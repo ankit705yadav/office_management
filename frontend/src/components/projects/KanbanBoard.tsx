@@ -37,10 +37,10 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'todo', title: 'To Do', color: '#9e9e9e', bgColor: '#f5f5f5' },
-  { id: 'in_progress', title: 'In Progress', color: '#1976d2', bgColor: '#e3f2fd' },
-  { id: 'in_review', title: 'In Review', color: '#9c27b0', bgColor: '#f3e5f5' },
-  { id: 'done', title: 'Done', color: '#2e7d32', bgColor: '#e8f5e9' },
+  { id: 'todo', title: 'To Do', color: '#9e9e9e', bgColor: 'var(--surface)' },
+  { id: 'in_progress', title: 'In Progress', color: '#1976d2', bgColor: 'var(--surface)' },
+  { id: 'in_review', title: 'In Review', color: '#9c27b0', bgColor: 'var(--surface)' },
+  { id: 'done', title: 'Done', color: '#2e7d32', bgColor: 'var(--surface)' },
 ];
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskUpdate }) => {
@@ -283,7 +283,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskU
                       flexGrow: 1,
                       minHeight: 100,
                       p: 1,
-                      backgroundColor: snapshot.isDraggingOver ? 'action.hover' : 'grey.50',
+                      backgroundColor: snapshot.isDraggingOver ? 'var(--sidebar-item-hover)' : 'var(--bg-elevated)',
                       borderRadius: 1,
                       transition: 'background-color 0.2s',
                     }}

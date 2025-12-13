@@ -291,7 +291,7 @@ const LoginPage: React.FC = () => {
                   Manager
                 </span>
                 <span style={{ color: "var(--text-secondary)" }}>
-                  john.manager@company.com / Password@123
+                  john.doe@company.com / Admin@123
                 </span>
               </div>
 
@@ -310,7 +310,7 @@ const LoginPage: React.FC = () => {
                   Employee
                 </span>
                 <span style={{ color: "var(--text-secondary)" }}>
-                  alice.dev@company.com / Password@123
+                  jane.smith@company.com / Admin@123
                 </span>
               </div>
             </div>

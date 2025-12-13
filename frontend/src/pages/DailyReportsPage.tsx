@@ -69,6 +69,35 @@ const getStatusColor = (status: string): 'default' | 'warning' | 'success' => {
   }
 };
 
+// Common TextField styling for dark mode compatibility
+const textFieldSx = {
+  '& .MuiInputBase-root': {
+    color: 'var(--text-primary)',
+    backgroundColor: 'var(--surface)',
+  },
+  '& .MuiInputBase-input': {
+    color: 'var(--text-primary)',
+    WebkitTextFillColor: 'var(--text-primary)',
+  },
+  '& .MuiInputBase-input.Mui-disabled': {
+    color: 'var(--text-secondary)',
+    WebkitTextFillColor: 'var(--text-secondary)',
+  },
+  '& .MuiInputLabel-root': {
+    color: 'var(--text-secondary)',
+  },
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'var(--border)',
+  },
+  '& .MuiSvgIcon-root': {
+    color: 'var(--text-secondary)',
+  },
+  '& .Mui-disabled': {
+    color: 'var(--text-secondary)',
+    WebkitTextFillColor: 'var(--text-secondary)',
+  },
+};
+
 const DailyReportsPage: React.FC = () => {
   const { user } = useAuth();
   const isManagerOrAdmin = user?.role === 'manager' || user?.role === 'admin';
@@ -310,11 +339,11 @@ const DailyReportsPage: React.FC = () => {
           label="Report Date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: 200, ...textFieldSx }}
           size="small"
         >
           {dateOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
+            <MenuItem key={option.value} value={option.value} sx={{ color: 'var(--text-primary)' }}>
               {option.label}
             </MenuItem>
           ))}
@@ -372,7 +401,7 @@ const DailyReportsPage: React.FC = () => {
                   handleEntryChange(index, 'projectId', newValue?.id || undefined)
                 }
                 renderInput={(params) => (
-                  <TextField {...params} label="Project" size="small" />
+                  <TextField {...params} label="Project" size="small" sx={textFieldSx} />
                 )}
                 sx={{ minWidth: 200, flex: 1 }}
                 disabled={currentReport?.status === 'submitted'}
@@ -394,7 +423,7 @@ const DailyReportsPage: React.FC = () => {
                     handleEntryChange(index, 'taskId', newValue?.id || undefined)
                   }
                   renderInput={(params) => (
-                    <TextField {...params} label="Task" size="small" />
+                    <TextField {...params} label="Task" size="small" sx={textFieldSx} />
                   )}
                   sx={{ minWidth: 200, flex: 1 }}
                   disabled={currentReport?.status === 'submitted'}
@@ -408,7 +437,7 @@ const DailyReportsPage: React.FC = () => {
                   handleEntryChange(index, 'description', e.target.value)
                 }
                 size="small"
-                sx={{ flex: 2, minWidth: 200 }}
+                sx={{ flex: 2, minWidth: 200, ...textFieldSx }}
                 multiline
                 disabled={currentReport?.status === 'submitted'}
               />
@@ -421,7 +450,7 @@ const DailyReportsPage: React.FC = () => {
                   handleEntryChange(index, 'hours', parseFloat(e.target.value) || 0)
                 }
                 size="small"
-                sx={{ width: 100 }}
+                sx={{ width: 100, ...textFieldSx }}
                 inputProps={{ min: 0, max: 24, step: 0.5 }}
                 disabled={currentReport?.status === 'submitted'}
               />
@@ -464,6 +493,7 @@ const DailyReportsPage: React.FC = () => {
             onChange={(e) => setSummary(e.target.value)}
             placeholder="Write a summary of your day's work..."
             disabled={currentReport?.status === 'submitted'}
+            sx={textFieldSx}
           />
         </CardContent>
       </Card>
@@ -594,12 +624,12 @@ const DailyReportsPage: React.FC = () => {
             setSelectedEmployee(e.target.value as number | '');
             setTeamReportsPage(1);
           }}
-          sx={{ minWidth: 250 }}
+          sx={{ minWidth: 250, ...textFieldSx }}
           size="small"
         >
-          <MenuItem value="">All Employees</MenuItem>
+          <MenuItem value="" sx={{ color: 'var(--text-primary)' }}>All Employees</MenuItem>
           {teamMembers.map((member) => (
-            <MenuItem key={member.id} value={member.id}>
+            <MenuItem key={member.id} value={member.id} sx={{ color: 'var(--text-primary)' }}>
               {member.firstName} {member.lastName}
             </MenuItem>
           ))}
