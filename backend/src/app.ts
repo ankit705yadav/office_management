@@ -16,6 +16,7 @@ import holidayRoutes from './routes/holiday.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import projectRoutes from './routes/project.routes';
+import dailyReportRoutes from './routes/dailyReport.routes';
 
 const app: Application = express();
 
@@ -98,6 +99,7 @@ app.get('/api', (_req: Request, res: Response) => {
       attendance: '/api/attendance',
       dashboard: '/api/dashboard',
       projects: '/api/projects',
+      dailyReports: '/api/daily-reports',
     },
   });
 });
@@ -110,6 +112,7 @@ app.use('/api/holidays', holidayRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/daily-reports', dailyReportRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

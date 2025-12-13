@@ -12,6 +12,8 @@ import EmployeeCustomField from './EmployeeCustomField';
 import EmployeeDocument from './EmployeeDocument';
 import TaskAttachment from './TaskAttachment';
 import ProjectAttachment from './ProjectAttachment';
+import DailyReport from './DailyReport';
+import DailyReportEntry from './DailyReportEntry';
 
 // ============================================
 // Define Associations/Relationships
@@ -103,6 +105,22 @@ User.hasMany(EmployeeCustomField, { foreignKey: 'userId', as: 'customFields' });
 EmployeeDocument.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(EmployeeDocument, { foreignKey: 'userId', as: 'documents' });
 
+// Daily Report - User relationship
+DailyReport.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(DailyReport, { foreignKey: 'userId', as: 'dailyReports' });
+
+// Daily Report Entry - Daily Report relationship
+DailyReportEntry.belongsTo(DailyReport, { foreignKey: 'dailyReportId', as: 'dailyReport' });
+DailyReport.hasMany(DailyReportEntry, { foreignKey: 'dailyReportId', as: 'entries' });
+
+// Daily Report Entry - Project relationship
+DailyReportEntry.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Project.hasMany(DailyReportEntry, { foreignKey: 'projectId', as: 'dailyReportEntries' });
+
+// Daily Report Entry - Task relationship
+DailyReportEntry.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
+Task.hasMany(DailyReportEntry, { foreignKey: 'taskId', as: 'dailyReportEntries' });
+
 // Export all models
 export {
   User,
@@ -118,6 +136,8 @@ export {
   Notification,
   EmployeeCustomField,
   EmployeeDocument,
+  DailyReport,
+  DailyReportEntry,
 };
 
 // Export default object with all models
@@ -135,4 +155,6 @@ export default {
   Notification,
   EmployeeCustomField,
   EmployeeDocument,
+  DailyReport,
+  DailyReportEntry,
 };

@@ -25,6 +25,7 @@ import {
   LightMode,
   ChevronLeft,
   ChevronRight,
+  Assignment,
 } from "@mui/icons-material";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -76,6 +77,11 @@ const navSections: NavSection[] = [
         text: "Projects",
         icon: <FolderOpen />,
         path: "/projects",
+      },
+      {
+        text: "Daily Reports",
+        icon: <Assignment />,
+        path: "/daily-reports",
       },
       {
         text: "Holidays",

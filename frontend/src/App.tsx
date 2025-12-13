@@ -13,6 +13,7 @@ import HolidaysPage from './pages/HolidaysPage';
 import ProfilePage from './pages/ProfilePage';
 import EmployeesPage from './pages/EmployeesPage';
 import ProjectsPage from './pages/ProjectsPage';
+import DailyReportsPage from './pages/DailyReportsPage';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -73,6 +74,7 @@ const App: React.FC = () => {
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="employees" element={<EmployeesPage />} />
         <Route path="projects" element={<ProjectsPage />} />
+        <Route path="daily-reports" element={<DailyReportsPage />} />
         <Route path="holidays" element={<HolidaysPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
