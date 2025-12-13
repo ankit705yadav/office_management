@@ -1,5 +1,6 @@
--- Operation Management System Database Schema
+-- Office Management System Database Schema
 -- PostgreSQL 14+
+-- Modules: Users, Leaves, Attendance, Projects, Holidays, Notifications
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -7,10 +8,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create ENUM types
 CREATE TYPE user_role AS ENUM ('employee', 'manager', 'admin');
 CREATE TYPE user_status AS ENUM ('active', 'inactive', 'terminated');
-CREATE TYPE leave_type AS ENUM ('sick', 'casual', 'earned', 'comp_off', 'paternity', 'maternity');
+CREATE TYPE leave_type AS ENUM ('sick_leave', 'casual_leave', 'earned_leave', 'comp_off', 'paternity_maternity');
 CREATE TYPE request_status AS ENUM ('pending', 'approved', 'rejected', 'cancelled');
-CREATE TYPE expense_category AS ENUM ('travel', 'food', 'accommodation', 'office_supplies', 'software', 'hardware', 'training', 'other');
-CREATE TYPE inventory_status AS ENUM ('available', 'assigned', 'under_repair', 'damaged', 'retired');
+CREATE TYPE approval_status AS ENUM ('pending', 'approved', 'rejected');
+CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'half_day', 'on_leave', 'holiday', 'weekend');
 CREATE TYPE task_status AS ENUM ('todo', 'in_progress', 'done', 'blocked');
 CREATE TYPE task_priority AS ENUM ('low', 'medium', 'high', 'urgent');
 CREATE TYPE project_status AS ENUM ('planning', 'active', 'on_hold', 'completed', 'cancelled');
@@ -47,6 +48,8 @@ CREATE TABLE users (
     address TEXT,
     emergency_contact_name VARCHAR(100),
     emergency_contact_phone VARCHAR(20),
+    pan_number VARCHAR(20),
+    aadhar_number VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -56,13 +59,34 @@ ALTER TABLE departments
 ADD CONSTRAINT fk_department_head
 FOREIGN KEY (head_id) REFERENCES users(id) ON DELETE SET NULL;
 
--- Refresh tokens table (for JWT authentication)
+-- Refresh tokens table
 CREATE TABLE refresh_tokens (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token TEXT NOT NULL UNIQUE,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Employee custom fields
+CREATE TABLE employee_custom_fields (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    field_name VARCHAR(100) NOT NULL,
+    field_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Employee documents
+CREATE TABLE employee_documents (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    document_name VARCHAR(255) NOT NULL,
+    document_type VARCHAR(100),
+    file_url TEXT NOT NULL,
+    file_size INTEGER,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -88,7 +112,7 @@ CREATE TABLE leave_balances (
 CREATE TABLE leave_requests (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    leave_type leave_type NOT NULL,
+    leave_type VARCHAR(50) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     days_count DECIMAL(3, 1) NOT NULL,
@@ -97,6 +121,24 @@ CREATE TABLE leave_requests (
     approver_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     approved_rejected_at TIMESTAMP,
     comments TEXT,
+    is_half_day BOOLEAN DEFAULT FALSE,
+    half_day_session VARCHAR(20),
+    document_url TEXT,
+    current_approval_level INTEGER DEFAULT 1,
+    total_approval_levels INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Leave approvals table (multi-level approval)
+CREATE TABLE leave_approvals (
+    id SERIAL PRIMARY KEY,
+    leave_request_id INTEGER NOT NULL REFERENCES leave_requests(id) ON DELETE CASCADE,
+    approver_id INTEGER NOT NULL REFERENCES users(id),
+    approval_order INTEGER NOT NULL DEFAULT 1,
+    status approval_status DEFAULT 'pending',
+    comments TEXT,
+    acted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -114,117 +156,44 @@ CREATE TABLE holidays (
 );
 
 -- ============================================
--- EXPENSE MANAGEMENT
+-- ATTENDANCE MANAGEMENT
 -- ============================================
 
--- Expenses table
-CREATE TABLE expenses (
+-- Attendance table
+CREATE TABLE attendance (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    amount DECIMAL(10, 2) NOT NULL,
-    category expense_category NOT NULL,
-    description TEXT NOT NULL,
-    expense_date DATE NOT NULL,
-    receipt_url TEXT,
+    date DATE NOT NULL,
+    check_in_time TIMESTAMP,
+    check_out_time TIMESTAMP,
+    check_in_location VARCHAR(500),
+    check_out_location VARCHAR(500),
+    status VARCHAR(20) DEFAULT 'absent',
+    work_hours DECIMAL(4, 2) DEFAULT 0,
+    is_late BOOLEAN DEFAULT FALSE,
+    is_early_departure BOOLEAN DEFAULT FALSE,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, date)
+);
+
+-- Attendance regularizations
+CREATE TABLE attendance_regularizations (
+    id SERIAL PRIMARY KEY,
+    attendance_id INTEGER REFERENCES attendance(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    requested_check_in TIMESTAMP,
+    requested_check_out TIMESTAMP,
+    requested_location VARCHAR(500),
+    reason TEXT NOT NULL,
     status request_status DEFAULT 'pending',
-    approver_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    approver_id INTEGER REFERENCES users(id),
     approved_rejected_at TIMESTAMP,
     comments TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================
--- PAYROLL MANAGEMENT
--- ============================================
-
--- Payroll table
-CREATE TABLE payroll (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    month INTEGER NOT NULL CHECK (month >= 1 AND month <= 12),
-    year INTEGER NOT NULL,
-    basic_salary DECIMAL(10, 2) NOT NULL,
-    hra DECIMAL(10, 2) DEFAULT 0,
-    transport_allowance DECIMAL(10, 2) DEFAULT 0,
-    other_allowances DECIMAL(10, 2) DEFAULT 0,
-    gross_salary DECIMAL(10, 2) NOT NULL,
-    pf_deduction DECIMAL(10, 2) DEFAULT 0,
-    esi_deduction DECIMAL(10, 2) DEFAULT 0,
-    tax_deduction DECIMAL(10, 2) DEFAULT 0,
-    other_deductions DECIMAL(10, 2) DEFAULT 0,
-    total_deductions DECIMAL(10, 2) NOT NULL,
-    net_salary DECIMAL(10, 2) NOT NULL,
-    payslip_url TEXT,
-    processed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, month, year)
-);
-
--- Employee Salary Details table
-CREATE TABLE employee_salary_details (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    employee_code VARCHAR(50) UNIQUE,
-    pan_number VARCHAR(10),
-    bank_account_number VARCHAR(50),
-    bank_name VARCHAR(100),
-    bank_ifsc_code VARCHAR(11),
-    bank_branch VARCHAR(100),
-    pf_account_number VARCHAR(50),
-    uan_number VARCHAR(12),
-    esi_number VARCHAR(17),
-    basic_salary DECIMAL(10, 2) NOT NULL,
-    hra_percentage DECIMAL(5, 2) DEFAULT 40.0,
-    transport_allowance DECIMAL(10, 2) DEFAULT 1600,
-    other_allowances DECIMAL(10, 2) DEFAULT 0,
-    pf_applicable BOOLEAN DEFAULT TRUE,
-    esi_applicable BOOLEAN DEFAULT FALSE,
-    professional_tax DECIMAL(10, 2) DEFAULT 200,
-    tax_regime VARCHAR(10) DEFAULT 'old',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Index for employee salary details
-CREATE INDEX idx_employee_salary_user_id ON employee_salary_details(user_id);
-
--- ============================================
--- INVENTORY MANAGEMENT
--- ============================================
-
--- Inventory table
-CREATE TABLE inventory (
-    id SERIAL PRIMARY KEY,
-    item_name VARCHAR(200) NOT NULL,
-    category VARCHAR(100) NOT NULL,
-    description TEXT,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    unit_price DECIMAL(10, 2),
-    total_value DECIMAL(10, 2),
-    status inventory_status DEFAULT 'available',
-    assigned_to_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    purchase_date DATE,
-    warranty_expiry DATE,
-    serial_number VARCHAR(100),
-    location VARCHAR(200),
-    notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Inventory history (for tracking assignments)
-CREATE TABLE inventory_history (
-    id SERIAL PRIMARY KEY,
-    inventory_id INTEGER NOT NULL REFERENCES inventory(id) ON DELETE CASCADE,
-    action VARCHAR(50) NOT NULL,
-    assigned_to_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    assigned_from_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    notes TEXT,
-    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -236,10 +205,17 @@ CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     description TEXT,
-    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+    parent_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
     status project_status DEFAULT 'planning',
+    priority VARCHAR(20) DEFAULT 'medium',
     start_date DATE,
     end_date DATE,
+    budget DECIMAL(12, 2),
+    project_code VARCHAR(50),
+    is_folder BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -250,23 +226,18 @@ CREATE TABLE tasks (
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title VARCHAR(300) NOT NULL,
     description TEXT,
-    assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    assignee_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
     status task_status DEFAULT 'todo',
     priority task_priority DEFAULT 'medium',
     due_date DATE,
-    parent_task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
-    order_index INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Task comments table
-CREATE TABLE task_comments (
-    id SERIAL PRIMARY KEY,
-    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    comment TEXT NOT NULL,
+    estimated_hours DECIMAL(6, 2),
+    tags TEXT[],
+    task_code VARCHAR(50),
+    action_required BOOLEAN DEFAULT FALSE,
+    actual_hours DECIMAL(8, 2) DEFAULT 0,
+    depends_on_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+    sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -275,7 +246,19 @@ CREATE TABLE task_comments (
 CREATE TABLE task_attachments (
     id SERIAL PRIMARY KEY,
     task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    uploaded_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size INTEGER,
+    file_type VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Project attachments table
+CREATE TABLE project_attachments (
+    id SERIAL PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    uploaded_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     file_name VARCHAR(255) NOT NULL,
     file_url TEXT NOT NULL,
     file_size INTEGER,
@@ -303,39 +286,28 @@ CREATE TABLE notifications (
 -- INDEXES
 -- ============================================
 
--- Users indexes
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_department_id ON users(department_id);
 CREATE INDEX idx_users_manager_id ON users(manager_id);
 
--- Leave requests indexes
 CREATE INDEX idx_leave_requests_user_id ON leave_requests(user_id);
 CREATE INDEX idx_leave_requests_status ON leave_requests(status);
 CREATE INDEX idx_leave_requests_dates ON leave_requests(start_date, end_date);
 
--- Expenses indexes
-CREATE INDEX idx_expenses_user_id ON expenses(user_id);
-CREATE INDEX idx_expenses_status ON expenses(status);
-CREATE INDEX idx_expenses_date ON expenses(expense_date);
+CREATE INDEX idx_leave_approvals_request_id ON leave_approvals(leave_request_id);
+CREATE INDEX idx_leave_approvals_approver_id ON leave_approvals(approver_id);
 
--- Payroll indexes
-CREATE INDEX idx_payroll_user_id ON payroll(user_id);
-CREATE INDEX idx_payroll_month_year ON payroll(month, year);
+CREATE INDEX idx_attendance_user_id ON attendance(user_id);
+CREATE INDEX idx_attendance_date ON attendance(date);
+CREATE INDEX idx_attendance_user_date ON attendance(user_id, date);
 
--- Inventory indexes
-CREATE INDEX idx_inventory_status ON inventory(status);
-CREATE INDEX idx_inventory_assigned_to ON inventory(assigned_to_user_id);
-CREATE INDEX idx_inventory_category ON inventory(category);
-
--- Tasks indexes
 CREATE INDEX idx_tasks_project_id ON tasks(project_id);
-CREATE INDEX idx_tasks_assigned_to ON tasks(assigned_to);
+CREATE INDEX idx_tasks_assignee_id ON tasks(assignee_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 CREATE INDEX idx_tasks_due_date ON tasks(due_date);
 
--- Notifications indexes
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 
@@ -343,7 +315,6 @@ CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 -- FUNCTIONS & TRIGGERS
 -- ============================================
 
--- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -352,7 +323,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply update_updated_at trigger to all relevant tables
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -368,13 +338,7 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_holidays_updated_at BEFORE UPDATE ON holidays
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_expenses_updated_at BEFORE UPDATE ON expenses
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_payroll_updated_at BEFORE UPDATE ON payroll
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_inventory_updated_at BEFORE UPDATE ON inventory
+CREATE TRIGGER update_attendance_updated_at BEFORE UPDATE ON attendance
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
@@ -383,14 +347,11 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON tasks
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_task_comments_updated_at BEFORE UPDATE ON task_comments
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 -- ============================================
--- SEED DATA (Optional - for development)
+-- SEED DATA
 -- ============================================
 
--- Insert default department
+-- Insert departments
 INSERT INTO departments (name, description) VALUES
 ('IT', 'Information Technology'),
 ('HR', 'Human Resources'),
@@ -398,56 +359,87 @@ INSERT INTO departments (name, description) VALUES
 ('Operations', 'Operations & Management'),
 ('Sales', 'Sales & Marketing');
 
--- Insert default admin user (password: Admin@123)
--- Password hash for 'Admin@123' (bcrypt with 10 rounds)
+-- Insert admin user (password: Admin@123)
 INSERT INTO users (
     email, password_hash, first_name, last_name,
     date_of_joining, role, status, department_id
 ) VALUES (
     'admin@elisrun.com',
-    '$2b$10$xKvPl5vLQm5Y0UZLVqG9NOtqH5z0gYM.xI0Qh3JKX8vP1EQ2ZJYxW',
+    '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
     'System',
     'Administrator',
-    CURRENT_DATE,
+    '2024-01-01',
     'admin',
     'active',
     1
 );
 
--- Insert employee salary details (sample data for testing)
-INSERT INTO employee_salary_details (
-    user_id, employee_code, pan_number, bank_account_number,
-    bank_name, bank_ifsc_code, bank_branch, pf_account_number,
-    uan_number, basic_salary, hra_percentage, transport_allowance,
-    other_allowances, pf_applicable, esi_applicable, professional_tax, tax_regime
+-- Insert manager user (password: Password@123)
+INSERT INTO users (
+    email, password_hash, first_name, last_name,
+    date_of_joining, role, status, department_id, manager_id
 ) VALUES (
-    1, -- admin user
-    'EMP001',
-    'ABCDE1234F',
-    '1234567890123456',
-    'HDFC Bank',
-    'HDFC0001234',
-    'Bangalore Main Branch',
-    'KA/BGP/0123456/000/0001234',
-    '100123456789',
-    50000.00,
-    40.0,
-    1600.00,
-    3000.00,
-    TRUE,
-    FALSE,
-    200.00,
-    'old'
+    'john.doe@elisrun.com',
+    '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
+    'John',
+    'Doe',
+    '2024-01-15',
+    'manager',
+    'active',
+    1,
+    1
 );
 
--- Insert current year holidays (India - 2025 sample)
+-- Insert employee user (password: Password@123)
+INSERT INTO users (
+    email, password_hash, first_name, last_name,
+    date_of_joining, role, status, department_id, manager_id
+) VALUES (
+    'jane.smith@elisrun.com',
+    '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
+    'Jane',
+    'Smith',
+    '2024-02-01',
+    'employee',
+    'active',
+    1,
+    2
+);
+
+-- Set department head
+UPDATE departments SET head_id = 2 WHERE id = 1;
+
+-- Insert leave balances for current year
+INSERT INTO leave_balances (user_id, year, sick_leave, casual_leave, earned_leave, comp_off, paternity_maternity)
+VALUES
+(1, 2025, 12, 12, 15, 0, 0),
+(2, 2025, 12, 12, 15, 0, 0),
+(3, 2025, 12, 12, 15, 0, 0);
+
+-- Insert holidays for 2025
 INSERT INTO holidays (date, name, description, is_optional, year) VALUES
+('2025-01-01', 'New Year''s Day', 'New Year celebration', FALSE, 2025),
 ('2025-01-26', 'Republic Day', 'National holiday', FALSE, 2025),
 ('2025-03-14', 'Holi', 'Festival of colors', FALSE, 2025),
 ('2025-04-14', 'Ambedkar Jayanti', 'Dr. B.R. Ambedkar birth anniversary', TRUE, 2025),
+('2025-04-18', 'Good Friday', 'Christian holiday', TRUE, 2025),
+('2025-05-01', 'May Day', 'Labour Day', FALSE, 2025),
 ('2025-08-15', 'Independence Day', 'National holiday', FALSE, 2025),
 ('2025-10-02', 'Gandhi Jayanti', 'Mahatma Gandhi birth anniversary', FALSE, 2025),
-('2025-10-24', 'Diwali', 'Festival of lights', FALSE, 2025),
+('2025-10-20', 'Dussehra', 'Victory of good over evil', FALSE, 2025),
+('2025-11-01', 'Diwali', 'Festival of lights', FALSE, 2025),
 ('2025-12-25', 'Christmas', 'Christmas Day', FALSE, 2025);
 
-COMMENT ON DATABASE office_management IS 'Operation Management System for Elisrun Technologies';
+-- Insert a sample project
+INSERT INTO projects (name, description, owner_id, created_by, department_id, status, start_date)
+VALUES ('Office Management System', 'Internal HR and operations management platform', 1, 1, 1, 'active', '2025-01-01');
+
+-- Insert sample tasks
+INSERT INTO tasks (project_id, title, description, assignee_id, created_by, status, priority, due_date)
+VALUES
+(1, 'Setup development environment', 'Configure local dev environment for all team members', 2, 1, 'done', 'high', '2025-01-15'),
+(1, 'Design database schema', 'Create PostgreSQL schema for all modules', 2, 1, 'done', 'high', '2025-01-20'),
+(1, 'Implement authentication', 'JWT-based authentication system', 3, 2, 'done', 'high', '2025-02-01'),
+(1, 'Build leave management module', 'Complete leave application and approval workflow', 3, 2, 'in_progress', 'medium', '2025-02-15');
+
+COMMENT ON DATABASE office_management IS 'Office Management System - Elisrun Technologies';

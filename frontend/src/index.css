@@ -736,3 +736,76 @@
 .MuiChip-outlined {
   border-color: currentColor !important;
 }
+
+/* Fix input placeholder colors for dark mode */
+.MuiInputBase-input::placeholder,
+.MuiOutlinedInput-input::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Fix ListItemText secondary text */
+.MuiListItemText-secondary {
+  color: var(--text-secondary) !important;
+}
+
+/* Fix ListItemText primary text */
+.MuiListItemText-primary {
+  color: var(--text-primary) !important;
+}
+
+/* Fix ListItemButton text */
+.MuiListItemButton-root .MuiTypography-root {
+  color: var(--text-primary);
+}
+
+/* Fix sidebar items that are not selected */
+.MuiListItemButton-root:not(.Mui-selected) .MuiTypography-root {
+  color: var(--text-primary);
+}
+
+.MuiListItemButton-root:not(.Mui-selected) .MuiListItemText-secondary {
+  color: var(--text-secondary) !important;
+}
+
+/* Fix ListItemIcon color */
+.MuiListItemIcon-root {
+  color: var(--text-secondary) !important;
+}
+
+/* Ensure selected state overrides work */
+.MuiListItemButton-root.Mui-selected .MuiTypography-root {
+  color: #ffffff !important;
+}
+
+.MuiListItemButton-root.Mui-selected .MuiListItemText-secondary {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.MuiListItemButton-root.Mui-selected .MuiListItemIcon-root {
+  color: #ffffff !important;
+}
+
+/* Fix FormControlLabel text */
+.MuiFormControlLabel-label {
+  color: var(--text-primary) !important;
+}
+
+/* Fix Select display value */
+.MuiSelect-select {
+  color: var(--text-primary) !important;
+}
+
+/* Fix InputLabel shrunk state */
+.MuiInputLabel-shrink {
+  color: var(--text-secondary) !important;
+}
+
+/* Fix FormLabel */
+.MuiFormLabel-root {
+  color: var(--text-secondary) !important;
+}
+
+.MuiFormLabel-root.Mui-focused {
+  color: var(--accent-primary) !important;
+}

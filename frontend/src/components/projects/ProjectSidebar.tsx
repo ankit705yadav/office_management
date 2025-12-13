@@ -103,19 +103,19 @@ const ProjectTreeItem: React.FC<ProjectTreeItemProps> = ({
           mb: 0.25,
           '&.Mui-selected': {
             backgroundColor: 'primary.main',
-            color: 'primary.contrastText',
+            color: '#ffffff',
             '&:hover': {
               backgroundColor: 'primary.dark',
             },
             '& .MuiListItemIcon-root': {
-              color: 'primary.contrastText',
+              color: '#ffffff !important',
             },
             '& .MuiChip-root': {
               borderColor: 'rgba(255,255,255,0.7)',
-              color: 'primary.contrastText',
+              color: '#ffffff',
             },
             '& .MuiTypography-root': {
-              color: 'primary.contrastText !important',
+              color: '#ffffff !important',
             },
             '& .MuiListItemText-secondary': {
               color: 'rgba(255,255,255,0.8) !important',
@@ -136,7 +136,7 @@ const ProjectTreeItem: React.FC<ProjectTreeItemProps> = ({
           <Box sx={{ width: 28 }} />
         )}
 
-        <ListItemIcon sx={{ minWidth: 32 }}>
+        <ListItemIcon sx={{ minWidth: 32, color: 'var(--text-secondary)' }}>
           {project.isFolder ? (
             isExpanded ? <FolderOpen fontSize="small" /> : <Folder fontSize="small" />
           ) : (
@@ -147,14 +147,14 @@ const ProjectTreeItem: React.FC<ProjectTreeItemProps> = ({
         <ListItemText
           primary={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-              <Typography variant="body2" noWrap sx={{ flexShrink: 1, minWidth: 0, color: 'text.primary' }}>
+              <Typography variant="body2" noWrap sx={{ flexShrink: 1, minWidth: 0, color: 'var(--text-primary)' }}>
                 {project.name}
               </Typography>
               {project.projectCode && (
                 <Typography
                   variant="caption"
                   sx={{
-                    color: 'text.secondary',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   ({project.projectCode})
@@ -164,7 +164,9 @@ const ProjectTreeItem: React.FC<ProjectTreeItemProps> = ({
           }
           secondary={
             !project.isFolder && project.taskCounts ? (
-              `${project.taskCounts.done}/${project.taskCounts.total} tasks`
+              <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>
+                {project.taskCounts.done}/{project.taskCounts.total} tasks
+              </Typography>
             ) : null
           }
         />
@@ -323,16 +325,16 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         minWidth: 280,
         height: '100%',
         borderRight: 1,
-        borderColor: 'divider',
+        borderColor: 'var(--border)',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: 'background.default',
+        bgcolor: 'var(--surface)',
       }}
     >
       {/* Header */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'var(--border)' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ color: 'var(--text-primary)' }}>
             Projects
           </Typography>
           <Box>
@@ -396,23 +398,29 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 mb: 0.5,
                 '&.Mui-selected': {
                   backgroundColor: 'primary.main',
-                  color: 'primary.contrastText',
+                  color: '#ffffff',
                   '&:hover': {
                     backgroundColor: 'primary.dark',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: 'primary.contrastText',
+                    color: '#ffffff !important',
                   },
                   '& .MuiTypography-root': {
-                    color: 'primary.contrastText',
+                    color: '#ffffff !important',
                   },
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 32 }}>
+              <ListItemIcon sx={{ minWidth: 32, color: 'var(--text-secondary)' }}>
                 <Description fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="All Tasks" />
+              <ListItemText
+                primary={
+                  <Typography variant="body2" sx={{ color: 'var(--text-primary)' }}>
+                    All Tasks
+                  </Typography>
+                }
+              />
             </ListItemButton>
 
             <Divider sx={{ my: 1 }} />

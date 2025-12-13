@@ -15,19 +15,7 @@ import leaveRoutes from './routes/leave.routes';
 import holidayRoutes from './routes/holiday.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import attendanceRoutes from './routes/attendance.routes';
-import payrollRoutes from './routes/payroll.routes';
-import salaryDetailsRoutes from './routes/salaryDetails.routes';
-import expenseRoutes from './routes/expense.routes';
-import voucherRoutes from './routes/voucher.routes';
-import advanceSalaryRoutes from './routes/advanceSalary.routes';
-import expenseCapRoutes from './routes/expenseCap.routes';
-import vendorRoutes from './routes/vendor.routes';
-import customerRoutes from './routes/customer.routes';
-import inventoryRoutes from './routes/inventory.routes';
-import assetRoutes from './routes/asset.routes';
 import projectRoutes from './routes/project.routes';
-import storageRoutes from './routes/storage.routes';
-import chatRoutes from './routes/chat.routes';
 
 const app: Application = express();
 
@@ -109,16 +97,7 @@ app.get('/api', (_req: Request, res: Response) => {
       holidays: '/api/holidays',
       attendance: '/api/attendance',
       dashboard: '/api/dashboard',
-      payroll: '/api/payroll',
-      salaryDetails: '/api/salary-details',
-      expenses: '/api/expenses',
-      vouchers: '/api/vouchers',
-      advanceSalary: '/api/advance-salary',
-      inventory: '/api/inventory',
-      assets: '/api/assets',
       projects: '/api/projects',
-      storage: '/api/storage',
-      chat: '/api/chat',
     },
   });
 });
@@ -130,19 +109,7 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/holidays', holidayRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/attendance', attendanceRoutes);
-app.use('/api/payroll', payrollRoutes);
-app.use('/api/salary-details', salaryDetailsRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/vouchers', voucherRoutes);
-app.use('/api/advance-salary', advanceSalaryRoutes);
-app.use('/api/expense-caps', expenseCapRoutes);
-app.use('/api/vendors', vendorRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/assets', assetRoutes);
 app.use('/api/projects', projectRoutes);
-app.use('/api/storage', storageRoutes);
-app.use('/api/chat', chatRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

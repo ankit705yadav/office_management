@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Avatar,
@@ -8,7 +8,7 @@ import {
   Badge,
   Tooltip,
   IconButton,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Dashboard,
@@ -19,27 +19,21 @@ import {
   AccountCircle,
   Logout,
   Close,
-  AttachMoney,
-  Settings,
-  Receipt,
   People,
-  Business,
-  Inventory,
   FolderOpen,
-  CloudUpload,
   DarkMode,
   LightMode,
   ChevronLeft,
   ChevronRight,
-} from '@mui/icons-material';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { toast } from 'react-toastify';
-import logoImage from '@/assets/logo_1.png';
+} from "@mui/icons-material";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { toast } from "react-toastify";
+// import logoImage from '@/assets/logo_1.png';
 
 const SIDEBAR_EXPANDED_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 64;
-const SIDEBAR_STATE_KEY = 'elisrun-sidebar-collapsed';
+const SIDEBAR_STATE_KEY = "elisrun-sidebar-collapsed";
 
 interface NavItem {
   text: string;
@@ -55,82 +49,38 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Workspace',
+    label: "Workspace",
     items: [
       {
-        text: 'Dashboard',
+        text: "Dashboard",
         icon: <Dashboard />,
-        path: '/',
+        path: "/",
       },
       {
-        text: 'Employees',
+        text: "Employees",
         icon: <People />,
-        path: '/employees',
-        roles: ['admin'],
+        path: "/employees",
+        roles: ["admin"],
       },
       {
-        text: 'Leaves',
+        text: "Leaves",
         icon: <EventAvailable />,
-        path: '/leaves',
+        path: "/leaves",
       },
       {
-        text: 'Attendance',
+        text: "Attendance",
         icon: <AccessTime />,
-        path: '/attendance',
+        path: "/attendance",
       },
       {
-        text: 'Payroll',
-        icon: <AttachMoney />,
-        path: '/payroll',
-      },
-      {
-        text: 'Salary Setup',
-        icon: <Settings />,
-        path: '/salary-setup',
-        roles: ['admin'],
-      },
-      {
-        text: 'Expenses',
-        icon: <Receipt />,
-        path: '/expenses',
-      },
-      {
-        text: 'Vendors',
-        icon: <Business />,
-        path: '/vendors',
-        roles: ['admin', 'manager'],
-      },
-      {
-        text: 'Customers',
-        icon: <People />,
-        path: '/customers',
-        roles: ['admin', 'manager'],
-      },
-      {
-        text: 'Inventory',
-        icon: <Inventory />,
-        path: '/inventory',
-        roles: ['admin', 'manager'],
-      },
-      {
-        text: 'Assets',
-        icon: <Inventory />,
-        path: '/assets',
-      },
-      {
-        text: 'Projects',
+        text: "Projects",
         icon: <FolderOpen />,
-        path: '/projects',
+        path: "/projects",
       },
       {
-        text: 'Storage',
-        icon: <CloudUpload />,
-        path: '/storage',
-      },
-      {
-        text: 'Holidays',
+        text: "Holidays",
         icon: <CalendarMonth />,
-        path: '/holidays',
+        path: "/holidays",
       },
     ],
   },
@@ -145,7 +95,7 @@ const DashboardLayout: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const stored = localStorage.getItem(SIDEBAR_STATE_KEY);
-    return stored === 'true';
+    return stored === "true";
   });
 
   useEffect(() => {
@@ -171,10 +121,10 @@ const DashboardLayout: React.FC = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Logged out successfully');
-      navigate('/login');
+      toast.success("Logged out successfully");
+      navigate("/login");
     } catch (error) {
-      toast.error('Logout failed');
+      toast.error("Logout failed");
     }
     handleProfileMenuClose();
   };
@@ -191,8 +141,8 @@ const DashboardLayout: React.FC = () => {
       const item = section.items.find((i) => i.path === location.pathname);
       if (item) return item.text;
     }
-    if (location.pathname === '/profile') return 'Profile';
-    return 'Dashboard';
+    if (location.pathname === "/profile") return "Profile";
+    return "Dashboard";
   };
 
   const getCurrentPageIcon = () => {
@@ -200,36 +150,38 @@ const DashboardLayout: React.FC = () => {
       const item = section.items.find((i) => i.path === location.pathname);
       if (item) return item.icon;
     }
-    if (location.pathname === '/profile') return <AccountCircle />;
+    if (location.pathname === "/profile") return <AccountCircle />;
     return <Dashboard />;
   };
 
-  const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH;
+  const sidebarWidth = sidebarCollapsed
+    ? SIDEBAR_COLLAPSED_WIDTH
+    : SIDEBAR_EXPANDED_WIDTH;
 
   const sidebar = (
     <div
       className="h-full flex flex-col transition-all duration-200"
       style={{
-        backgroundColor: 'var(--sidebar-bg)',
-        borderRight: '1px solid var(--sidebar-border)',
+        backgroundColor: "var(--sidebar-bg)",
+        borderRight: "1px solid var(--sidebar-border)",
         width: sidebarWidth,
       }}
     >
       {/* Logo Section */}
       <div
         className="h-14 flex items-center px-3 border-b"
-        style={{ borderColor: 'var(--sidebar-border)' }}
+        style={{ borderColor: "var(--sidebar-border)" }}
       >
         {!sidebarCollapsed ? (
           <div className="flex items-center gap-2 flex-1">
-            <img
+            {/*<img
               src={logoImage}
               alt="Elisrun"
               style={{ height: 28, width: 'auto' }}
-            />
+            />*/}
             <ChevronLeft
               className="ml-auto cursor-pointer"
-              style={{ color: 'var(--text-muted)', fontSize: 18 }}
+              style={{ color: "var(--text-muted)", fontSize: 18 }}
               onClick={handleSidebarToggle}
             />
           </div>
@@ -237,7 +189,7 @@ const DashboardLayout: React.FC = () => {
           <div className="flex items-center justify-center w-full">
             <ChevronRight
               className="cursor-pointer"
-              style={{ color: 'var(--text-muted)', fontSize: 18 }}
+              style={{ color: "var(--text-muted)", fontSize: 18 }}
               onClick={handleSidebarToggle}
             />
           </div>
@@ -250,20 +202,20 @@ const DashboardLayout: React.FC = () => {
           <div key={sectionIdx}>
             {/* Section Label */}
             {section.label && !sidebarCollapsed && (
-              <div className="sidebar-section-label">
-                {section.label}
-              </div>
+              <div className="sidebar-section-label">{section.label}</div>
             )}
 
             {/* Section Items */}
             {section.items
-              .filter((item) => !item.roles || item.roles.includes(user?.role || ''))
+              .filter(
+                (item) => !item.roles || item.roles.includes(user?.role || ""),
+              )
               .map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <Tooltip
                     key={item.text}
-                    title={sidebarCollapsed ? item.text : ''}
+                    title={sidebarCollapsed ? item.text : ""}
                     placement="right"
                     arrow
                   >
@@ -272,23 +224,35 @@ const DashboardLayout: React.FC = () => {
                       className={`
                         flex items-center gap-3 px-3 py-2 my-0.5 rounded-md cursor-pointer
                         transition-all duration-150
-                        ${isActive ? 'sidebar-item-active' : 'sidebar-item'}
+                        ${isActive ? "sidebar-item-active" : "sidebar-item"}
                       `}
-                      style={sidebarCollapsed ? { justifyContent: 'center', padding: '0.5rem' } : {}}
+                      style={
+                        sidebarCollapsed
+                          ? { justifyContent: "center", padding: "0.5rem" }
+                          : {}
+                      }
                     >
                       <div
                         className="flex items-center justify-center"
                         style={{
-                          color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                          color: isActive
+                            ? "var(--accent-primary)"
+                            : "var(--text-secondary)",
                           minWidth: 20,
                         }}
                       >
-                        {React.cloneElement(item.icon, { sx: { fontSize: 20 } })}
+                        {React.cloneElement(item.icon, {
+                          sx: { fontSize: 20 },
+                        })}
                       </div>
                       {!sidebarCollapsed && (
                         <span
                           className="text-sm font-medium truncate"
-                          style={{ color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
+                          style={{
+                            color: isActive
+                              ? "var(--accent-primary)"
+                              : "var(--text-secondary)",
+                          }}
                         >
                           {item.text}
                         </span>
@@ -302,7 +266,7 @@ const DashboardLayout: React.FC = () => {
             {sectionIdx < navSections.length - 1 && (
               <div
                 className="my-2 mx-3 border-b"
-                style={{ borderColor: 'var(--sidebar-border)' }}
+                style={{ borderColor: "var(--sidebar-border)" }}
               />
             )}
           </div>
@@ -312,23 +276,23 @@ const DashboardLayout: React.FC = () => {
       {/* User Info at Bottom */}
       <div
         className="p-2 border-t"
-        style={{ borderColor: 'var(--sidebar-border)' }}
+        style={{ borderColor: "var(--sidebar-border)" }}
       >
         {!sidebarCollapsed ? (
           <div
             className="flex items-center gap-3 p-2 rounded-lg"
             style={{
-              backgroundColor: 'var(--bg-elevated)',
-              border: '1px solid var(--border)',
+              backgroundColor: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
             }}
           >
             <Avatar
               sx={{
                 width: 36,
                 height: 36,
-                fontSize: '14px',
+                fontSize: "14px",
                 fontWeight: 600,
-                bgcolor: 'var(--accent-primary)',
+                bgcolor: "var(--accent-primary)",
               }}
             >
               {user?.firstName?.[0]}
@@ -337,34 +301,38 @@ const DashboardLayout: React.FC = () => {
             <div className="flex-1 min-w-0">
               <p
                 className="text-sm font-medium truncate"
-                style={{ color: 'var(--text-primary)' }}
+                style={{ color: "var(--text-primary)" }}
               >
                 {user?.firstName} {user?.lastName}
               </p>
               <p
                 className="text-xs capitalize truncate"
-                style={{ color: 'var(--text-muted)' }}
+                style={{ color: "var(--text-muted)" }}
               >
                 {user?.role}
               </p>
             </div>
           </div>
         ) : (
-          <Tooltip title={`${user?.firstName} ${user?.lastName} (${user?.role})`} placement="right" arrow>
+          <Tooltip
+            title={`${user?.firstName} ${user?.lastName} (${user?.role})`}
+            placement="right"
+            arrow
+          >
             <div
               className="flex justify-center p-1 rounded-lg"
               style={{
-                backgroundColor: 'var(--bg-elevated)',
-                border: '1px solid var(--border)',
+                backgroundColor: "var(--bg-elevated)",
+                border: "1px solid var(--border)",
               }}
             >
               <Avatar
                 sx={{
                   width: 32,
                   height: 32,
-                  fontSize: '12px',
+                  fontSize: "12px",
                   fontWeight: 600,
-                  bgcolor: 'var(--accent-primary)',
+                  bgcolor: "var(--accent-primary)",
                 }}
               >
                 {user?.firstName?.[0]}
@@ -378,7 +346,10 @@ const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ backgroundColor: "var(--bg-primary)" }}
+    >
       {/* Mobile Menu Overlay */}
       {mobileOpen && (
         <div
@@ -399,21 +370,21 @@ const DashboardLayout: React.FC = () => {
       <aside
         className={`
           lg:hidden fixed left-0 top-0 h-screen z-50 transform transition-transform duration-300
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         `}
         style={{ width: SIDEBAR_EXPANDED_WIDTH }}
       >
         <div
           className="h-full flex flex-col"
           style={{
-            backgroundColor: 'var(--sidebar-bg)',
-            borderRight: '1px solid var(--sidebar-border)',
+            backgroundColor: "var(--sidebar-bg)",
+            borderRight: "1px solid var(--sidebar-border)",
           }}
         >
           {/* Mobile close button */}
           <div className="absolute top-4 right-4">
             <IconButton size="small" onClick={handleDrawerToggle}>
-              <Close sx={{ color: 'var(--text-secondary)' }} />
+              <Close sx={{ color: "var(--text-secondary)" }} />
             </IconButton>
           </div>
           {React.cloneElement(sidebar as React.ReactElement, {})}
@@ -429,16 +400,24 @@ const DashboardLayout: React.FC = () => {
         <header
           className="h-14 flex items-center px-4 sticky top-0 z-20 border-b"
           style={{
-            backgroundColor: 'var(--header-bg)',
-            borderColor: 'var(--header-border)',
+            backgroundColor: "var(--header-bg)",
+            borderColor: "var(--header-border)",
           }}
         >
           {/* Page Title */}
           <div className="flex items-center gap-2 flex-1">
-            <div className="flex items-center justify-center" style={{ color: 'var(--text-muted)' }}>
-              {React.cloneElement(getCurrentPageIcon(), { sx: { fontSize: 20, display: 'block' } })}
+            <div
+              className="flex items-center justify-center"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {React.cloneElement(getCurrentPageIcon(), {
+                sx: { fontSize: 20, display: "block" },
+              })}
             </div>
-            <span className="text-sm font-medium leading-none" style={{ color: 'var(--text-primary)' }}>
+            <span
+              className="text-sm font-medium leading-none"
+              style={{ color: "var(--text-primary)" }}
+            >
               {getCurrentPageTitle()}
             </span>
           </div>
@@ -446,9 +425,9 @@ const DashboardLayout: React.FC = () => {
           {/* Header Actions */}
           <div className="flex items-center gap-1">
             {/* Theme Toggle */}
-            <Tooltip title={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
+            <Tooltip title={theme === "dark" ? "Light mode" : "Dark mode"}>
               <IconButton size="small" onClick={toggleTheme}>
-                {theme === 'dark' ? (
+                {theme === "dark" ? (
                   <LightMode sx={{ fontSize: 20 }} />
                 ) : (
                   <DarkMode sx={{ fontSize: 20 }} />
@@ -467,12 +446,15 @@ const DashboardLayout: React.FC = () => {
 
             {/* User Menu */}
             <Tooltip title="Account">
-              <div onClick={handleProfileMenuOpen} className="cursor-pointer ml-2">
+              <div
+                onClick={handleProfileMenuOpen}
+                className="cursor-pointer ml-2"
+              >
                 <Avatar
                   sx={{
                     width: 32,
                     height: 32,
-                    fontSize: '12px',
+                    fontSize: "12px",
                     fontWeight: 600,
                   }}
                 >
@@ -486,8 +468,8 @@ const DashboardLayout: React.FC = () => {
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
               onClose={handleProfileMenuClose}
-              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              transformOrigin={{ horizontal: "right", vertical: "top" }}
+              anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
               PaperProps={{
                 elevation: 0,
                 sx: {
@@ -496,16 +478,25 @@ const DashboardLayout: React.FC = () => {
                 },
               }}
             >
-              <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              <div
+                className="px-4 py-2 border-b"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {user?.email}
                 </p>
               </div>
               <MenuItem
-                onClick={() => { handleNavigate('/profile'); handleProfileMenuClose(); }}
+                onClick={() => {
+                  handleNavigate("/profile");
+                  handleProfileMenuClose();
+                }}
                 sx={{ gap: 1.5, py: 1 }}
               >
                 <AccountCircle fontSize="small" />
@@ -513,7 +504,7 @@ const DashboardLayout: React.FC = () => {
               </MenuItem>
               <MenuItem
                 onClick={handleLogout}
-                sx={{ gap: 1.5, py: 1, color: 'var(--accent-error)' }}
+                sx={{ gap: 1.5, py: 1, color: "var(--accent-error)" }}
               >
                 <Logout fontSize="small" />
                 <span className="text-sm">Logout</span>
@@ -525,7 +516,7 @@ const DashboardLayout: React.FC = () => {
         {/* Page Content */}
         <main
           className="flex-1 p-6 overflow-y-auto custom-scrollbar"
-          style={{ backgroundColor: 'var(--bg-primary)' }}
+          style={{ backgroundColor: "var(--bg-primary)" }}
         >
           <Outlet />
         </main>

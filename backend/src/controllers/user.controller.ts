@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import PDFDocument from 'pdfkit';
-import { User, Department, LeaveBalance, EmployeeSalaryDetail, EmployeeCustomField, EmployeeDocument } from '../models';
+import { User, Department, LeaveBalance, EmployeeCustomField, EmployeeDocument } from '../models';
 import { UserStatus } from '../types/enums';
 import logger from '../utils/logger';
 
@@ -432,12 +432,8 @@ export const generateIdCard = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Get employee code from salary details
-    const salaryDetail = await EmployeeSalaryDetail.findOne({
-      where: { userId: id },
-    });
-
-    const employeeCode = salaryDetail?.employeeCode || `EMP${String(user.id).padStart(5, '0')}`;
+    // Generate employee code
+    const employeeCode = `EMP${String(user.id).padStart(5, '0')}`;
 
     // Create PDF document
     const doc = new PDFDocument({

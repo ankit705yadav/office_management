@@ -4,7 +4,6 @@ import config from './config/environment';
 import { connectDatabase } from './config/database';
 import logger from './utils/logger';
 import { startCronJobs, stopCronJobs } from './services/cron.service';
-import { initializeSocketServer } from './services/socket.service';
 import { initializeFirebase } from './services/push.service';
 
 // Handle uncaught exceptions
@@ -24,14 +23,10 @@ const startServer = async () => {
     // Initialize Firebase for push notifications
     initializeFirebase();
 
-    // Create HTTP server for Express + Socket.io
+    // Create HTTP server
     const httpServer = createServer(app);
 
-    // Initialize Socket.io
-    const corsOrigins = config.corsOrigin.split(',').map((origin) => origin.trim());
-    initializeSocketServer(httpServer, corsOrigins);
-
-    // Start HTTP server (Express + Socket.io)
+    // Start HTTP server
     httpServer.listen(config.port, () => {
       logger.info(`
 ╔═══════════════════════════════════════════════════════════════╗
@@ -42,7 +37,6 @@ const startServer = async () => {
 ║   Port:        ${config.port.toString().padEnd(46)} ║
 ║   Host:        ${config.host.padEnd(46)} ║
 ║   Database:    ${config.database.name.padEnd(46)} ║
-║   Socket.io:   Enabled${' '.repeat(40)} ║
 ║                                                               ║
 ║   API URL:     http://${config.host}:${config.port}/api${' '.repeat(23)} ║
 ║   Health:      http://${config.host}:${config.port}/health${' '.repeat(20)} ║

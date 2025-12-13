@@ -1,0 +1,112 @@
+Office Management Software – Concept Brief
+We want a low-cost office management system that runs through popular chat platforms like WhatsApp, Google Chat, or Telegram. The core idea is to manage attendance, tasks, leaves, and daily reporting through automated chat prompts so remote teams stay accountable without heavy software.
+﻿
+Key Objectives
+    • Make daily team routines frictionless through chat-based automation.
+    • Replace physical attendance systems for remote teams.
+    • Streamline task assignment across roles.
+    • Keep leave approvals simple and transparent.
+    • Ensure daily reporting happens without manual follow-ups.
+Core Features
+1. Chat-based attendance
+    • A scheduled attendance prompt fires at the team’s set time (example: 10:30 AM).
+    • Each user gets an attendance button through the chosen platform.
+    • Marking attendance acts like a remote equivalent of a biometric check.
+    • Admins can view who marked attendance and at what time.
+2. Task assignment and tracking
+Managers should be able to assign tasks with structured fields:
+    • Topic
+    • Project name
+    • Content type
+    • Copy text
+    • Caption
+    • Publishing status
+Role-based assignment Each part of a task can be tagged to the right person:
+    • Copy to the social media marketer
+    • Design/thumbnail to the designer
+    • Video elements to the video editor
+Status tracking
+    • Everyone can check a shared dashboard or sheet showing task progress.
+    • Team members can update status as they complete their part.
+3. Leave management
+All leave requests should run through the chatbot.﻿
+Flow:
+    1. User types "leave".
+    2. Bot shows date selection.
+    3. User picks the date.
+    4. Bot asks for a short note.
+    5. Request goes to admins (manager or founder).
+    6. Admin approves or rejects.
+    7. Leave history is stored for tracking.
+4. End-of-day reporting
+    • Every user gets an automatic reminder at a set time to submit their daily report.
+    • Report includes tasks completed, pending items, or any blockers.
+    • If someone skips the report, the bot keeps nudging them through the same day.
+    • If skipped for three consecutive days, the system triggers a penalty flag or warning.
+Integrations
+    • Should work with at least one of these platforms first: WhatsApp Telegram Google Chat
+    • Later, support for multiple platforms can be added.
+Technical Notes for Developer
+    • Requires a chatbot workflow engine capable of scheduled prompts and multi-step forms.
+    • Each feature (attendance, tasks, leave, reporting) should act as a separate module.
+    • Database: minimal but structured storage for attendance logs, tasks, leave records, and daily reports.
+    • Admin dashboard (web-based or Google Sheet integration) for oversight.
+    • Role-based access: admins, managers, team members.
+If you want, I can also prepare a version for investors, a pitch deck outline, or a more detailed technical specification.
+
+
+==============================================================
+  Feature Comparison: Concept vs Implementation
+
+  ✅ DONE (Implemented but different approach)
+
+  | Concept Feature   | Implementation                                                                        |
+  |-------------------|---------------------------------------------------------------------------------------|
+  | Attendance System | ✅ Web-based attendance (not chat-based) with check-in/out, regularization requests   |
+  | Leave Management  | ✅ Full web UI with leave requests, approvals, balance tracking, multi-level approval |
+  | Task Assignment   | ✅ Project & Task management with Kanban board, assignments, attachments              |
+  | Role-based Access | ✅ Admin, Manager, Employee roles implemented                                         |
+  | Admin Dashboard   | ✅ Web dashboard with stats, not Google Sheets                                        |
+  | Database Storage  | ✅ PostgreSQL with full schema for all modules                                        |
+
+  ---
+  ❌ TO-DO (From Concept - Not Implemented)
+
+  | Feature                       | Description                                                         |
+  |-------------------------------|---------------------------------------------------------------------|
+  | Chat Platform Integration     | WhatsApp, Telegram, Google Chat bots NOT implemented                |
+  | Chat-based Attendance Prompts | No scheduled chat prompts at 10:30 AM                               |
+  | Chat-based Leave Requests     | Leave via web UI, not chatbot conversation                          |
+  | End-of-Day Reporting via Chat | No automatic EOD reminders through chat                             |
+  | 3-Day Skip Penalty System     | No penalty flags for missed reports                                 |
+  | Content-Specific Task Fields  | Missing: Topic, Content Type, Copy Text, Caption, Publishing Status |
+  | Role-tagged Task Parts        | No tagging copy→marketer, design→designer, video→editor             |
+
+  ---
+  ➕ EXTRA (Built but NOT in Concept)
+
+  | Extra Feature        | Description                                                                               |
+  |----------------------|-------------------------------------------------------------------------------------------|
+  | Payroll Management   | Full payroll processing, payslip generation, salary details                               |
+  | Expense Management   | Employee expense claims with approval workflow, category caps                             |
+  | Inventory Management | Product tracking, stock movements, barcode scanning                                       |
+  | Asset Management     | Company assets, assignments, requests                                                     |
+  | Customer Management  | Customer database and tracking                                                            |
+  | Vendor Management    | Vendor database and tracking                                                              |
+  | Voucher System       | Financial vouchers                                                                        |
+  | Advance Salary       | Advance salary requests                                                                   |
+  | File Storage         | Cloud storage with folders, sharing, public files                                         |
+  | Internal Chat        | Web-based chat (conversations, messages, attachments) - NOT external platform integration |
+  | Holiday Calendar     | Holiday management with CSV import                                                        |
+  | Notifications        | In-app notification system                                                                |
+  | Email Service        | Email notifications via Gmail/AWS SES                                                     |
+  | Push Notifications   | Firebase push notification support                                                        |
+
+  ---
+  Summary
+
+  | Category                     | Count       |
+  |------------------------------|-------------|
+  | ✅ Done (different approach) | 6 features  |
+  | ❌ To-Do (from concept)      | 7 features  |
+  | ➕ Extra (beyond concept)    | 14 features |

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import sequelize from '../config/database';
-import { User, LeaveRequest, Expense, Holiday, Notification, LeaveBalance } from '../models';
+import { User, LeaveRequest, Holiday, Notification, LeaveBalance } from '../models';
 import { RequestStatus } from '../types/enums';
 import logger from '../utils/logger';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
@@ -101,21 +101,6 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
       stats.admin = {
         totalEmployees,
       };
-
-      // Total expenses this month
-      const startDate = startOfMonth(new Date());
-      const endDate = endOfMonth(new Date());
-
-      const monthlyExpenses = await Expense.sum('amount', {
-        where: {
-          expenseDate: {
-            [Op.between]: [startDate, endDate],
-          },
-          status: RequestStatus.APPROVED,
-        },
-      });
-
-      stats.admin.monthlyExpenses = monthlyExpenses || 0;
     }
 
     res.status(200).json({
