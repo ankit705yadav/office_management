@@ -1,0 +1,13 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="40" height="40" rx="6" fill="#1e3a5f"/>
+
+  <!-- Upper triangle -->
+  <path d="M8 8 L32 18 L8 18 Z" fill="white"/>
+
+  <!-- Lower triangle with cutout effect -->
+  <path d="M8 18 L32 18 L20 32 Z" fill="white"/>
+
+  <!-- Shadow/fold line -->
+  <path d="M8 18 L20 32 L14 18 Z" fill="#a8b8c8"/>
+</svg>

@@ -1,0 +1,24 @@
+name,date,description,isOptional
+New Year's Day,2025-01-01,First day of the year,false
+Makar Sankranti,2025-01-14,Harvest festival marking the transition of the sun,true
+Republic Day,2025-01-26,Commemorates the adoption of the Constitution of India,false
+Maha Shivaratri,2025-02-26,Hindu festival celebrated in honour of Lord Shiva,true
+Holi,2025-03-14,Festival of colors marking the arrival of spring,true
+Good Friday,2025-04-18,Commemorates the crucifixion of Jesus Christ,true
+Eid ul-Fitr,2025-03-31,Islamic festival marking the end of Ramadan,false
+Ambedkar Jayanti,2025-04-14,Birth anniversary of Dr. B.R. Ambedkar,true
+May Day,2025-05-01,International Workers' Day,true
+Buddha Purnima,2025-05-12,Celebrates the birth of Gautama Buddha,true
+Eid ul-Adha,2025-06-07,Islamic festival of sacrifice,false
+Rath Yatra,2025-06-29,Annual Hindu chariot festival,true
+Independence Day,2025-08-15,Celebrates India's independence from British rule,false
+Janmashtami,2025-08-16,Celebrates the birth of Lord Krishna,true
+Ganesh Chaturthi,2025-08-27,Hindu festival celebrating Lord Ganesha,true
+Muharram,2025-07-05,Islamic New Year,true
+Gandhi Jayanti,2025-10-02,Birth anniversary of Mahatma Gandhi,false
+Dussehra,2025-10-02,Victory of good over evil,false
+Diwali,2025-10-20,Festival of lights,false
+Bhai Dooj,2025-10-22,Celebrates the bond between brothers and sisters,true
+Guru Nanak Jayanti,2025-11-05,Birth anniversary of Guru Nanak Dev,true
+Christmas,2025-12-25,Celebrates the birth of Jesus Christ,false
+New Year's Eve,2025-12-31,Last day of the year,true

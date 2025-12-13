@@ -1,0 +1,197 @@
+import express, { Application, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import path from 'path';
+import config from './config/environment';
+import logger from './utils/logger';
+
+// Import routes
+import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+import leaveRoutes from './routes/leave.routes';
+import holidayRoutes from './routes/holiday.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import attendanceRoutes from './routes/attendance.routes';
+import payrollRoutes from './routes/payroll.routes';
+import salaryDetailsRoutes from './routes/salaryDetails.routes';
+import expenseRoutes from './routes/expense.routes';
+import voucherRoutes from './routes/voucher.routes';
+import advanceSalaryRoutes from './routes/advanceSalary.routes';
+import expenseCapRoutes from './routes/expenseCap.routes';
+import vendorRoutes from './routes/vendor.routes';
+import customerRoutes from './routes/customer.routes';
+import inventoryRoutes from './routes/inventory.routes';
+import assetRoutes from './routes/asset.routes';
+import projectRoutes from './routes/project.routes';
+import storageRoutes from './routes/storage.routes';
+import chatRoutes from './routes/chat.routes';
+
+const app: Application = express();
+
+// CORS configuration - MUST be before helmet to handle preflight requests
+const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// Handle preflight requests explicitly
+app.options('*', cors());
+
+// Security middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Static file serving for uploads with CORS headers
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(__dirname, '../uploads')));
+
+// Compression middleware
+app.use(compression());
+
+// Request logging
+if (config.nodeEnv === 'development') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined', {
+    stream: {
+      write: (message: string) => logger.http(message.trim()),
+    },
+  }));
+}
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.maxRequests,
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api', limiter);
+
+// Health check endpoint
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv,
+  });
+});
+
+// API Routes
+app.get('/api', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Operation Management API v1.0',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      users: '/api/users',
+      leaves: '/api/leaves',
+      holidays: '/api/holidays',
+      attendance: '/api/attendance',
+      dashboard: '/api/dashboard',
+      payroll: '/api/payroll',
+      salaryDetails: '/api/salary-details',
+      expenses: '/api/expenses',
+      vouchers: '/api/vouchers',
+      advanceSalary: '/api/advance-salary',
+      inventory: '/api/inventory',
+      assets: '/api/assets',
+      projects: '/api/projects',
+      storage: '/api/storage',
+      chat: '/api/chat',
+    },
+  });
+});
+
+// Mount routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/leaves', leaveRoutes);
+app.use('/api/holidays', holidayRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/payroll', payrollRoutes);
+app.use('/api/salary-details', salaryDetailsRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/vouchers', voucherRoutes);
+app.use('/api/advance-salary', advanceSalaryRoutes);
+app.use('/api/expense-caps', expenseCapRoutes);
+app.use('/api/vendors', vendorRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/assets', assetRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/storage', storageRoutes);
+app.use('/api/chat', chatRoutes);
+
+// 404 handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    status: 'error',
+    message: 'Route not found',
+    path: req.originalUrl,
+  });
+});
+
+// Global error handler
+interface CustomError extends Error {
+  statusCode?: number;
+  status?: string;
+  isOperational?: boolean;
+}
+
+app.use((err: CustomError, req: Request, res: Response, _next: NextFunction) => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+
+  logger.error(`ERROR: ${err.message}`, {
+    error: err,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method,
+  });
+
+  if (config.nodeEnv === 'development') {
+    res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message,
+      stack: err.stack,
+      error: err,
+    });
+  } else {
+    // Production error response (don't leak error details)
+    if (err.isOperational) {
+      res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message,
+      });
+    } else {
+      res.status(500).json({
+        status: 'error',
+        message: 'Something went wrong',
+      });
+    }
+  }
+});
+
+export default app;
