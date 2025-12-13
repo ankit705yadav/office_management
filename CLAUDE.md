@@ -66,7 +66,7 @@ cp .env.example .env
 
 # The defaults should work fine:
 # VITE_API_URL=http://localhost:5000/api
-# VITE_APP_NAME=Elisrun Operation Management
+# VITE_APP_NAME=Operation Management
 # VITE_ENV=development
 
 # Start frontend server
@@ -79,16 +79,16 @@ Frontend will run at: `http://localhost:3000`
 
 1. Open browser: `http://localhost:3000`
 2. Login with default admin credentials:
-   - **Email**: `admin@elisrun.com`
+   - **Email**: `admin@company.com`
    - **Password**: `Admin@123`
 
 ## Default Users (from schema.sql)
 
 | Email | Password | Role |
 |-------|----------|------|
-| admin@elisrun.com | Admin@123 | Admin |
-| john.doe@elisrun.com | Password@123 | Manager |
-| jane.smith@elisrun.com | Password@123 | Employee |
+| admin@company.com | Admin@123 | Admin |
+| john.doe@company.com | Password@123 | Manager |
+| jane.smith@company.com | Password@123 | Employee |
 
 ## Quick Test Checklist
 

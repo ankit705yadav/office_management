@@ -2,6 +2,6 @@
   <!-- Background with rounded corners -->
   <rect width="32" height="32" rx="6" fill="#f14e1e"/>
 
-  <!-- Stylized "E" for Elisrun - clean modern look -->
+  <!-- Stylized "E" for Company - clean modern look -->
   <path d="M8 8h16v3H11.5v4H22v3H11.5v4H24v3H8V8z" fill="white"/>
 </svg>

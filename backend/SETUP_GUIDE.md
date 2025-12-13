@@ -119,7 +119,7 @@ You should see all tables created:
 
 The schema includes default data:
 - 5 departments (IT, HR, Finance, Operations, Sales)
-- 1 admin user (email: `admin@elisrun.com`, password: `Admin@123`)
+- 1 admin user (email: `admin@company.com`, password: `Admin@123`)
 - Sample holidays for 2025
 
 ---
@@ -195,8 +195,8 @@ JWT_REFRESH_EXPIRES_IN=7d
 # Email Configuration - Gmail (For Development)
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-16-char-app-password
-EMAIL_FROM=noreply@elisrun.com
-EMAIL_FROM_NAME=Elisrun Technologies
+EMAIL_FROM=noreply@company.com
+EMAIL_FROM_NAME=Company Name
 
 # OR Email Configuration - AWS SES (For Production)
 # AWS_ACCESS_KEY_ID=your-aws-access-key
@@ -302,7 +302,7 @@ Expected response:
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@elisrun.com",
+    "email": "admin@company.com",
     "password": "Admin@123"
   }'
 ```
@@ -557,7 +557,7 @@ npm run test:watch
 ## Support
 
 For issues and questions:
-- **Email**: it@elisrun.com
+- **Email**: it@company.com
 - **Documentation**: `/backend/API_DOCUMENTATION.md`
 - **Internal**: Contact IT Department
 

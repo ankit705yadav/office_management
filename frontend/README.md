@@ -1,6 +1,6 @@
 # Operation Management Frontend
 
-Modern, responsive React + TypeScript frontend for the Elisrun Technologies Operation Management Platform.
+Modern, responsive React + TypeScript frontend for the Company Name Operation Management Platform.
 
 ## Features
 
@@ -47,7 +47,7 @@ cp .env.example .env
 Edit `.env`:
 ```env
 VITE_API_URL=http://localhost:5000/api
-VITE_APP_NAME=Elisrun Operation Management
+VITE_APP_NAME=Operation Management
 VITE_ENV=development
 ```
 
@@ -62,7 +62,7 @@ The application will open at `http://localhost:3000`
 ### 4. Login
 
 Use the default admin credentials:
-- **Email**: `admin@elisrun.com`
+- **Email**: `admin@company.com`
 - **Password**: `Admin@123`
 
 ## Available Scripts
@@ -348,11 +348,11 @@ npm run lint
 ## Support
 
 For issues or questions:
-- **Email**: it@elisrun.com
+- **Email**: it@company.com
 - **Internal**: Contact IT Department
 
 ---
 
 **Version**: 1.0.0
 **Last Updated**: November 2025
-**License**: Proprietary - Elisrun Technologies
+**License**: Proprietary - Company Name

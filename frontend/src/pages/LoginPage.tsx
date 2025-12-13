@@ -101,7 +101,7 @@ const LoginPage: React.FC = () => {
             <div className="inline-flex items-center justify-center mb-4">
               {/*<img
                 src={logoImage}
-                alt="Elisrun"
+                alt="Company"
                 style={{ height: 48, width: 'auto' }}
               />*/}
             </div>
@@ -272,7 +272,7 @@ const LoginPage: React.FC = () => {
                   Admin
                 </span>
                 <span style={{ color: "var(--text-secondary)" }}>
-                  admin@elisrun.com / Admin@123
+                  admin@company.com / Admin@123
                 </span>
               </div>
 
@@ -291,7 +291,7 @@ const LoginPage: React.FC = () => {
                   Manager
                 </span>
                 <span style={{ color: "var(--text-secondary)" }}>
-                  john.manager@elisrun.com / Password@123
+                  john.manager@company.com / Password@123
                 </span>
               </div>
 
@@ -310,7 +310,7 @@ const LoginPage: React.FC = () => {
                   Employee
                 </span>
                 <span style={{ color: "var(--text-secondary)" }}>
-                  alice.dev@elisrun.com / Password@123
+                  alice.dev@company.com / Password@123
                 </span>
               </div>
             </div>

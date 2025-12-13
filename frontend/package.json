@@ -1,7 +1,7 @@
 {
   "name": "operation-management-frontend",
   "version": "1.0.0",
-  "description": "Frontend for Elisrun Technologies Operation Management Platform",
+  "description": "Frontend for Company Name Operation Management Platform",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.11.1",

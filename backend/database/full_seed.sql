@@ -576,26 +576,26 @@ INSERT INTO departments (name, description) VALUES
 -- bcrypt hash: $2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS
 INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, date_of_joining, role, status, department_id, manager_id, address, pan_number, aadhar_number) VALUES
 -- Admin
-('admin@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'System', 'Administrator', '+91-9876543210', '1985-01-15', '2020-01-01', 'admin', 'active', 1, NULL, 'Bangalore, Karnataka', 'ABCDE1234F', '123456789012'),
+('admin@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'System', 'Administrator', '+91-9876543210', '1985-01-15', '2020-01-01', 'admin', 'active', 1, NULL, 'Bangalore, Karnataka', 'ABCDE1234F', '123456789012'),
 
 -- Managers
-('john.manager@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'John', 'Manager', '+91-9876543211', '1988-03-20', '2020-06-01', 'manager', 'active', 1, 1, 'Bangalore, Karnataka', 'BCDEF2345G', '234567890123'),
-('sarah.hr@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Sarah', 'Johnson', '+91-9876543212', '1987-05-12', '2020-07-15', 'manager', 'active', 2, 1, 'Mumbai, Maharashtra', 'CDEFG3456H', '345678901234'),
-('mike.sales@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Mike', 'Wilson', '+91-9876543213', '1986-08-25', '2020-08-01', 'manager', 'active', 3, 1, 'Delhi, NCR', 'DEFGH4567I', '456789012345'),
+('john.manager@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'John', 'Manager', '+91-9876543211', '1988-03-20', '2020-06-01', 'manager', 'active', 1, 1, 'Bangalore, Karnataka', 'BCDEF2345G', '234567890123'),
+('sarah.hr@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Sarah', 'Johnson', '+91-9876543212', '1987-05-12', '2020-07-15', 'manager', 'active', 2, 1, 'Mumbai, Maharashtra', 'CDEFG3456H', '345678901234'),
+('mike.sales@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Mike', 'Wilson', '+91-9876543213', '1986-08-25', '2020-08-01', 'manager', 'active', 3, 1, 'Delhi, NCR', 'DEFGH4567I', '456789012345'),
 
 -- Employees - Engineering
-('alice.dev@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Alice', 'Anderson', '+91-9876543214', '1992-01-10', '2022-01-15', 'employee', 'active', 1, 2, 'Bangalore, Karnataka', 'EFGHI5678J', '567890123456'),
-('bob.dev@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Bob', 'Brown', '+91-9876543215', '1993-04-18', '2022-03-01', 'employee', 'active', 1, 2, 'Chennai, Tamil Nadu', 'FGHIJ6789K', '678901234567'),
-('carol.dev@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Carol', 'Clark', '+91-9876543216', '1994-07-22', '2022-06-15', 'employee', 'active', 1, 2, 'Hyderabad, Telangana', 'GHIJK7890L', '789012345678'),
-('david.dev@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'David', 'Davis', '+91-9876543217', '1991-11-30', '2021-09-01', 'employee', 'active', 1, 2, 'Pune, Maharashtra', 'HIJKL8901M', '890123456789'),
+('alice.dev@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Alice', 'Anderson', '+91-9876543214', '1992-01-10', '2022-01-15', 'employee', 'active', 1, 2, 'Bangalore, Karnataka', 'EFGHI5678J', '567890123456'),
+('bob.dev@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Bob', 'Brown', '+91-9876543215', '1993-04-18', '2022-03-01', 'employee', 'active', 1, 2, 'Chennai, Tamil Nadu', 'FGHIJ6789K', '678901234567'),
+('carol.dev@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Carol', 'Clark', '+91-9876543216', '1994-07-22', '2022-06-15', 'employee', 'active', 1, 2, 'Hyderabad, Telangana', 'GHIJK7890L', '789012345678'),
+('david.dev@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'David', 'Davis', '+91-9876543217', '1991-11-30', '2021-09-01', 'employee', 'active', 1, 2, 'Pune, Maharashtra', 'HIJKL8901M', '890123456789'),
 
 -- Employees - HR
-('emma.hr@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Emma', 'Evans', '+91-9876543218', '1990-02-14', '2021-05-01', 'employee', 'active', 2, 3, 'Mumbai, Maharashtra', 'IJKLM9012N', '901234567890'),
-('frank.hr@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Frank', 'Fisher', '+91-9876543219', '1992-06-28', '2022-02-15', 'employee', 'active', 2, 3, 'Mumbai, Maharashtra', 'JKLMN0123O', '012345678901'),
+('emma.hr@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Emma', 'Evans', '+91-9876543218', '1990-02-14', '2021-05-01', 'employee', 'active', 2, 3, 'Mumbai, Maharashtra', 'IJKLM9012N', '901234567890'),
+('frank.hr@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Frank', 'Fisher', '+91-9876543219', '1992-06-28', '2022-02-15', 'employee', 'active', 2, 3, 'Mumbai, Maharashtra', 'JKLMN0123O', '012345678901'),
 
 -- Employees - Sales
-('grace.sales@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Grace', 'Green', '+91-9876543220', '1993-09-05', '2022-04-01', 'employee', 'active', 3, 4, 'Delhi, NCR', 'KLMNO1234P', '123456789013'),
-('henry.sales@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Henry', 'Harris', '+91-9876543221', '1991-12-16', '2021-11-15', 'employee', 'active', 3, 4, 'Delhi, NCR', 'LMNOP2345Q', '234567890124');
+('grace.sales@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Grace', 'Green', '+91-9876543220', '1993-09-05', '2022-04-01', 'employee', 'active', 3, 4, 'Delhi, NCR', 'KLMNO1234P', '123456789013'),
+('henry.sales@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Henry', 'Harris', '+91-9876543221', '1991-12-16', '2021-11-15', 'employee', 'active', 3, 4, 'Delhi, NCR', 'LMNOP2345Q', '234567890124');
 
 -- Insert leave balances for all active users for 2025
 INSERT INTO leave_balances (user_id, year, sick_leave, casual_leave, earned_leave, comp_off, paternity_maternity)

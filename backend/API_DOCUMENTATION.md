@@ -26,7 +26,7 @@ Authorization: Bearer <access_token>
 **Request Body:**
 ```json
 {
-  "email": "user@elisrun.com",
+  "email": "user@company.com",
   "password": "password123"
 }
 ```
@@ -39,7 +39,7 @@ Authorization: Bearer <access_token>
   "data": {
     "user": {
       "id": 1,
-      "email": "user@elisrun.com",
+      "email": "user@company.com",
       "firstName": "John",
       "lastName": "Doe",
       "fullName": "John Doe",
@@ -124,7 +124,7 @@ Authorization: Bearer <access_token>
 **Request Body:**
 ```json
 {
-  "email": "newuser@elisrun.com",
+  "email": "newuser@company.com",
   "password": "Password@123",
   "firstName": "Jane",
   "lastName": "Smith",
@@ -396,7 +396,7 @@ Returns personalized statistics based on user role.
         "id": 5,
         "firstName": "Alice",
         "lastName": "Johnson",
-        "email": "alice@elisrun.com",
+        "email": "alice@company.com",
         "dateOfBirth": "1992-11-20",
         "department": {
           "id": 1,
@@ -589,7 +589,7 @@ When limit is exceeded:
 # Login
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@elisrun.com","password":"Admin@123"}'
+  -d '{"email":"admin@company.com","password":"Admin@123"}'
 
 # Get user profile (with token)
 curl http://localhost:5000/api/auth/me \
@@ -605,4 +605,4 @@ curl http://localhost:5000/api/auth/me \
 
 ---
 
-**Need help?** Contact the IT department at it@elisrun.com
+**Need help?** Contact the IT department at it@company.com

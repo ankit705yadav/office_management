@@ -1,7 +1,7 @@
 {
   "name": "operation-management-backend",
   "version": "1.0.0",
-  "description": "Backend API for Elisrun Technologies Operation Management Platform",
+  "description": "Backend API for Company Name Operation Management Platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon src/index.ts",
@@ -22,7 +22,7 @@
     "inventory",
     "project-management"
   ],
-  "author": "Elisrun Technologies",
+  "author": "Company Name",
   "license": "PROPRIETARY",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.940.0",

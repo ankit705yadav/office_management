@@ -400,7 +400,7 @@ INSERT INTO users (
     email, password_hash, first_name, last_name,
     date_of_joining, role, status, department_id
 ) VALUES (
-    'admin@elisrun.com',
+    'admin@company.com',
     '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
     'System',
     'Administrator',
@@ -415,7 +415,7 @@ INSERT INTO users (
     email, password_hash, first_name, last_name,
     date_of_joining, role, status, department_id, manager_id
 ) VALUES (
-    'john.doe@elisrun.com',
+    'john.doe@company.com',
     '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
     'John',
     'Doe',
@@ -431,7 +431,7 @@ INSERT INTO users (
     email, password_hash, first_name, last_name,
     date_of_joining, role, status, department_id, manager_id
 ) VALUES (
-    'jane.smith@elisrun.com',
+    'jane.smith@company.com',
     '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
     'Jane',
     'Smith',
@@ -478,4 +478,4 @@ VALUES
 (1, 'Implement authentication', 'JWT-based authentication system', 3, 2, 'done', 'high', '2025-02-01'),
 (1, 'Build leave management module', 'Complete leave application and approval workflow', 3, 2, 'in_progress', 'medium', '2025-02-15');
 
-COMMENT ON DATABASE office_management IS 'Office Management System - Elisrun Technologies';
+COMMENT ON DATABASE office_management IS 'Office Management System - Company Name';

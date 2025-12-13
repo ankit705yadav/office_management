@@ -34,7 +34,7 @@ import { toast } from "react-toastify";
 
 const SIDEBAR_EXPANDED_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 64;
-const SIDEBAR_STATE_KEY = "elisrun-sidebar-collapsed";
+const SIDEBAR_STATE_KEY = "app-sidebar-collapsed";
 
 interface NavItem {
   text: string;
@@ -182,7 +182,7 @@ const DashboardLayout: React.FC = () => {
           <div className="flex items-center gap-2 flex-1">
             {/*<img
               src={logoImage}
-              alt="Elisrun"
+              alt="Company"
               style={{ height: 28, width: 'auto' }}
             />*/}
             <ChevronLeft

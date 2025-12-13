@@ -85,7 +85,7 @@ export const sendWelcomeEmail = async (
   name: string,
   temporaryPassword: string
 ): Promise<boolean> => {
-  const subject = 'Welcome to Elisrun Technologies';
+  const subject = 'Welcome to Company Name';
   const html = `
     <!DOCTYPE html>
     <html>
@@ -103,12 +103,12 @@ export const sendWelcomeEmail = async (
     <body>
       <div class="container">
         <div class="header">
-          <h1>Welcome to Elisrun Technologies!</h1>
+          <h1>Welcome to Company Name!</h1>
         </div>
         <div class="content">
           <p>Dear ${name},</p>
 
-          <p>We're excited to welcome you to the Elisrun Technologies team! Your account has been created in our Operation Management System.</p>
+          <p>We're excited to welcome you to the Company Name team! Your account has been created in our Operation Management System.</p>
 
           <div class="credentials">
             <h3>Your Login Credentials:</h3>
@@ -124,11 +124,11 @@ export const sendWelcomeEmail = async (
 
           <p>If you have any questions or need assistance, please contact the IT department.</p>
 
-          <p>Best regards,<br>Elisrun Technologies Team</p>
+          <p>Best regards,<br>Company Name Team</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
-          <p>&copy; ${new Date().getFullYear()} Elisrun Technologies. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Company Name. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -193,7 +193,7 @@ export const sendLeaveRequestNotification = async (
 
           <p>Please login to the system to approve or reject this request.</p>
 
-          <p>Best regards,<br>Elisrun Technologies HR System</p>
+          <p>Best regards,<br>Company Name HR System</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
@@ -254,7 +254,7 @@ export const sendLeaveApprovalNotification = async (
 
           <p>Enjoy your time off!</p>
 
-          <p>Best regards,<br>Elisrun Technologies HR Team</p>
+          <p>Best regards,<br>Company Name HR Team</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
@@ -315,7 +315,7 @@ export const sendLeaveRejectionNotification = async (
 
           <p>Please contact ${approverName} if you have any questions or would like to discuss alternative dates.</p>
 
-          <p>Best regards,<br>Elisrun Technologies HR Team</p>
+          <p>Best regards,<br>Company Name HR Team</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
@@ -359,14 +359,14 @@ export const sendBirthdayWishes = async (
 
           <h2>Wishing you a fantastic day!</h2>
 
-          <p>On behalf of everyone at Elisrun Technologies, we wish you a very happy birthday filled with joy, laughter, and wonderful moments.</p>
+          <p>On behalf of everyone at Company Name, we wish you a very happy birthday filled with joy, laughter, and wonderful moments.</p>
 
           <p>Thank you for being a valued member of our team. We hope this year brings you success, happiness, and many more achievements!</p>
 
-          <p style="margin-top: 30px;">Warmest wishes,<br><strong>The Elisrun Technologies Team</strong></p>
+          <p style="margin-top: 30px;">Warmest wishes,<br><strong>The Company Name Team</strong></p>
         </div>
         <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Elisrun Technologies. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Company Name. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -408,16 +408,16 @@ export const sendWorkAnniversaryWishes = async (
 
           <h2>Work Anniversary Celebration!</h2>
 
-          <p>Today marks <strong>${years} ${years === 1 ? 'year' : 'years'}</strong> since you joined the Elisrun Technologies family!</p>
+          <p>Today marks <strong>${years} ${years === 1 ? 'year' : 'years'}</strong> since you joined the Company Name family!</p>
 
           <p>Your dedication, hard work, and valuable contributions have been instrumental to our success. We're grateful to have you as part of our team.</p>
 
           <p>Here's to many more years of growth, success, and achievements together!</p>
 
-          <p style="margin-top: 30px;">With appreciation,<br><strong>The Elisrun Technologies Team</strong></p>
+          <p style="margin-top: 30px;">With appreciation,<br><strong>The Company Name Team</strong></p>
         </div>
         <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Elisrun Technologies. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Company Name. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -459,7 +459,7 @@ export const sendPasswordResetEmail = async (
         <div class="content">
           <p>Dear ${name},</p>
 
-          <p>We received a request to reset your password for your Elisrun Technologies account.</p>
+          <p>We received a request to reset your password for your Company Name account.</p>
 
           <p style="text-align: center;">
             <a href="${resetUrl}" class="button">Reset Password</a>
@@ -477,7 +477,7 @@ export const sendPasswordResetEmail = async (
             </ul>
           </div>
 
-          <p>Best regards,<br>Elisrun Technologies IT Team</p>
+          <p>Best regards,<br>Company Name IT Team</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
@@ -531,7 +531,7 @@ export const sendPayslipEmail = async (
       <body>
         <div class="container">
           <div class="header">
-            <h1>Elisrun Technologies</h1>
+            <h1>Company Name</h1>
             <p>Salary Slip Generated</p>
           </div>
           <div class="content">
@@ -561,11 +561,11 @@ export const sendPayslipEmail = async (
             <p>If you did not expect this email, please contact our HR department immediately.</p>
 
             <p>Best regards,<br>
-            <strong>Elisrun Technologies HR Team</strong></p>
+            <strong>Company Name HR Team</strong></p>
           </div>
           <div class="footer">
             <p>This is an automated email. Please do not reply to this message.</p>
-            <p>&copy; ${new Date().getFullYear()} Elisrun Technologies. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} Company Name. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -661,11 +661,11 @@ export const sendAssetAssignmentEmail = async (
 
           <p>If you have any questions, please contact your manager or HR.</p>
 
-          <p>Best regards,<br>Elisrun Technologies Team</p>
+          <p>Best regards,<br>Company Name Team</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
-          <p>&copy; ${new Date().getFullYear()} Elisrun Technologies. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Company Name. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -728,7 +728,7 @@ export const sendAssetDueReminderEmail = async (
             <a href="${config.frontendUrl}/assets" class="button">View My Assets</a>
           </p>
 
-          <p>Best regards,<br>Elisrun Technologies Team</p>
+          <p>Best regards,<br>Company Name Team</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
@@ -789,7 +789,7 @@ export const sendAssetDueTodayEmail = async (
             <a href="${config.frontendUrl}/assets" class="button">Return Asset</a>
           </p>
 
-          <p>Best regards,<br>Elisrun Technologies Team</p>
+          <p>Best regards,<br>Company Name Team</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
@@ -863,7 +863,7 @@ export const sendAssetOverdueEmail = async (
 
           <p>If you have already returned this asset, please contact HR to update the records.</p>
 
-          <p>Best regards,<br>Elisrun Technologies Team</p>
+          <p>Best regards,<br>Company Name Team</p>
         </div>
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>

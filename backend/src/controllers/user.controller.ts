@@ -456,7 +456,7 @@ export const generateIdCard = async (req: Request, res: Response): Promise<void>
     doc.fillColor('#ffffff')
        .fontSize(16)
        .font('Helvetica-Bold')
-       .text('ELISRUN', 20, 15, { width: 284, align: 'center' });
+       .text('COMPANY', 20, 15, { width: 284, align: 'center' });
     doc.fontSize(8)
        .font('Helvetica')
        .text('Operation Management', 20, 33, { width: 284, align: 'center' });
@@ -512,7 +512,7 @@ export const generateIdCard = async (req: Request, res: Response): Promise<void>
     doc.rect(0, 175, 324, 29).fill('#f1f5f9');
     doc.fillColor('#666666')
        .fontSize(7)
-       .text('This card is the property of Elisrun. If found, please return.', 20, 182, { width: 284, align: 'center' });
+       .text('This card is the property of Company. If found, please return.', 20, 182, { width: 284, align: 'center' });
     doc.text(`Valid: ${new Date().getFullYear()}`, 20, 192, { width: 284, align: 'center' });
 
     // Finalize PDF

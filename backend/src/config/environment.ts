@@ -104,13 +104,13 @@ const config: EnvironmentConfig = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
     region: process.env.AWS_REGION || 'us-east-1',
-    s3Bucket: process.env.AWS_S3_BUCKET || 'elisrun-operation-mgmt',
+    s3Bucket: process.env.AWS_S3_BUCKET || 'company-operation-mgmt',
     sesRegion: process.env.AWS_SES_REGION || 'us-east-1',
   },
 
   email: {
-    from: process.env.EMAIL_FROM || 'noreply@elisrun.com',
-    fromName: process.env.EMAIL_FROM_NAME || 'Elisrun Technologies',
+    from: process.env.EMAIL_FROM || 'noreply@company.com',
+    fromName: process.env.EMAIL_FROM_NAME || 'Company Name',
   },
 
   fileUpload: {

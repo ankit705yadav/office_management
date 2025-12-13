@@ -282,37 +282,37 @@ INSERT INTO departments (name, description) VALUES
 -- bcrypt hash: $2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS
 INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, date_of_joining, role, status, department_id, manager_id) VALUES
 -- Admin
-('admin@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'System', 'Administrator', '+91-9876543210', '1985-01-15', '2020-01-01', 'admin', 'active', NULL, NULL),
+('admin@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'System', 'Administrator', '+91-9876543210', '1985-01-15', '2020-01-01', 'admin', 'active', NULL, NULL),
 
 -- Managers
-('john.manager@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'John', 'Manager', '+91-9876543211', '1988-03-20', '2020-06-01', 'manager', 'active', 1, 1),
-('sarah.hr@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Sarah', 'Johnson', '+91-9876543212', '1987-05-12', '2020-07-15', 'manager', 'active', 2, 1),
-('mike.sales@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Mike', 'Wilson', '+91-9876543213', '1986-08-25', '2020-08-01', 'manager', 'active', 3, 1),
+('john.manager@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'John', 'Manager', '+91-9876543211', '1988-03-20', '2020-06-01', 'manager', 'active', 1, 1),
+('sarah.hr@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Sarah', 'Johnson', '+91-9876543212', '1987-05-12', '2020-07-15', 'manager', 'active', 2, 1),
+('mike.sales@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Mike', 'Wilson', '+91-9876543213', '1986-08-25', '2020-08-01', 'manager', 'active', 3, 1),
 
 -- Employees - Engineering
-('alice.dev@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Alice', 'Anderson', '+91-9876543214', '1992-01-10', '2022-01-15', 'employee', 'active', 1, 2),
-('bob.dev@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Bob', 'Brown', '+91-9876543215', '1993-04-18', '2022-03-01', 'employee', 'active', 1, 2),
-('carol.dev@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Carol', 'Clark', '+91-9876543216', '1994-07-22', '2022-06-15', 'employee', 'active', 1, 2),
-('david.dev@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'David', 'Davis', '+91-9876543217', '1991-11-30', '2021-09-01', 'employee', 'active', 1, 2),
+('alice.dev@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Alice', 'Anderson', '+91-9876543214', '1992-01-10', '2022-01-15', 'employee', 'active', 1, 2),
+('bob.dev@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Bob', 'Brown', '+91-9876543215', '1993-04-18', '2022-03-01', 'employee', 'active', 1, 2),
+('carol.dev@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Carol', 'Clark', '+91-9876543216', '1994-07-22', '2022-06-15', 'employee', 'active', 1, 2),
+('david.dev@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'David', 'Davis', '+91-9876543217', '1991-11-30', '2021-09-01', 'employee', 'active', 1, 2),
 
 -- Employees - HR
-('emma.hr@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Emma', 'Evans', '+91-9876543218', '1990-02-14', '2021-05-01', 'employee', 'active', 2, 3),
-('frank.hr@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Frank', 'Fisher', '+91-9876543219', '1992-06-28', '2022-02-15', 'employee', 'active', 2, 3),
+('emma.hr@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Emma', 'Evans', '+91-9876543218', '1990-02-14', '2021-05-01', 'employee', 'active', 2, 3),
+('frank.hr@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Frank', 'Fisher', '+91-9876543219', '1992-06-28', '2022-02-15', 'employee', 'active', 2, 3),
 
 -- Employees - Sales
-('grace.sales@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Grace', 'Green', '+91-9876543220', '1993-09-05', '2022-04-01', 'employee', 'active', 3, 4),
-('henry.sales@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Henry', 'Harris', '+91-9876543221', '1991-12-16', '2021-11-15', 'employee', 'active', 3, 4),
-('ivy.sales@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Ivy', 'Jackson', '+91-9876543222', '1994-03-08', '2023-01-10', 'employee', 'active', 3, 4),
+('grace.sales@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Grace', 'Green', '+91-9876543220', '1993-09-05', '2022-04-01', 'employee', 'active', 3, 4),
+('henry.sales@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Henry', 'Harris', '+91-9876543221', '1991-12-16', '2021-11-15', 'employee', 'active', 3, 4),
+('ivy.sales@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Ivy', 'Jackson', '+91-9876543222', '1994-03-08', '2023-01-10', 'employee', 'active', 3, 4),
 
 -- Employees - Marketing
-('jack.marketing@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Jack', 'Jones', '+91-9876543223', '1992-05-20', '2022-07-01', 'employee', 'active', 4, 1),
-('kate.marketing@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Kate', 'King', '+91-9876543224', '1993-08-12', '2022-09-15', 'employee', 'active', 4, 1),
+('jack.marketing@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Jack', 'Jones', '+91-9876543223', '1992-05-20', '2022-07-01', 'employee', 'active', 4, 1),
+('kate.marketing@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Kate', 'King', '+91-9876543224', '1993-08-12', '2022-09-15', 'employee', 'active', 4, 1),
 
 -- Employees - Finance
-('leo.finance@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Leo', 'Lee', '+91-9876543225', '1990-10-25', '2021-03-01', 'employee', 'active', 5, 1),
+('leo.finance@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Leo', 'Lee', '+91-9876543225', '1990-10-25', '2021-03-01', 'employee', 'active', 5, 1),
 
 -- Inactive employee for testing
-('inactive.user@elisrun.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Inactive', 'User', '+91-9876543226', '1995-12-01', '2023-06-01', 'employee', 'inactive', 1, 2);
+('inactive.user@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Inactive', 'User', '+91-9876543226', '1995-12-01', '2023-06-01', 'employee', 'inactive', 1, 2);
 
 -- Insert leave balances for all active users for 2025
 INSERT INTO leave_balances (user_id, year, sick_leave, casual_leave, earned_leave, comp_off, paternity_maternity)
@@ -365,9 +365,9 @@ INSERT INTO employee_salary_details (
 \echo '============================================================================'
 \echo ''
 \echo 'Test Users Created:'
-\echo '  Admin:        admin@elisrun.com'
-\echo '  Managers:     john.manager@elisrun.com, sarah.hr@elisrun.com, mike.sales@elisrun.com'
-\echo '  Employees:    alice.dev@elisrun.com, bob.dev@elisrun.com, and 10 more'
+\echo '  Admin:        admin@company.com'
+\echo '  Managers:     john.manager@company.com, sarah.hr@company.com, mike.sales@company.com'
+\echo '  Employees:    alice.dev@company.com, bob.dev@company.com, and 10 more'
 \echo ''
 \echo 'Default Password: Password@123'
 \echo ''

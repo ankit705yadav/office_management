@@ -1,4 +1,4 @@
-# Operation Management Platform - Elisrun Technologies
+# Operation Management Platform - Company Name
 
 A comprehensive internal business management platform for streamlining HR, Finance, Inventory, and Project Management operations.
 
@@ -163,7 +163,7 @@ AWS_ACCESS_KEY_ID=your-aws-key
 AWS_SECRET_ACCESS_KEY=your-aws-secret
 AWS_S3_BUCKET=your-s3-bucket
 AWS_SES_REGION=us-east-1
-EMAIL_FROM=noreply@elisrun.com
+EMAIL_FROM=noreply@company.com
 ```
 
 ### Frontend (.env)
@@ -225,15 +225,15 @@ Refer to `docs/deployment.md` for detailed AWS deployment instructions.
 ## Support & Contact
 
 For issues, questions, or feature requests:
-- **Email**: it@elisrun.com
+- **Email**: it@company.com
 - **Internal**: Contact the IT department
 
 ## License
 
-Internal use only - Elisrun Technologies Pvt. Ltd.
+Internal use only - Company Name Pvt. Ltd.
 
 ---
 
 **Version**: 1.0.0
 **Last Updated**: 2025-11-17
-**Maintained by**: Elisrun IT Team
+**Maintained by**: Company IT Team
