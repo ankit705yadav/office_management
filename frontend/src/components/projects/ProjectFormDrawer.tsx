@@ -13,8 +13,6 @@ import {
   Divider,
   Autocomplete,
   CircularProgress,
-  FormControlLabel,
-  Switch,
 } from '@mui/material';
 import { Close, Save, Folder, Description } from '@mui/icons-material';
 import { toast } from 'react-toastify';
@@ -247,17 +245,6 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
               disabled={viewOnly}
               placeholder="Auto-generated if empty"
               helperText={!project ? 'Leave empty for auto-generation' : undefined}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.isFolder}
-                  onChange={(e) => setFormData({ ...formData, isFolder: e.target.checked })}
-                  disabled={viewOnly}
-                />
-              }
-              label="Folder"
-              sx={{ minWidth: 100 }}
             />
           </Box>
 

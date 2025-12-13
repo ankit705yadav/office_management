@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
-  Box,
   Avatar,
   Menu,
   MenuItem,
-  Badge,
   Tooltip,
   IconButton,
 } from "@mui/material";
 import {
-  Menu as MenuIcon,
   Dashboard,
   EventAvailable,
   AccessTime,
   CalendarMonth,
-  Notifications,
   AccountCircle,
   Logout,
   Close,
@@ -27,6 +23,7 @@ import {
   ChevronRight,
   Assignment,
 } from "@mui/icons-material";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "react-toastify";
@@ -442,13 +439,7 @@ const DashboardLayout: React.FC = () => {
             </Tooltip>
 
             {/* Notifications */}
-            <Tooltip title="Notifications">
-              <IconButton size="small">
-                <Badge badgeContent={0} color="error">
-                  <Notifications sx={{ fontSize: 20 }} />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+            <NotificationBell />
 
             {/* User Menu */}
             <Tooltip title="Account">

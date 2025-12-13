@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { Op, Sequelize } from 'sequelize';
-import { Task, Project, User, TaskAttachment, Notification, LeaveRequest } from '../models';
+import { Task, Project, User, TaskAttachment, LeaveRequest } from '../models';
 import { TaskStatus, TaskPriority } from '../types/enums';
 import logger from '../utils/logger';
+import { createNotification } from '../services/notification.service';
 
 // Get all tasks with pagination and filters
 export const getAllTasks = async (req: Request, res: Response): Promise<void> => {
@@ -239,11 +240,12 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
 
     // Send notification to assignee
     if (assigneeId && assigneeId !== req.user?.id) {
-      await Notification.create({
+      await createNotification({
         userId: assigneeId,
         type: 'task',
         title: 'New Task Assigned',
         message: `You have been assigned to task "${title}" in project "${project.name}"`,
+        actionUrl: `/projects?task=${task.id}`,
         relatedId: task.id,
         relatedType: 'task',
       });
@@ -304,11 +306,12 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
 
     // Send notification if assignee changed
     if (assigneeId && assigneeId !== previousAssigneeId && assigneeId !== req.user?.id) {
-      await Notification.create({
+      await createNotification({
         userId: assigneeId,
         type: 'task',
         title: 'Task Assigned',
         message: `You have been assigned to task "${task.title}" in project "${(task as any).project.name}"`,
+        actionUrl: `/projects?task=${task.id}`,
         relatedId: task.id,
         relatedType: 'task',
       });
@@ -316,11 +319,12 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
 
     // Send notification if status changed to done
     if (status === TaskStatus.DONE && previousStatus !== TaskStatus.DONE && task.createdBy && task.createdBy !== req.user?.id) {
-      await Notification.create({
+      await createNotification({
         userId: task.createdBy,
         type: 'task',
         title: 'Task Completed',
         message: `Task "${task.title}" has been marked as done`,
+        actionUrl: `/projects?task=${task.id}`,
         relatedId: task.id,
         relatedType: 'task',
       });
@@ -397,11 +401,12 @@ export const updateTaskStatus = async (req: Request, res: Response): Promise<voi
 
     // Send notification if completed
     if (status === TaskStatus.DONE && previousStatus !== TaskStatus.DONE && task.createdBy && task.createdBy !== req.user?.id) {
-      await Notification.create({
+      await createNotification({
         userId: task.createdBy,
         type: 'task',
         title: 'Task Completed',
         message: `Task "${task.title}" has been marked as done`,
+        actionUrl: `/projects?task=${task.id}`,
         relatedId: task.id,
         relatedType: 'task',
       });

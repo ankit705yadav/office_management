@@ -5,6 +5,7 @@ import { connectDatabase } from './config/database';
 import logger from './utils/logger';
 import { startCronJobs, stopCronJobs } from './services/cron.service';
 import { initializeFirebase } from './services/push.service';
+import { initializeSocket } from './services/socket.service';
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error: Error) => {
@@ -25,6 +26,9 @@ const startServer = async () => {
 
     // Create HTTP server
     const httpServer = createServer(app);
+
+    // Initialize Socket.io
+    initializeSocket(httpServer);
 
     // Start HTTP server
     httpServer.listen(config.port, () => {

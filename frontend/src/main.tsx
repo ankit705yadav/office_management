@@ -8,6 +8,8 @@ import './index.css'; // Import Tailwind and custom styles
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SocketProvider } from './contexts/SocketContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // Toast theme component that syncs with app theme
 const ThemedToastContainer: React.FC = () => {
@@ -40,8 +42,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <CssBaseline />
       <ThemeProvider>
         <AuthProvider>
-          <App />
-          <ThemedToastContainer />
+          <SocketProvider>
+            <NotificationProvider>
+              <App />
+              <ThemedToastContainer />
+            </NotificationProvider>
+          </SocketProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

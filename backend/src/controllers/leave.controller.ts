@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { LeaveRequest, LeaveBalance, User, Notification, LeaveApproval } from '../models';
+import { LeaveRequest, LeaveBalance, User, LeaveApproval } from '../models';
 import { LeaveType, RequestStatus, UserRole } from '../types/enums';
 import { ApprovalStatus } from '../models/LeaveApproval';
 import logger from '../utils/logger';
@@ -10,6 +10,7 @@ import {
   sendLeaveApprovalNotification,
   sendLeaveRejectionNotification,
 } from '../services/email.service';
+import { createNotification } from '../services/notification.service';
 
 /**
  * Helper function to get the approval chain for a user
@@ -202,13 +203,14 @@ export const applyLeave = async (req: Request, res: Response): Promise<void> => 
     if (approvalChain.length > 0) {
       const firstApprover = approvalChain[0];
 
-      await Notification.create({
+      await createNotification({
         userId: firstApprover.id,
         type: 'leave',
         title: 'New Leave Request - Approval Required',
         message: `${user?.fullName} has requested ${daysCount} day(s) of ${leaveType} leave and requires your approval`,
-        actionUrl: `/leaves/${leaveRequest.id}`,
-        isRead: false,
+        actionUrl: `/leaves`,
+        relatedId: leaveRequest.id,
+        relatedType: 'leave',
       });
 
       // Send email notification to first approver
@@ -487,13 +489,14 @@ export const approveLeave = async (req: Request, res: Response): Promise<void> =
       }
 
       // Notify employee of final approval
-      await Notification.create({
+      await createNotification({
         userId: leaveRequest.userId,
         type: 'leave',
         title: 'Leave Request Approved',
         message: `Your leave request for ${leaveRequest.daysCount} day(s) has been fully approved by all approvers`,
-        actionUrl: `/leaves/${leaveRequest.id}`,
-        isRead: false,
+        actionUrl: `/leaves`,
+        relatedId: leaveRequest.id,
+        relatedType: 'leave',
       });
 
       // Send email notification to employee
@@ -528,13 +531,14 @@ export const approveLeave = async (req: Request, res: Response): Promise<void> =
         const employee = await User.findByPk(leaveRequest.userId);
 
         if (nextApprover && employee) {
-          await Notification.create({
+          await createNotification({
             userId: nextApprover.id,
             type: 'leave',
             title: 'Leave Request - Approval Required',
             message: `${employee.fullName}'s leave request requires your approval (Level ${nextApproval.approvalOrder} of ${leaveRequest.totalApprovalLevels})`,
-            actionUrl: `/leaves/${leaveRequest.id}`,
-            isRead: false,
+            actionUrl: `/leaves`,
+            relatedId: leaveRequest.id,
+            relatedType: 'leave',
           });
 
           await sendLeaveRequestNotification(
@@ -551,13 +555,14 @@ export const approveLeave = async (req: Request, res: Response): Promise<void> =
       }
 
       // Notify employee of partial approval
-      await Notification.create({
+      await createNotification({
         userId: leaveRequest.userId,
         type: 'leave',
         title: 'Leave Request Partially Approved',
         message: `Your leave request has been approved by Level ${newLevel} of ${leaveRequest.totalApprovalLevels} approvers`,
-        actionUrl: `/leaves/${leaveRequest.id}`,
-        isRead: false,
+        actionUrl: `/leaves`,
+        relatedId: leaveRequest.id,
+        relatedType: 'leave',
       });
 
       logger.info(`Leave request partially approved: ${id} by ${approverId} (Level ${newLevel}/${leaveRequest.totalApprovalLevels})`);
@@ -660,13 +665,14 @@ export const rejectLeave = async (req: Request, res: Response): Promise<void> =>
     });
 
     // Create notification for employee
-    await Notification.create({
+    await createNotification({
       userId: leaveRequest.userId,
       type: 'leave',
       title: 'Leave Request Rejected',
       message: `Your leave request for ${leaveRequest.daysCount} day(s) has been rejected`,
-      actionUrl: `/leaves/${leaveRequest.id}`,
-      isRead: false,
+      actionUrl: `/leaves`,
+      relatedId: leaveRequest.id,
+      relatedType: 'leave',
     });
 
     // Send email notification to employee

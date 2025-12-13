@@ -20,6 +20,7 @@ import {
   getAttendanceSettings as getSettings,
 } from '../services/attendance.service';
 import { sendEmail } from '../services/email.service';
+import { createNotification } from '../services/notification.service';
 
 /**
  * Check in for the day
@@ -582,18 +583,32 @@ export const requestRegularization = async (
     const user = await User.findByPk(userId);
     if (user?.managerId) {
       const manager = await User.findByPk(user.managerId);
-      if (manager?.email) {
-        await sendEmail({
-          to: manager.email,
-          subject: 'New Attendance Regularization Request',
-          html: `
-            <p>Dear ${manager.firstName},</p>
-            <p><strong>${user.firstName} ${user.lastName}</strong> has requested attendance regularization for <strong>${format(targetDate, 'MMMM dd, yyyy')}</strong>.</p>
-            <p><strong>Reason:</strong> ${reason}</p>
-            <p>Please review and approve/reject this request from the Attendance Management system.</p>
-            <p>Best regards,<br/>Operation Management System</p>
-          `,
+      if (manager) {
+        // Create in-app notification
+        await createNotification({
+          userId: manager.id,
+          type: 'attendance',
+          title: 'Attendance Regularization Request',
+          message: `${user.firstName} ${user.lastName} has requested attendance regularization for ${format(targetDate, 'MMM dd, yyyy')}`,
+          actionUrl: '/attendance',
+          relatedId: regularization.id,
+          relatedType: 'regularization',
         });
+
+        // Send email notification
+        if (manager.email) {
+          await sendEmail({
+            to: manager.email,
+            subject: 'New Attendance Regularization Request',
+            html: `
+              <p>Dear ${manager.firstName},</p>
+              <p><strong>${user.firstName} ${user.lastName}</strong> has requested attendance regularization for <strong>${format(targetDate, 'MMMM dd, yyyy')}</strong>.</p>
+              <p><strong>Reason:</strong> ${reason}</p>
+              <p>Please review and approve/reject this request from the Attendance Management system.</p>
+              <p>Best regards,<br/>Operation Management System</p>
+            `,
+          });
+        }
       }
     }
 
@@ -779,17 +794,31 @@ export const approveRegularization = async (
 
     // Send notification to employee
     const user = regularization.user as any;
-    if (user?.email) {
-      await sendEmail({
-        to: user.email,
-        subject: 'Attendance Regularization Approved',
-        html: `
-          <p>Dear ${user.firstName},</p>
-          <p>Your attendance regularization request for <strong>${format(new Date(regularization.date), 'MMMM dd, yyyy')}</strong> has been <strong>approved</strong>.</p>
-          <p><strong>Manager's Comments:</strong> ${comments || 'No comments'}</p>
-          <p>Best regards,<br/>Operation Management System</p>
-        `,
+    if (user) {
+      // Create in-app notification
+      await createNotification({
+        userId: user.id,
+        type: 'attendance',
+        title: 'Regularization Request Approved',
+        message: `Your attendance regularization request for ${format(new Date(regularization.date), 'MMM dd, yyyy')} has been approved`,
+        actionUrl: '/attendance',
+        relatedId: regularization.id,
+        relatedType: 'regularization',
       });
+
+      // Send email notification
+      if (user.email) {
+        await sendEmail({
+          to: user.email,
+          subject: 'Attendance Regularization Approved',
+          html: `
+            <p>Dear ${user.firstName},</p>
+            <p>Your attendance regularization request for <strong>${format(new Date(regularization.date), 'MMMM dd, yyyy')}</strong> has been <strong>approved</strong>.</p>
+            <p><strong>Manager's Comments:</strong> ${comments || 'No comments'}</p>
+            <p>Best regards,<br/>Operation Management System</p>
+          `,
+        });
+      }
     }
 
     res.status(200).json({
@@ -857,18 +886,32 @@ export const rejectRegularization = async (
 
     // Send notification to employee
     const user = regularization.user as any;
-    if (user?.email) {
-      await sendEmail({
-        to: user.email,
-        subject: 'Attendance Regularization Rejected',
-        html: `
-          <p>Dear ${user.firstName},</p>
-          <p>Your attendance regularization request for <strong>${format(new Date(regularization.date), 'MMMM dd, yyyy')}</strong> has been <strong>rejected</strong>.</p>
-          <p><strong>Manager's Comments:</strong> ${comments || 'No reason provided'}</p>
-          <p>If you have any questions, please contact your manager.</p>
-          <p>Best regards,<br/>Operation Management System</p>
-        `,
+    if (user) {
+      // Create in-app notification
+      await createNotification({
+        userId: user.id,
+        type: 'attendance',
+        title: 'Regularization Request Rejected',
+        message: `Your attendance regularization request for ${format(new Date(regularization.date), 'MMM dd, yyyy')} has been rejected`,
+        actionUrl: '/attendance',
+        relatedId: regularization.id,
+        relatedType: 'regularization',
       });
+
+      // Send email notification
+      if (user.email) {
+        await sendEmail({
+          to: user.email,
+          subject: 'Attendance Regularization Rejected',
+          html: `
+            <p>Dear ${user.firstName},</p>
+            <p>Your attendance regularization request for <strong>${format(new Date(regularization.date), 'MMMM dd, yyyy')}</strong> has been <strong>rejected</strong>.</p>
+            <p><strong>Manager's Comments:</strong> ${comments || 'No reason provided'}</p>
+            <p>If you have any questions, please contact your manager.</p>
+            <p>Best regards,<br/>Operation Management System</p>
+          `,
+        });
+      }
     }
 
     res.status(200).json({

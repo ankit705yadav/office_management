@@ -4,7 +4,8 @@ import { DailyReport, DailyReportEntry, User, Project, Task } from '../models';
 import { DailyReportStatus } from '../models/DailyReport';
 import { UserRole } from '../types/enums';
 import logger from '../utils/logger';
-import { parseISO, differenceInDays, startOfDay } from 'date-fns';
+import { parseISO, differenceInDays, startOfDay, format } from 'date-fns';
+import { createNotification } from '../services/notification.service';
 
 const MAX_BACKDATE_DAYS = 7;
 
@@ -163,6 +164,20 @@ export const submitReport = async (req: Request, res: Response): Promise<void> =
       status: DailyReportStatus.SUBMITTED,
       submittedAt: new Date(),
     });
+
+    // Notify manager about submitted report
+    const user = await User.findByPk(userId);
+    if (user?.managerId) {
+      await createNotification({
+        userId: user.managerId,
+        type: 'daily_report',
+        title: 'Daily Report Submitted',
+        message: `${user.firstName} ${user.lastName} submitted daily report for ${format(new Date(report.reportDate), 'MMM dd, yyyy')}`,
+        actionUrl: '/daily-reports',
+        relatedId: report.id,
+        relatedType: 'daily_report',
+      });
+    }
 
     res.json({
       status: 'success',

@@ -17,6 +17,7 @@ import dashboardRoutes from './routes/dashboard.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import projectRoutes from './routes/project.routes';
 import dailyReportRoutes from './routes/dailyReport.routes';
+import notificationRoutes from './routes/notification.routes';
 
 const app: Application = express();
 
@@ -100,6 +101,7 @@ app.get('/api', (_req: Request, res: Response) => {
       dashboard: '/api/dashboard',
       projects: '/api/projects',
       dailyReports: '/api/daily-reports',
+      notifications: '/api/notifications',
     },
   });
 });
@@ -113,6 +115,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/daily-reports', dailyReportRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { Op, Sequelize } from 'sequelize';
-import { Project, Task, User, Department, TaskAttachment, ProjectAttachment, Notification, LeaveRequest } from '../models';
+import { Project, Task, User, Department, TaskAttachment, ProjectAttachment, LeaveRequest } from '../models';
 import { ProjectStatus, TaskStatus, TaskPriority } from '../types/enums';
 import logger from '../utils/logger';
+import { createNotification } from '../services/notification.service';
 
 // Get all projects with pagination and filters
 export const getAllProjects = async (req: Request, res: Response): Promise<void> => {
@@ -955,11 +956,12 @@ export const createTaskWithCode = async (req: Request, res: Response): Promise<v
 
     // If assigned, create notification
     if (assigneeId) {
-      await Notification.create({
+      await createNotification({
         userId: assigneeId,
         type: 'task',
         title: 'New Task Assigned',
         message: `You have been assigned to task: ${title}`,
+        actionUrl: `/projects?task=${task.id}`,
         relatedId: task.id,
         relatedType: 'task',
       });
