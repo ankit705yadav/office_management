@@ -75,7 +75,7 @@ export const getAllSalaries = async (req: Request, res: Response): Promise<void>
       ],
       limit: Number(limit),
       offset,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
     });
 
     res.status(200).json({
@@ -233,7 +233,7 @@ export const getAllPayments = async (req: Request, res: Response): Promise<void>
       ],
       limit: Number(limit),
       offset,
-      order: [['paymentYear', 'DESC'], ['paymentMonth', 'DESC'], ['createdAt', 'DESC']],
+      order: [['payment_year', 'DESC'], ['payment_month', 'DESC'], ['created_at', 'DESC']],
     });
 
     res.status(200).json({
