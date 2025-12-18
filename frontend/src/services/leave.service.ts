@@ -9,31 +9,19 @@ import {
 
 export const leaveService = {
   /**
-   * Apply for leave with optional medical document
+   * Apply for leave with optional document link
    */
-  applyLeave: async (data: CreateLeaveRequest & { document?: File }): Promise<LeaveRequest> => {
-    const formData = new FormData();
-    formData.append('leaveType', data.leaveType);
-    formData.append('startDate', data.startDate);
-    formData.append('endDate', data.endDate);
-    formData.append('reason', data.reason);
-    if (data.isHalfDay !== undefined) {
-      formData.append('isHalfDay', String(data.isHalfDay));
-    }
-    if (data.halfDaySession) {
-      formData.append('halfDaySession', data.halfDaySession);
-    }
-    if (data.document) {
-      formData.append('document', data.document);
-    }
-
+  applyLeave: async (data: CreateLeaveRequest & { documentUrl?: string }): Promise<LeaveRequest> => {
     const response = await api.post<ApiResponse<{ leaveRequest: LeaveRequest }>>(
       '/leaves',
-      formData,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        leaveType: data.leaveType,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        reason: data.reason,
+        isHalfDay: data.isHalfDay,
+        halfDaySession: data.halfDaySession,
+        documentUrl: data.documentUrl,
       }
     );
     return response.data.data!.leaveRequest;

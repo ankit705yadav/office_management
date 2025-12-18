@@ -1,7 +1,4 @@
 import { Router } from 'express';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import {
   applyLeave,
   getAllLeaveRequests,
@@ -15,43 +12,8 @@ import {
 } from '../controllers/leave.controller';
 import { authenticate } from '../middleware/auth';
 import { requireManagerOrAdmin } from '../middleware/roleCheck';
-import { validateRequest } from '../middleware/validateRequest';
-import { leaveRequestValidation } from '../utils/validators';
 
 const router = Router();
-
-// Ensure uploads/medical-documents directory exists
-const uploadsDir = path.join(__dirname, '../../uploads/medical-documents');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configure multer for medical document upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `medical-doc-${uniqueSuffix}${ext}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only images (JPEG, PNG, GIF, WebP) and PDF files are allowed'));
-    }
-  },
-});
 
 // All routes require authentication
 router.use(authenticate);
@@ -79,10 +41,10 @@ router.get('/export', exportLeaveReport);
 
 /**
  * @route   POST /api/leaves
- * @desc    Apply for leave with optional medical document upload
+ * @desc    Apply for leave with optional document link
  * @access  Private (All authenticated users)
  */
-router.post('/', upload.single('document'), applyLeave);
+router.post('/', applyLeave);
 
 /**
  * @route   GET /api/leaves

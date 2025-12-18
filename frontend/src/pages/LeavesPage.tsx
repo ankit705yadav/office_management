@@ -33,14 +33,13 @@ import {
   Delete,
   FileDownload,
   History,
-  CloudUpload,
-  AttachFile,
+  Link as LinkIcon,
   Close,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { format, differenceInDays } from 'date-fns';
+import { format, eachDayOfInterval, isSunday } from 'date-fns';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/contexts/AuthContext';
 import { leaveService } from '@/services/leave.service';
@@ -54,6 +53,12 @@ const leaveTypes = [
   { value: 'paternity_maternity', label: 'Paternity Leave' },
   { value: 'paternity_maternity', label: 'Maternity Leave' },
 ];
+
+// Helper function to count days excluding Sundays
+const countDaysExcludingSundays = (startDate: Date, endDate: Date): number => {
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
+  return days.filter(day => !isSunday(day)).length;
+};
 
 // Helper function to get approval status color
 const getApprovalStatusColor = (status: string): 'default' | 'warning' | 'success' | 'error' => {
@@ -190,7 +195,7 @@ const LeavesPage: React.FC = () => {
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [halfDaySession, setHalfDaySession] = useState<HalfDaySession | ''>('');
   const [activeTab, setActiveTab] = useState(0);
-  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentUrl, setDocumentUrl] = useState<string>('');
 
   const {
     control,
@@ -213,10 +218,10 @@ const LeavesPage: React.FC = () => {
   const endDate = watch('endDate');
 
   let daysCount = startDate && endDate
-    ? differenceInDays(new Date(endDate), new Date(startDate)) + 1
+    ? countDaysExcludingSundays(new Date(startDate), new Date(endDate))
     : 0;
 
-  if (isHalfDay && daysCount === 1) {
+  if (isHalfDay) {
     daysCount = 0.5;
   }
 
@@ -284,11 +289,11 @@ const LeavesPage: React.FC = () => {
       const leaveData = {
         leaveType: data.leaveType as any,
         startDate: data.startDate,
-        endDate: data.endDate,
+        endDate: isHalfDay ? data.startDate : data.endDate,
         reason: data.reason,
         isHalfDay,
         halfDaySession: isHalfDay ? (halfDaySession as HalfDaySession) : undefined,
-        document: documentFile || undefined,
+        documentUrl: documentUrl.trim() || undefined,
       };
       await leaveService.applyLeave(leaveData);
       toast.success('Leave request submitted successfully');
@@ -296,31 +301,13 @@ const LeavesPage: React.FC = () => {
       reset();
       setIsHalfDay(false);
       setHalfDaySession('');
-      setDocumentFile(null);
+      setDocumentUrl('');
       loadLeaves();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || 'Failed to submit leave request';
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleDocumentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Check file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('File size must be less than 10MB');
-        return;
-      }
-      // Check file type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        toast.error('Only images (JPEG, PNG, GIF, WebP) and PDF files are allowed');
-        return;
-      }
-      setDocumentFile(file);
     }
   };
 
@@ -845,9 +832,16 @@ const LeavesPage: React.FC = () => {
           </Box>
 
           {/* Form Content */}
-          <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+          <Box sx={{ flex: 1, overflowX: 'hidden', overflowY: 'auto', p: 2 }}>
             <form id="apply-leave-form" onSubmit={handleSubmit(handleApplyLeave)}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'var(--border)',
+                },
+              }}>
                 <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mb: -0.5 }}>
                   Leave Details
                 </Typography>
@@ -897,27 +891,6 @@ const LeavesPage: React.FC = () => {
                   )}
                 />
 
-                <Controller
-                  name="endDate"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      size="small"
-                      label="End Date"
-                      type="date"
-                      InputLabelProps={{ shrink: true }}
-                      error={!!errors.endDate}
-                      helperText={errors.endDate?.message}
-                      disabled={submitting}
-                      inputProps={{
-                        min: startDate || format(new Date(), 'yyyy-MM-dd'),
-                      }}
-                    />
-                  )}
-                />
-
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -950,9 +923,32 @@ const LeavesPage: React.FC = () => {
                     disabled={submitting}
                     required
                   >
-                    <MenuItem value="morning">Morning (First Half)</MenuItem>
-                    <MenuItem value="afternoon">Afternoon (Second Half)</MenuItem>
+                    <MenuItem value="first_half">Morning (First Half)</MenuItem>
+                    <MenuItem value="second_half">Afternoon (Second Half)</MenuItem>
                   </TextField>
+                )}
+
+                {!isHalfDay && (
+                  <Controller
+                    name="endDate"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        size="small"
+                        label="End Date"
+                        type="date"
+                        InputLabelProps={{ shrink: true }}
+                        error={!!errors.endDate}
+                        helperText={errors.endDate?.message}
+                        disabled={submitting}
+                        inputProps={{
+                          min: startDate || format(new Date(), 'yyyy-MM-dd'),
+                        }}
+                      />
+                    )}
+                  />
                 )}
 
                 {daysCount > 0 && (
@@ -985,66 +981,19 @@ const LeavesPage: React.FC = () => {
                   )}
                 />
 
-                {/* Medical Document Upload */}
-                <Box>
-                  <Typography variant="body2" sx={{ color: 'var(--text-secondary)', mb: 1, fontSize: '0.8rem' }}>
-                    Medical Report / Supporting Document (Optional)
-                  </Typography>
-                  <Box
-                    sx={{
-                      border: '2px dashed',
-                      borderColor: documentFile ? '#10B981' : 'var(--border)',
-                      borderRadius: 2,
-                      p: 1.5,
-                      textAlign: 'center',
-                      bgcolor: documentFile ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-elevated)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        borderColor: 'var(--accent-primary)',
-                        bgcolor: 'var(--sidebar-item-hover)',
-                      },
-                    }}
-                    component="label"
-                  >
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*,.pdf"
-                      onChange={handleDocumentChange}
-                      disabled={submitting}
-                    />
-                    {documentFile ? (
-                      <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
-                        <AttachFile sx={{ color: '#10B981', fontSize: 20 }} />
-                        <Typography variant="body2" sx={{ color: '#10B981', fontWeight: 500, fontSize: '0.85rem' }}>
-                          {documentFile.name}
-                        </Typography>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setDocumentFile(null);
-                          }}
-                          sx={{ ml: 0.5, p: 0.5 }}
-                        >
-                          <Close fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    ) : (
-                      <Box>
-                        <CloudUpload sx={{ fontSize: 28, color: 'var(--text-muted)', mb: 0.5 }} />
-                        <Typography variant="body2" sx={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                          Click to upload document
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                          Max 10MB - Images or PDF
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                </Box>
+                {/* Document Link */}
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Supporting Document Link (Optional)"
+                  placeholder="https://drive.google.com/..."
+                  value={documentUrl}
+                  onChange={(e) => setDocumentUrl(e.target.value)}
+                  disabled={submitting}
+                  InputProps={{
+                    startAdornment: <LinkIcon sx={{ mr: 1, color: 'var(--text-muted)', fontSize: 20 }} />,
+                  }}
+                />
               </Box>
             </form>
           </Box>

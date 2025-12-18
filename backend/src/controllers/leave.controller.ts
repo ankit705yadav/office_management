@@ -4,13 +4,21 @@ import { LeaveRequest, LeaveBalance, User, LeaveApproval } from '../models';
 import { LeaveType, RequestStatus, UserRole } from '../types/enums';
 import { ApprovalStatus } from '../models/LeaveApproval';
 import logger from '../utils/logger';
-import { differenceInDays, parseISO, format } from 'date-fns';
+import { parseISO, format, eachDayOfInterval, isSunday } from 'date-fns';
 import {
   sendLeaveRequestNotification,
   sendLeaveApprovalNotification,
   sendLeaveRejectionNotification,
 } from '../services/email.service';
 import { createNotification } from '../services/notification.service';
+
+/**
+ * Helper function to count days excluding Sundays
+ */
+const countDaysExcludingSundays = (startDate: Date, endDate: Date): number => {
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
+  return days.filter(day => !isSunday(day)).length;
+};
 
 /**
  * Helper function to get the approval chain for a user
@@ -86,15 +94,14 @@ const createApprovalRecords = async (leaveRequestId: number, approvers: User[]):
  */
 export const applyLeave = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { leaveType, startDate, endDate, reason, halfDaySession } = req.body;
-    // Parse isHalfDay as boolean (FormData sends strings)
-    const isHalfDay = req.body.isHalfDay === 'true' || req.body.isHalfDay === true;
+    const { leaveType, startDate, endDate, reason, halfDaySession, documentUrl } = req.body;
+    const isHalfDay = req.body.isHalfDay === true;
     const userId = req.user!.id;
 
-    // Calculate number of days
+    // Calculate number of days (excluding Sundays)
     const start = parseISO(startDate);
     const end = parseISO(endDate);
-    let daysCount = differenceInDays(end, start) + 1;
+    let daysCount = countDaysExcludingSundays(start, end);
 
     // Handle half-day leave
     if (isHalfDay) {
@@ -106,10 +113,20 @@ export const applyLeave = async (req: Request, res: Response): Promise<void> => 
         return;
       }
 
-      if (daysCount !== 1) {
+      // For half-day, start and end date must be the same
+      if (startDate !== endDate) {
         res.status(400).json({
           status: 'error',
           message: 'Half-day leave can only be applied for a single day',
+        });
+        return;
+      }
+
+      // Check if the selected day is a Sunday
+      if (isSunday(start)) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Cannot apply leave on Sunday',
         });
         return;
       }
@@ -121,6 +138,39 @@ export const applyLeave = async (req: Request, res: Response): Promise<void> => 
       res.status(400).json({
         status: 'error',
         message: 'Invalid date range',
+      });
+      return;
+    }
+
+    // Check for overlapping leave requests (pending or approved)
+    const overlappingLeave = await LeaveRequest.findOne({
+      where: {
+        userId,
+        status: { [Op.in]: [RequestStatus.PENDING, RequestStatus.APPROVED] },
+        [Op.or]: [
+          // New leave starts within existing leave
+          {
+            startDate: { [Op.lte]: startDate },
+            endDate: { [Op.gte]: startDate },
+          },
+          // New leave ends within existing leave
+          {
+            startDate: { [Op.lte]: endDate },
+            endDate: { [Op.gte]: endDate },
+          },
+          // New leave completely contains existing leave
+          {
+            startDate: { [Op.gte]: startDate },
+            endDate: { [Op.lte]: endDate },
+          },
+        ],
+      },
+    });
+
+    if (overlappingLeave) {
+      res.status(400).json({
+        status: 'error',
+        message: `You already have a leave request (${overlappingLeave.status}) for the selected dates`,
       });
       return;
     }
@@ -170,12 +220,6 @@ export const applyLeave = async (req: Request, res: Response): Promise<void> => 
 
     // Get user
     const user = await User.findByPk(userId);
-
-    // Get document URL from uploaded file
-    let documentUrl: string | undefined;
-    if (req.file) {
-      documentUrl = `/uploads/medical-documents/${req.file.filename}`;
-    }
 
     // Get approval chain for this user
     const approvalChain = await getApprovalChain(userId);
