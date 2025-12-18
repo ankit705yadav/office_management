@@ -118,3 +118,10 @@ export enum DevicePlatform {
   ANDROID = 'android',
   WEB = 'web',
 }
+
+// Payment-related enums
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  CANCELLED = 'cancelled',
+}

@@ -14,6 +14,7 @@ import ProfilePage from './pages/ProfilePage';
 import EmployeesPage from './pages/EmployeesPage';
 import ProjectsPage from './pages/ProjectsPage';
 import DailyReportsPage from './pages/DailyReportsPage';
+import PaymentsPage from './pages/PaymentsPage';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -76,6 +77,7 @@ const App: React.FC = () => {
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="daily-reports" element={<DailyReportsPage />} />
         <Route path="holidays" element={<HolidaysPage />} />
+        <Route path="payments" element={<PaymentsPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
