@@ -14,7 +14,7 @@ import {
   Autocomplete,
   CircularProgress,
 } from '@mui/material';
-import { Close, Save, Folder, Description, Link as LinkIcon } from '@mui/icons-material';
+import { Close, Save, Link as LinkIcon } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { projectService, Project, CreateProjectRequest, UpdateProjectRequest } from '../../services/project.service';
 import api from '../../services/api';
@@ -38,7 +38,6 @@ interface ProjectFormDrawerProps {
   project: Project | null;
   viewOnly?: boolean;
   onSaved: () => void;
-  parentId?: number;
 }
 
 const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
@@ -47,13 +46,11 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
   project,
   viewOnly = false,
   onSaved,
-  parentId,
 }) => {
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -66,9 +63,6 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
     endDate: '',
     budget: '',
     attachmentUrl: '',
-    parentId: null as number | null,
-    projectCode: '',
-    isFolder: false,
   });
 
   useEffect(() => {
@@ -76,7 +70,6 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
       loadDepartments();
       loadUsers();
       loadClients();
-      loadProjects();
       if (project) {
         setFormData({
           name: project.name || '',
@@ -90,9 +83,6 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
           endDate: project.endDate ? project.endDate.split('T')[0] : '',
           budget: project.budget?.toString() || '',
           attachmentUrl: (project as any).attachmentUrl || '',
-          parentId: project.parentId || null,
-          projectCode: project.projectCode || '',
-          isFolder: project.isFolder || false,
         });
       } else {
         setFormData({
@@ -107,22 +97,10 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
           endDate: '',
           budget: '',
           attachmentUrl: '',
-          parentId: parentId || null,
-          projectCode: '',
-          isFolder: false,
         });
       }
     }
-  }, [open, project, parentId]);
-
-  const loadProjects = async () => {
-    try {
-      const response = await projectService.getAllProjects({ limit: 100 });
-      setAllProjects(response.items);
-    } catch (error) {
-      console.error('Error loading projects:', error);
-    }
-  };
+  }, [open, project]);
 
   const loadDepartments = async () => {
     try {
@@ -175,9 +153,6 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
         endDate: formData.endDate || undefined,
         budget: formData.budget ? parseFloat(formData.budget) : undefined,
         attachmentUrl: formData.attachmentUrl || undefined,
-        parentId: formData.parentId || undefined,
-        projectCode: formData.projectCode || undefined,
-        isFolder: formData.isFolder,
       } as any;
 
       if (project) {
@@ -234,40 +209,6 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
             disabled={viewOnly}
             sx={{ mb: 2 }}
           />
-
-          {/* Parent Project */}
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Parent Project</InputLabel>
-            <Select
-              value={formData.parentId || ''}
-              label="Parent Project"
-              onChange={(e) => setFormData({ ...formData, parentId: e.target.value as number || null })}
-              disabled={viewOnly}
-            >
-              <MenuItem value="">None (Root Project)</MenuItem>
-              {allProjects
-                .filter((p) => p.id !== project?.id) // Prevent self-referencing
-                .map((p) => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {p.isFolder ? <Folder fontSize="small" sx={{ mr: 1 }} /> : <Description fontSize="small" sx={{ mr: 1 }} />}
-                    {p.name} {p.projectCode && `(${p.projectCode})`}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
-
-          {/* Project Code & Is Folder */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              fullWidth
-              label="Project Code"
-              value={formData.projectCode}
-              onChange={(e) => setFormData({ ...formData, projectCode: e.target.value })}
-              disabled={viewOnly}
-              placeholder="Auto-generated if empty"
-              helperText={!project ? 'Leave empty for auto-generation' : undefined}
-            />
-          </Box>
 
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel>Department</InputLabel>

@@ -2,17 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
-  Button,
   Paper,
   Tabs,
   Tab,
   Alert,
-  Chip,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
-  Add,
   Warning,
   ViewKanban,
   TableChart,
@@ -37,7 +32,6 @@ const ProjectsPage: React.FC = () => {
   const [projectDrawerOpen, setProjectDrawerOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewOnlyMode, setViewOnlyMode] = useState(false);
-  const [parentIdForNew, setParentIdForNew] = useState<number | undefined>(undefined);
 
   const canManage = user?.role === 'admin' || user?.role === 'manager';
 
@@ -68,17 +62,15 @@ const ProjectsPage: React.FC = () => {
     setSelectedProject(project);
   };
 
-  const handleCreateProject = (parentId?: number) => {
+  const handleCreateProject = () => {
     setEditingProject(null);
     setViewOnlyMode(false);
-    setParentIdForNew(parentId);
     setProjectDrawerOpen(true);
   };
 
   const handleEditProject = (project: Project) => {
     setEditingProject(project);
     setViewOnlyMode(false);
-    setParentIdForNew(undefined);
     setProjectDrawerOpen(true);
   };
 
@@ -132,14 +124,6 @@ const ProjectsPage: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <FolderOpen color="primary" />
                     {selectedProject.name}
-                    {selectedProject.projectCode && (
-                      <Chip
-                        label={selectedProject.projectCode}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontFamily: 'monospace' }}
-                      />
-                    )}
                   </Box>
                 ) : (
                   'All Tasks'
@@ -151,16 +135,6 @@ const ProjectsPage: React.FC = () => {
                 </Typography>
               )}
             </Box>
-            {canManage && selectedProject && (
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => handleCreateProject(selectedProject.id)}
-                size="small"
-              >
-                Add Sub-project
-              </Button>
-            )}
           </Box>
 
           {/* Stats Row */}
@@ -214,7 +188,7 @@ const ProjectsPage: React.FC = () => {
           )}
 
           {/* View Mode Tabs */}
-          {selectedProject && !selectedProject.isFolder && (
+          {selectedProject && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Tabs value={viewMode} onChange={(_, v) => setViewMode(v)}>
                 <Tab
@@ -239,35 +213,7 @@ const ProjectsPage: React.FC = () => {
         {/* Content Area */}
         <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
           {selectedProject ? (
-            selectedProject.isFolder ? (
-              // Folder selected - show message to select a project
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  color: 'text.secondary',
-                }}
-              >
-                <FolderOpen sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
-                <Typography variant="h6">This is a folder</Typography>
-                <Typography variant="body2">
-                  Select a project from the sidebar to view its tasks
-                </Typography>
-                {canManage && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<Add />}
-                    onClick={() => handleCreateProject(selectedProject.id)}
-                    sx={{ mt: 2 }}
-                  >
-                    Create Project in this Folder
-                  </Button>
-                )}
-              </Box>
-            ) : viewMode === 'board' ? (
+            viewMode === 'board' ? (
               <KanbanBoard
                 projectId={selectedProject.id}
                 canManage={canManage}
@@ -293,7 +239,6 @@ const ProjectsPage: React.FC = () => {
         project={editingProject}
         viewOnly={viewOnlyMode}
         onSaved={handleProjectSaved}
-        parentId={parentIdForNew}
       />
     </Box>
   );

@@ -15,16 +15,12 @@ export interface ProjectAttributes {
   endDate?: Date;
   budget?: number;
   attachmentUrl?: string;
-  // Hierarchical support
-  parentId?: number;
-  projectCode?: string;
-  isFolder: boolean;
   createdBy?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface ProjectCreationAttributes extends Optional<ProjectAttributes, 'id' | 'status' | 'priority' | 'isFolder'> {}
+interface ProjectCreationAttributes extends Optional<ProjectAttributes, 'id' | 'status' | 'priority'> {}
 
 class Project extends Model<ProjectAttributes, ProjectCreationAttributes> implements ProjectAttributes {
   public id!: number;
@@ -39,10 +35,6 @@ class Project extends Model<ProjectAttributes, ProjectCreationAttributes> implem
   public endDate?: Date;
   public budget?: number;
   public attachmentUrl?: string;
-  // Hierarchical support
-  public parentId?: number;
-  public projectCode?: string;
-  public isFolder!: boolean;
   public createdBy?: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -54,8 +46,6 @@ class Project extends Model<ProjectAttributes, ProjectCreationAttributes> implem
   public readonly client?: any;
   public readonly tasks?: any[];
   public readonly attachments?: any[];
-  public readonly parent?: Project;
-  public readonly children?: Project[];
 }
 
 Project.init(
@@ -121,22 +111,6 @@ Project.init(
       type: DataTypes.INTEGER,
       allowNull: true,
       field: 'created_by',
-    },
-    // Hierarchical support
-    parentId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      field: 'parent_id',
-    },
-    projectCode: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
-      field: 'project_code',
-    },
-    isFolder: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-      field: 'is_folder',
     },
   },
   {

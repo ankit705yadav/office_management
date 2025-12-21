@@ -11,9 +11,6 @@ import {
   deleteProject,
   getProjectStats,
   getTasksAtRiskDueToLeave,
-  getProjectHierarchy,
-  createProjectWithCode,
-  moveProject,
   getTasksForBoard,
   reorderTasks,
   checkAssigneeLeave,
@@ -89,9 +86,6 @@ router.get('/stats', getProjectStats);
 // Get tasks at risk due to leave
 router.get('/tasks-at-risk', getTasksAtRiskDueToLeave);
 
-// Get project hierarchy (tree structure)
-router.get('/hierarchy', getProjectHierarchy);
-
 // Check assignee leave status
 router.get('/check-leave/:userId', checkAssigneeLeave);
 
@@ -104,14 +98,11 @@ router.get('/:id', getProjectById);
 // Get tasks for Kanban board
 router.get('/:id/board', getTasksForBoard);
 
-// Create project with auto-generated code (admin/manager only)
-router.post('/', authorize(['admin', 'manager']), createProjectWithCode);
+// Create project (admin/manager only)
+router.post('/', authorize(['admin', 'manager']), createProject);
 
 // Update project (admin/manager only)
 router.put('/:id', authorize(['admin', 'manager']), updateProject);
-
-// Move project to different parent (admin/manager only)
-router.put('/:id/move', authorize(['admin', 'manager']), moveProject);
 
 // Delete project (admin/manager only)
 router.delete('/:id', authorize(['admin', 'manager']), deleteProject);

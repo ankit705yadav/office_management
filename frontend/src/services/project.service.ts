@@ -7,15 +7,13 @@ export interface Project {
   description?: string;
   departmentId?: number;
   ownerId?: number;
+  clientId?: number;
   status: 'active' | 'completed' | 'on_hold' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'critical';
   startDate?: string;
   endDate?: string;
   budget?: number;
-  // Hierarchical support
-  parentId?: number;
-  projectCode?: string;
-  isFolder: boolean;
+  attachmentUrl?: string;
   createdBy?: number;
   createdAt: string;
   updatedAt: string;
@@ -34,8 +32,11 @@ export interface Project {
     firstName: string;
     lastName: string;
   };
-  parent?: Project;
-  children?: Project[];
+  client?: {
+    id: number;
+    name: string;
+    email?: string;
+  };
   taskCounts?: {
     total: number;
     todo: number;
@@ -69,7 +70,6 @@ export interface Task {
   project?: {
     id: number;
     name: string;
-    projectCode?: string;
     departmentId?: number;
     status: string;
   };
@@ -113,14 +113,12 @@ export interface CreateProjectRequest {
   description?: string;
   departmentId?: number;
   ownerId?: number;
+  clientId?: number;
   priority?: 'low' | 'medium' | 'high' | 'critical';
   startDate?: string;
   endDate?: string;
   budget?: number;
-  // Hierarchical support
-  parentId?: number;
-  projectCode?: string; // Optional override for auto-generated code
-  isFolder?: boolean;
+  attachmentUrl?: string;
 }
 
 export interface UpdateProjectRequest {
@@ -128,15 +126,13 @@ export interface UpdateProjectRequest {
   description?: string;
   departmentId?: number;
   ownerId?: number;
+  clientId?: number;
   status?: 'active' | 'completed' | 'on_hold' | 'cancelled';
   priority?: 'low' | 'medium' | 'high' | 'critical';
   startDate?: string;
   endDate?: string;
   budget?: number;
-  // Hierarchical support
-  parentId?: number | null;
-  projectCode?: string;
-  isFolder?: boolean;
+  attachmentUrl?: string;
 }
 
 export interface CreateTaskRequest {
@@ -245,10 +241,6 @@ export interface BoardData {
   done: Task[];
 }
 
-export interface ProjectHierarchy {
-  projects: Project[];
-}
-
 export interface ReorderTaskItem {
   id: number;
   status: 'todo' | 'in_progress' | 'in_review' | 'done';
@@ -303,17 +295,6 @@ class ProjectService {
 
   async getTasksAtRisk(): Promise<TasksAtRisk> {
     const response = await api.get('/projects/tasks-at-risk');
-    return response.data;
-  }
-
-  // Hierarchy endpoints
-  async getProjectHierarchy(): Promise<Project[]> {
-    const response = await api.get('/projects/hierarchy');
-    return response.data;
-  }
-
-  async moveProject(id: number, newParentId: number | null): Promise<Project> {
-    const response = await api.put(`/projects/${id}/move`, { newParentId });
     return response.data;
   }
 

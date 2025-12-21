@@ -64,10 +64,6 @@ User.hasMany(Project, { foreignKey: 'createdBy', as: 'createdProjects' });
 Project.belongsTo(Department, { foreignKey: 'departmentId', as: 'department' });
 Department.hasMany(Project, { foreignKey: 'departmentId', as: 'projects' });
 
-// Project - self-referential relationship (hierarchical projects)
-Project.belongsTo(Project, { foreignKey: 'parentId', as: 'parent' });
-Project.hasMany(Project, { foreignKey: 'parentId', as: 'children' });
-
 // Task - Project relationship
 Task.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
 Project.hasMany(Task, { foreignKey: 'projectId', as: 'tasks' });
