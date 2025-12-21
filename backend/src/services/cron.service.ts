@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { Op } from 'sequelize';
-import { User } from '../models';
+import { User, Attendance } from '../models';
 import {
   sendBirthdayWishes,
   sendWorkAnniversaryWishes,
@@ -9,6 +9,7 @@ import {
   autoMarkLeaveAsAttendance,
   autoMarkAbsent,
 } from './attendance.service';
+import { createNotification } from './notification.service';
 import logger from '../utils/logger';
 import config from '../config/environment';
 
@@ -263,6 +264,69 @@ const autoMarkAbsentUsers = cron.schedule(
 );
 
 /**
+ * Send checkout reminder to employees who've been working 8+ hours
+ * Runs every hour from 5 PM to 11 PM
+ */
+const sendCheckoutReminders = cron.schedule(
+  '0 17-23 * * 1-6', // Every hour from 5 PM to 11 PM, Monday to Saturday
+  async () => {
+    try {
+      logger.info('Running 8-hour checkout reminder cron job...');
+
+      const today = new Date();
+      const todayDate = today.toISOString().split('T')[0];
+      const eightHoursAgo = new Date(today.getTime() - 8 * 60 * 60 * 1000);
+
+      // Find employees who checked in 8+ hours ago but haven't checked out
+      const attendanceRecords = await Attendance.findAll({
+        where: {
+          date: todayDate,
+          checkInTime: {
+            [Op.lte]: eightHoursAgo,
+          },
+          checkOutTime: {
+            [Op.is]: null as any,
+          },
+        },
+        include: [
+          { association: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
+        ],
+      });
+
+      logger.info(`Found ${attendanceRecords.length} employee(s) working 8+ hours without checkout`);
+
+      // Send notification to each employee
+      for (const record of attendanceRecords) {
+        const user = (record as any).user;
+        if (!user) continue;
+
+        const checkInTime = new Date(record.checkInTime!);
+        const hoursWorked = Math.floor((today.getTime() - checkInTime.getTime()) / (1000 * 60 * 60));
+
+        await createNotification({
+          userId: user.id,
+          type: 'attendance',
+          title: 'Checkout Reminder',
+          message: `You've been working for ${hoursWorked} hours. Don't forget to checkout!`,
+          actionUrl: '/attendance',
+          relatedType: 'attendance',
+        });
+
+        logger.info(`Checkout reminder sent to ${user.email} (${hoursWorked} hours)`);
+      }
+
+      logger.info('8-hour checkout reminder cron job completed');
+    } catch (error) {
+      logger.error('8-hour checkout reminder cron job failed:', error);
+    }
+  },
+  {
+    scheduled: false,
+    timezone: 'Asia/Kolkata',
+  }
+);
+
+/**
  * Initialize and start all cron jobs
  */
 export const startCronJobs = (): void => {
@@ -291,6 +355,9 @@ export const startCronJobs = (): void => {
   autoMarkAbsentUsers.start();
   logger.info('✓ Auto-mark absent users cron job started (Daily at 11:59 PM)');
 
+  sendCheckoutReminders.start();
+  logger.info('✓ 8-hour checkout reminder cron job started (Hourly 5-11 PM, Mon-Sat)');
+
   logger.info('All cron jobs started successfully');
 };
 
@@ -306,6 +373,7 @@ export const stopCronJobs = (): void => {
   sendPendingApprovalReminders.stop();
   autoMarkLeaveAttendance.stop();
   autoMarkAbsentUsers.stop();
+  sendCheckoutReminders.stop();
 
   logger.info('All cron jobs stopped');
 };

@@ -15,6 +15,7 @@ import EmployeesPage from './pages/EmployeesPage';
 import ProjectsPage from './pages/ProjectsPage';
 import DailyReportsPage from './pages/DailyReportsPage';
 import PaymentsPage from './pages/PaymentsPage';
+import ClientsPage from './pages/ClientsPage';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -78,6 +79,7 @@ const App: React.FC = () => {
         <Route path="daily-reports" element={<DailyReportsPage />} />
         <Route path="holidays" element={<HolidaysPage />} />
         <Route path="payments" element={<PaymentsPage />} />
+        <Route path="clients" element={<ClientsPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 

@@ -14,15 +14,10 @@ import {
   Autocomplete,
   CircularProgress,
   Chip,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemSecondaryAction,
   Paper,
   Alert,
 } from '@mui/material';
-import { Close, Save, AttachFile, Delete, CloudUpload, Warning } from '@mui/icons-material';
+import { Close, Save, Warning, Link as LinkIcon } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import {
@@ -61,7 +56,6 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
   const [loading, setLoading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     projectId: defaultProjectId || null as number | null,
     title: '',
@@ -72,6 +66,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
     dueDate: '',
     estimatedHours: '',
     tags: [] as string[],
+    attachmentUrl: '',
   });
   const [tagInput, setTagInput] = useState('');
 
@@ -90,6 +85,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
           estimatedHours: task.estimatedHours?.toString() || '',
           tags: task.tags || [],
+          attachmentUrl: (task as any).attachmentUrl || '',
         });
       } else {
         setFormData({
@@ -102,9 +98,9 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           dueDate: '',
           estimatedHours: '',
           tags: [],
+          attachmentUrl: '',
         });
       }
-      setFilesToUpload([]);
     }
   }, [open, task, defaultProjectId]);
 
@@ -156,7 +152,8 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           dueDate: formData.dueDate || null,
           estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : null,
           tags: formData.tags,
-        };
+          attachmentUrl: formData.attachmentUrl || undefined,
+        } as any;
         savedTask = await projectService.updateTask(task.id, data);
         toast.success('Task updated successfully');
       } else {
@@ -170,14 +167,10 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           dueDate: formData.dueDate || undefined,
           estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
           tags: formData.tags,
-        };
+          attachmentUrl: formData.attachmentUrl || undefined,
+        } as any;
         savedTask = await projectService.createTask(data);
         toast.success('Task created successfully');
-      }
-
-      // Upload attachments if any
-      if (filesToUpload.length > 0) {
-        await projectService.addTaskAttachments(savedTask.id, filesToUpload);
       }
 
       onSaved();
@@ -187,28 +180,6 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDeleteAttachment = async (attachmentId: number) => {
-    if (!task) return;
-    try {
-      await projectService.deleteTaskAttachment(task.id, attachmentId);
-      toast.success('Attachment deleted');
-      // Refresh task data would be handled by parent
-    } catch (error) {
-      toast.error('Failed to delete attachment');
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      setFilesToUpload([...filesToUpload, ...Array.from(files)]);
-    }
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setFilesToUpload(filesToUpload.filter((_, i) => i !== index));
   };
 
   const handleAddTag = () => {
@@ -392,113 +363,19 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             )}
           </Box>
 
-          {/* Existing Attachments */}
-          {task && task.attachments && task.attachments.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Attachments
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {task.attachments.map((att) => {
-                  const isImage = att.fileType?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(att.fileName);
-                  // filePath is stored as /uploads/tasks/filename, API is at localhost:5000
-                  const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-                  const fileUrl = att.filePath?.startsWith('http') ? att.filePath : `${baseUrl}${att.filePath}`;
-
-                  return (
-                    <Paper
-                      key={att.id}
-                      variant="outlined"
-                      sx={{
-                        p: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        width: isImage ? 120 : 'auto',
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: 'action.hover' },
-                      }}
-                      component="a"
-                      href={fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {isImage ? (
-                        <Box
-                          component="img"
-                          src={fileUrl}
-                          alt={att.fileName}
-                          sx={{
-                            width: 100,
-                            height: 80,
-                            objectFit: 'cover',
-                            borderRadius: 1,
-                            mb: 0.5,
-                          }}
-                        />
-                      ) : (
-                        <AttachFile sx={{ fontSize: 40, color: 'text.secondary', mb: 0.5 }} />
-                      )}
-                      <Typography variant="caption" noWrap sx={{ maxWidth: 100, textAlign: 'center' }}>
-                        {att.fileName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {(att.fileSize / 1024).toFixed(1)} KB
-                      </Typography>
-                      {!viewOnly && (
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDeleteAttachment(att.id);
-                          }}
-                          sx={{ mt: 0.5 }}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      )}
-                    </Paper>
-                  );
-                })}
-              </Box>
-            </Box>
-          )}
-
-          {/* New Files to Upload */}
-          {!viewOnly && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Upload Files
-              </Typography>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<CloudUpload />}
-                size="small"
-              >
-                Select Files
-                <input type="file" hidden multiple onChange={handleFileSelect} />
-              </Button>
-              {filesToUpload.length > 0 && (
-                <List dense>
-                  {filesToUpload.map((file, index) => (
-                    <ListItem key={index}>
-                      <ListItemIcon>
-                        <AttachFile />
-                      </ListItemIcon>
-                      <ListItemText primary={file.name} secondary={`${(file.size / 1024).toFixed(1)} KB`} />
-                      <ListItemSecondaryAction>
-                        <IconButton edge="end" size="small" onClick={() => handleRemoveFile(index)}>
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </Box>
-          )}
+          {/* Attachment Link */}
+          <TextField
+            fullWidth
+            label="Attachment Link"
+            value={formData.attachmentUrl}
+            onChange={(e) => setFormData({ ...formData, attachmentUrl: e.target.value })}
+            disabled={viewOnly}
+            placeholder="https://drive.google.com/..."
+            InputProps={{
+              startAdornment: <LinkIcon sx={{ mr: 1, color: 'var(--text-muted)' }} />,
+            }}
+            sx={{ mb: 3 }}
+          />
 
           {/* Task Meta */}
           {task && (

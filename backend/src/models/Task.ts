@@ -13,6 +13,7 @@ export interface TaskAttributes {
   dueDate?: Date;
   estimatedHours?: number;
   tags?: string[];
+  attachmentUrl?: string;
   // New fields
   taskCode?: string;
   actionRequired: boolean;
@@ -37,6 +38,7 @@ class Task extends Model<TaskAttributes, TaskCreationAttributes> implements Task
   public dueDate?: Date;
   public estimatedHours?: number;
   public tags?: string[];
+  public attachmentUrl?: string;
   // New fields
   public taskCode?: string;
   public actionRequired!: boolean;
@@ -105,6 +107,11 @@ Task.init(
       type: DataTypes.ARRAY(DataTypes.TEXT),
       allowNull: true,
       defaultValue: [],
+    },
+    attachmentUrl: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'attachment_url',
     },
     createdBy: {
       type: DataTypes.INTEGER,

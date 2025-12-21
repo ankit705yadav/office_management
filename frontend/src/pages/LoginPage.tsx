@@ -245,7 +245,7 @@ const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Default Credentials Info */}
+          {/* Quick Login Buttons */}
           <div
             className="mt-6 pt-6"
             style={{ borderTop: "1px solid var(--border)" }}
@@ -254,65 +254,66 @@ const LoginPage: React.FC = () => {
               className="text-xs font-medium text-center mb-3"
               style={{ color: "var(--text-muted)" }}
             >
-              Demo Credentials
+              Quick Login (Demo)
             </p>
-            <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2">
               {/* Admin */}
-              <div
-                className="flex items-center justify-between px-3 py-2 rounded-lg text-xs"
-                style={{ backgroundColor: "var(--bg-elevated)" }}
+              <button
+                type="button"
+                onClick={() => onSubmit({ email: "admin@company.com", password: "Admin@123" })}
+                disabled={isLoading}
+                className="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:opacity-80 disabled:opacity-50"
+                style={{
+                  backgroundColor: "var(--accent-error-light)",
+                  color: "var(--accent-error)",
+                  border: "1px solid var(--accent-error)",
+                }}
               >
-                <span
-                  className="font-medium px-2 py-0.5 rounded"
-                  style={{
-                    backgroundColor: "var(--accent-error-light)",
-                    color: "var(--accent-error)",
-                  }}
-                >
-                  Admin
-                </span>
-                <span style={{ color: "var(--text-secondary)" }}>
-                  admin@company.com / Admin@123
-                </span>
-              </div>
+                Admin
+              </button>
 
               {/* Manager */}
-              <div
-                className="flex items-center justify-between px-3 py-2 rounded-lg text-xs"
-                style={{ backgroundColor: "var(--bg-elevated)" }}
+              <button
+                type="button"
+                onClick={() => onSubmit({ email: "john.doe@company.com", password: "Admin@123" })}
+                disabled={isLoading}
+                className="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:opacity-80 disabled:opacity-50"
+                style={{
+                  backgroundColor: "var(--accent-warning-light)",
+                  color: "var(--accent-warning)",
+                  border: "1px solid var(--accent-warning)",
+                }}
               >
-                <span
-                  className="font-medium px-2 py-0.5 rounded"
-                  style={{
-                    backgroundColor: "var(--accent-warning-light)",
-                    color: "var(--accent-warning)",
-                  }}
-                >
-                  Manager
-                </span>
-                <span style={{ color: "var(--text-secondary)" }}>
-                  john.doe@company.com / Admin@123
-                </span>
-              </div>
+                Manager
+              </button>
 
               {/* Employee */}
-              <div
-                className="flex items-center justify-between px-3 py-2 rounded-lg text-xs"
-                style={{ backgroundColor: "var(--bg-elevated)" }}
+              <button
+                type="button"
+                onClick={() => onSubmit({ email: "jane.smith@company.com", password: "Admin@123" })}
+                disabled={isLoading}
+                className="px-3 py-2 rounded-lg text-xs font-medium transition-all hover:opacity-80 disabled:opacity-50"
+                style={{
+                  backgroundColor: "var(--accent-success-light)",
+                  color: "var(--accent-success)",
+                  border: "1px solid var(--accent-success)",
+                }}
               >
-                <span
-                  className="font-medium px-2 py-0.5 rounded"
-                  style={{
-                    backgroundColor: "var(--accent-success-light)",
-                    color: "var(--accent-success)",
-                  }}
-                >
-                  Employee
-                </span>
-                <span style={{ color: "var(--text-secondary)" }}>
-                  jane.smith@company.com / Admin@123
-                </span>
-              </div>
+                Employee
+              </button>
+            </div>
+
+            {/* Credentials Reference */}
+            <div className="mt-3 space-y-1">
+              <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+                <span style={{ color: "var(--accent-error)" }}>Admin:</span> admin@company.com / Admin@123
+              </p>
+              <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+                <span style={{ color: "var(--accent-warning)" }}>Manager:</span> john.doe@company.com / Admin@123
+              </p>
+              <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+                <span style={{ color: "var(--accent-success)" }}>Employee:</span> jane.smith@company.com / Admin@123
+              </p>
             </div>
           </div>
 

@@ -211,7 +211,7 @@ export const getTaskById = async (req: Request, res: Response): Promise<void> =>
 // Create task
 export const createTask = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { projectId, title, description, status, priority, assigneeId, dueDate, estimatedHours, tags } = req.body;
+    const { projectId, title, description, status, priority, assigneeId, dueDate, estimatedHours, tags, attachmentUrl } = req.body;
 
     if (!projectId || !title) {
       res.status(400).json({ message: 'Project ID and title are required' });
@@ -235,6 +235,7 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
       dueDate: dueDate || null,
       estimatedHours: estimatedHours || null,
       tags: tags || [],
+      attachmentUrl: attachmentUrl || null,
       createdBy: req.user?.id,
     });
 
@@ -279,7 +280,7 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
 export const updateTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { title, description, status, priority, assigneeId, dueDate, estimatedHours, tags } = req.body;
+    const { title, description, status, priority, assigneeId, dueDate, estimatedHours, tags, attachmentUrl } = req.body;
 
     const task = await Task.findByPk(id, {
       include: [{ model: Project, as: 'project', attributes: ['id', 'name'] }],
@@ -302,6 +303,7 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
       dueDate: dueDate !== undefined ? dueDate : task.dueDate,
       estimatedHours: estimatedHours !== undefined ? estimatedHours : task.estimatedHours,
       tags: tags ?? task.tags,
+      attachmentUrl: attachmentUrl !== undefined ? attachmentUrl : task.attachmentUrl,
     });
 
     // Send notification if assignee changed

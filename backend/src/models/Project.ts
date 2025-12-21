@@ -8,11 +8,13 @@ export interface ProjectAttributes {
   description?: string;
   departmentId?: number;
   ownerId?: number;
+  clientId?: number;
   status: ProjectStatus;
   priority: ProjectPriority;
   startDate?: Date;
   endDate?: Date;
   budget?: number;
+  attachmentUrl?: string;
   // Hierarchical support
   parentId?: number;
   projectCode?: string;
@@ -30,11 +32,13 @@ class Project extends Model<ProjectAttributes, ProjectCreationAttributes> implem
   public description?: string;
   public departmentId?: number;
   public ownerId?: number;
+  public clientId?: number;
   public status!: ProjectStatus;
   public priority!: ProjectPriority;
   public startDate?: Date;
   public endDate?: Date;
   public budget?: number;
+  public attachmentUrl?: string;
   // Hierarchical support
   public parentId?: number;
   public projectCode?: string;
@@ -47,6 +51,7 @@ class Project extends Model<ProjectAttributes, ProjectCreationAttributes> implem
   public readonly department?: any;
   public readonly owner?: any;
   public readonly creator?: any;
+  public readonly client?: any;
   public readonly tasks?: any[];
   public readonly attachments?: any[];
   public readonly parent?: Project;
@@ -101,6 +106,16 @@ Project.init(
     budget: {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: true,
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'client_id',
+    },
+    attachmentUrl: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'attachment_url',
     },
     createdBy: {
       type: DataTypes.INTEGER,

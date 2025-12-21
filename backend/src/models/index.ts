@@ -16,6 +16,8 @@ import DailyReport from './DailyReport';
 import DailyReportEntry from './DailyReportEntry';
 import EmployeeSalary from './EmployeeSalary';
 import Payment from './Payment';
+import Attendance from './Attendance';
+import Client from './Client';
 
 // ============================================
 // Define Associations/Relationships
@@ -139,6 +141,14 @@ Payment.belongsTo(User, { foreignKey: 'paidBy', as: 'payer' });
 Payment.belongsTo(EmployeeSalary, { foreignKey: 'salaryId', as: 'salary' });
 EmployeeSalary.hasMany(Payment, { foreignKey: 'salaryId', as: 'payments' });
 
+// Client - User (Creator) relationship
+Client.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+User.hasMany(Client, { foreignKey: 'createdBy', as: 'createdClients' });
+
+// Project - Client relationship
+Project.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
+Client.hasMany(Project, { foreignKey: 'clientId', as: 'projects' });
+
 // Export all models
 export {
   User,
@@ -158,6 +168,8 @@ export {
   DailyReportEntry,
   EmployeeSalary,
   Payment,
+  Attendance,
+  Client,
 };
 
 // Export default object with all models
@@ -179,4 +191,6 @@ export default {
   DailyReportEntry,
   EmployeeSalary,
   Payment,
+  Attendance,
+  Client,
 };

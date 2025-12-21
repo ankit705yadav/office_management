@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Assignment,
   Payments,
+  Business,
 } from "@mui/icons-material";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,6 +91,12 @@ const navSections: NavSection[] = [
         text: "Payments",
         icon: <Payments />,
         path: "/payments",
+      },
+      {
+        text: "Clients",
+        icon: <Business />,
+        path: "/clients",
+        roles: ["admin", "manager"],
       },
     ],
   },

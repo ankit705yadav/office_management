@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op, Sequelize } from 'sequelize';
-import { Project, Task, User, Department, TaskAttachment, ProjectAttachment, LeaveRequest } from '../models';
+import { Project, Task, User, Department, TaskAttachment, ProjectAttachment, LeaveRequest, Client } from '../models';
 import { ProjectStatus, TaskStatus, TaskPriority } from '../types/enums';
 import logger from '../utils/logger';
 import { createNotification } from '../services/notification.service';
@@ -80,6 +80,11 @@ export const getAllProjects = async (req: Request, res: Response): Promise<void>
           attributes: ['id', 'firstName', 'lastName'],
         },
         {
+          model: Client,
+          as: 'client',
+          attributes: ['id', 'name', 'email'],
+        },
+        {
           model: Task,
           as: 'tasks',
           attributes: ['id', 'status'],
@@ -143,6 +148,11 @@ export const getProjectById = async (req: Request, res: Response): Promise<void>
           attributes: ['id', 'firstName', 'lastName'],
         },
         {
+          model: Client,
+          as: 'client',
+          attributes: ['id', 'name', 'email', 'phone', 'contactPerson'],
+        },
+        {
           model: ProjectAttachment,
           as: 'attachments',
           include: [
@@ -192,7 +202,7 @@ export const getProjectById = async (req: Request, res: Response): Promise<void>
 // Create project
 export const createProject = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, description, departmentId, ownerId, priority, startDate, endDate, budget } = req.body;
+    const { name, description, departmentId, ownerId, clientId, priority, startDate, endDate, budget, attachmentUrl } = req.body;
 
     if (!name) {
       res.status(400).json({ message: 'Project name is required' });
@@ -204,11 +214,13 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
       description,
       departmentId: departmentId || null,
       ownerId: ownerId || req.user?.id,
+      clientId: clientId || null,
       status: ProjectStatus.ACTIVE,
       priority: priority || 'medium',
       startDate,
       endDate,
       budget,
+      attachmentUrl: attachmentUrl || null,
       createdBy: req.user?.id,
     });
 
@@ -225,6 +237,11 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
           as: 'owner',
           attributes: ['id', 'firstName', 'lastName', 'email'],
         },
+        {
+          model: Client,
+          as: 'client',
+          attributes: ['id', 'name', 'email'],
+        },
       ],
     });
 
@@ -240,7 +257,7 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
 export const updateProject = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, description, departmentId, ownerId, status, priority, startDate, endDate, budget } = req.body;
+    const { name, description, departmentId, ownerId, clientId, status, priority, startDate, endDate, budget, attachmentUrl } = req.body;
 
     const project = await Project.findByPk(id);
 
@@ -254,11 +271,13 @@ export const updateProject = async (req: Request, res: Response): Promise<void> 
       description: description ?? project.description,
       departmentId: departmentId !== undefined ? departmentId : project.departmentId,
       ownerId: ownerId !== undefined ? ownerId : project.ownerId,
+      clientId: clientId !== undefined ? clientId : project.clientId,
       status: status ?? project.status,
       priority: priority ?? project.priority,
       startDate: startDate !== undefined ? startDate : project.startDate,
       endDate: endDate !== undefined ? endDate : project.endDate,
       budget: budget !== undefined ? budget : project.budget,
+      attachmentUrl: attachmentUrl !== undefined ? attachmentUrl : project.attachmentUrl,
     });
 
     // Fetch updated project with associations
@@ -273,6 +292,11 @@ export const updateProject = async (req: Request, res: Response): Promise<void> 
           model: User,
           as: 'owner',
           attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+        {
+          model: Client,
+          as: 'client',
+          attributes: ['id', 'name', 'email'],
         },
       ],
     });
@@ -644,7 +668,7 @@ export const getProjectHierarchy = async (req: Request, res: Response): Promise<
 // Create project with auto-generated code
 export const createProjectWithCode = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, description, departmentId, ownerId, priority, startDate, endDate, budget, parentId, projectCode, isFolder } = req.body;
+    const { name, description, departmentId, ownerId, clientId, priority, startDate, endDate, budget, attachmentUrl, parentId, projectCode, isFolder } = req.body;
 
     if (!name) {
       res.status(400).json({ message: 'Project name is required' });
@@ -675,11 +699,13 @@ export const createProjectWithCode = async (req: Request, res: Response): Promis
       description,
       departmentId: departmentId || null,
       ownerId: ownerId || req.user?.id,
+      clientId: clientId || null,
       status: ProjectStatus.ACTIVE,
       priority: priority || 'medium',
       startDate,
       endDate,
       budget,
+      attachmentUrl: attachmentUrl || null,
       parentId: parentId || null,
       projectCode: finalCode,
       isFolder: isFolder || false,
@@ -698,6 +724,11 @@ export const createProjectWithCode = async (req: Request, res: Response): Promis
           model: User,
           as: 'owner',
           attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+        {
+          model: Client,
+          as: 'client',
+          attributes: ['id', 'name', 'email'],
         },
         {
           model: Project,
@@ -917,7 +948,7 @@ export const checkAssigneeLeave = async (req: Request, res: Response): Promise<v
 // Create task with auto-generated code
 export const createTaskWithCode = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { projectId, title, description, priority, assigneeId, dueDate, estimatedHours, tags, taskCode, actionRequired, dependsOnTaskId } = req.body;
+    const { projectId, title, description, priority, assigneeId, dueDate, estimatedHours, tags, taskCode, actionRequired, dependsOnTaskId, attachmentUrl } = req.body;
 
     if (!projectId || !title) {
       res.status(400).json({ message: 'Project ID and title are required' });
@@ -946,6 +977,7 @@ export const createTaskWithCode = async (req: Request, res: Response): Promise<v
       dueDate,
       estimatedHours,
       tags: tags || [],
+      attachmentUrl: attachmentUrl || null,
       taskCode: finalCode,
       actionRequired: actionRequired || false,
       actualHours: 0,

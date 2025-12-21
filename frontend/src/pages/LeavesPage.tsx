@@ -1093,8 +1093,8 @@ const LeavesPage: React.FC = () => {
                   <Button
                     variant="outlined"
                     size="small"
-                    startIcon={<AttachFile />}
-                    href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${selectedLeave.documentUrl}`}
+                    startIcon={<LinkIcon />}
+                    href={selectedLeave.documentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

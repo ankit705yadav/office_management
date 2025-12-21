@@ -14,10 +14,11 @@ import {
   Autocomplete,
   CircularProgress,
 } from '@mui/material';
-import { Close, Save, Folder, Description } from '@mui/icons-material';
+import { Close, Save, Folder, Description, Link as LinkIcon } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { projectService, Project, CreateProjectRequest, UpdateProjectRequest } from '../../services/project.service';
 import api from '../../services/api';
+import { clientService, Client } from '../../services/client.service';
 
 interface Department {
   id: number;
@@ -51,17 +52,20 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     departmentId: null as number | null,
     ownerId: null as number | null,
+    clientId: null as number | null,
     status: 'active',
     priority: 'medium',
     startDate: '',
     endDate: '',
     budget: '',
+    attachmentUrl: '',
     parentId: null as number | null,
     projectCode: '',
     isFolder: false,
@@ -71,6 +75,7 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
     if (open) {
       loadDepartments();
       loadUsers();
+      loadClients();
       loadProjects();
       if (project) {
         setFormData({
@@ -78,11 +83,13 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
           description: project.description || '',
           departmentId: project.departmentId || null,
           ownerId: project.ownerId || null,
+          clientId: (project as any).clientId || null,
           status: project.status || 'active',
           priority: project.priority || 'medium',
           startDate: project.startDate ? project.startDate.split('T')[0] : '',
           endDate: project.endDate ? project.endDate.split('T')[0] : '',
           budget: project.budget?.toString() || '',
+          attachmentUrl: (project as any).attachmentUrl || '',
           parentId: project.parentId || null,
           projectCode: project.projectCode || '',
           isFolder: project.isFolder || false,
@@ -93,11 +100,13 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
           description: '',
           departmentId: null,
           ownerId: null,
+          clientId: null,
           status: 'active',
           priority: 'medium',
           startDate: '',
           endDate: '',
           budget: '',
+          attachmentUrl: '',
           parentId: parentId || null,
           projectCode: '',
           isFolder: false,
@@ -135,6 +144,15 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
     }
   };
 
+  const loadClients = async () => {
+    try {
+      const response = await clientService.getClients({ limit: 100, status: 'active' as any });
+      setClients(response.clients);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (viewOnly) return;
@@ -151,14 +169,16 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
         description: formData.description || undefined,
         departmentId: formData.departmentId || undefined,
         ownerId: formData.ownerId || undefined,
+        clientId: formData.clientId || undefined,
         priority: formData.priority as any,
         startDate: formData.startDate || undefined,
         endDate: formData.endDate || undefined,
         budget: formData.budget ? parseFloat(formData.budget) : undefined,
+        attachmentUrl: formData.attachmentUrl || undefined,
         parentId: formData.parentId || undefined,
         projectCode: formData.projectCode || undefined,
         isFolder: formData.isFolder,
-      };
+      } as any;
 
       if (project) {
         (data as UpdateProjectRequest).status = formData.status as any;
@@ -178,6 +198,7 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
   };
 
   const selectedOwner = users.find((u) => u.id === formData.ownerId) || null;
+  const selectedClient = clients.find((c) => c.id === formData.clientId) || null;
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
@@ -275,6 +296,16 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
             sx={{ mb: 2 }}
           />
 
+          <Autocomplete
+            options={clients}
+            getOptionLabel={(option) => option.name}
+            value={selectedClient}
+            onChange={(_, newValue) => setFormData({ ...formData, clientId: newValue?.id || null })}
+            disabled={viewOnly}
+            renderInput={(params) => <TextField {...params} label="Client" />}
+            sx={{ mb: 2 }}
+          />
+
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
@@ -335,6 +366,19 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
             value={formData.budget}
             onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
             disabled={viewOnly}
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            fullWidth
+            label="Attachment Link"
+            value={formData.attachmentUrl}
+            onChange={(e) => setFormData({ ...formData, attachmentUrl: e.target.value })}
+            disabled={viewOnly}
+            placeholder="https://drive.google.com/..."
+            InputProps={{
+              startAdornment: <LinkIcon sx={{ mr: 1, color: 'var(--text-muted)' }} />,
+            }}
             sx={{ mb: 3 }}
           />
 

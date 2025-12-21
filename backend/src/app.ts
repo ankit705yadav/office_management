@@ -19,6 +19,7 @@ import projectRoutes from './routes/project.routes';
 import dailyReportRoutes from './routes/dailyReport.routes';
 import notificationRoutes from './routes/notification.routes';
 import paymentRoutes from './routes/payment.routes';
+import clientRoutes from './routes/client.routes';
 
 const app: Application = express();
 
@@ -104,6 +105,7 @@ app.get('/api', (_req: Request, res: Response) => {
       dailyReports: '/api/daily-reports',
       notifications: '/api/notifications',
       payments: '/api/payments',
+      clients: '/api/clients',
     },
   });
 });
@@ -119,6 +121,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/daily-reports', dailyReportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/clients', clientRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
