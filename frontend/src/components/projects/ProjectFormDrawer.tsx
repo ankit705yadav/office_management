@@ -338,11 +338,11 @@ const ProjectFormDrawer: React.FC<ProjectFormDrawerProps> = ({
                 <Typography variant="body2" color="warning.main">
                   In Progress: {project.taskCounts?.inProgress || 0}
                 </Typography>
-                <Typography variant="body2" color="secondary.main">
-                  In Review: {project.taskCounts?.inReview || 0}
-                </Typography>
                 <Typography variant="body2" color="success.main">
                   Done: {project.taskCounts?.done || 0}
+                </Typography>
+                <Typography variant="body2" color="secondary.main">
+                  Approved: {project.taskCounts?.approved || 0}
                 </Typography>
               </Box>
             </Box>

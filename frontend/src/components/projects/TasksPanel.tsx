@@ -157,10 +157,10 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
         return 'default';
       case 'in_progress':
         return 'info';
-      case 'in_review':
-        return 'secondary';
       case 'done':
         return 'success';
+      case 'approved':
+        return 'secondary';
       default:
         return 'default';
     }
@@ -214,8 +214,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
               <MenuItem value="">All</MenuItem>
               <MenuItem value="todo">To Do</MenuItem>
               <MenuItem value="in_progress">In Progress</MenuItem>
-              <MenuItem value="in_review">In Review</MenuItem>
               <MenuItem value="done">Done</MenuItem>
+              <MenuItem value="approved">Approved</MenuItem>
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 130 }}>
@@ -388,8 +388,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
                       >
                         <MenuItem value="todo">To Do</MenuItem>
                         <MenuItem value="in_progress">In Progress</MenuItem>
-                        <MenuItem value="in_review">In Review</MenuItem>
                         <MenuItem value="done">Done</MenuItem>
+                        <MenuItem value="approved">Approved</MenuItem>
                       </Select>
                     </FormControl>
                   </TableCell>

@@ -99,8 +99,8 @@ export const getAllProjects = async (req: Request, res: Response): Promise<void>
         total: tasks.length,
         todo: tasks.filter((t: any) => t.status === TaskStatus.TODO).length,
         inProgress: tasks.filter((t: any) => t.status === TaskStatus.IN_PROGRESS).length,
-        inReview: tasks.filter((t: any) => t.status === TaskStatus.IN_REVIEW).length,
         done: tasks.filter((t: any) => t.status === TaskStatus.DONE).length,
+        approved: tasks.filter((t: any) => t.status === TaskStatus.APPROVED).length,
       };
       const { tasks: _, ...projectData } = project.toJSON();
       return {
@@ -182,8 +182,8 @@ export const getProjectById = async (req: Request, res: Response): Promise<void>
       total: tasks.length,
       todo: tasks.filter((t: any) => t.status === TaskStatus.TODO).length,
       inProgress: tasks.filter((t: any) => t.status === TaskStatus.IN_PROGRESS).length,
-      inReview: tasks.filter((t: any) => t.status === TaskStatus.IN_REVIEW).length,
       done: tasks.filter((t: any) => t.status === TaskStatus.DONE).length,
+      approved: tasks.filter((t: any) => t.status === TaskStatus.APPROVED).length,
     };
 
     const { tasks: _, ...projectData } = project.toJSON() as any;
@@ -597,8 +597,8 @@ export const getTasksForBoard = async (req: Request, res: Response): Promise<voi
     const board = {
       todo: [] as any[],
       in_progress: [] as any[],
-      in_review: [] as any[],
       done: [] as any[],
+      approved: [] as any[],
     };
 
     tasks.forEach((task: any) => {
@@ -611,8 +611,8 @@ export const getTasksForBoard = async (req: Request, res: Response): Promise<voi
       const status = task.status as string;
       if (status === 'todo') board.todo.push(taskData);
       else if (status === 'in_progress') board.in_progress.push(taskData);
-      else if (status === 'in_review') board.in_review.push(taskData);
       else if (status === 'done') board.done.push(taskData);
+      else if (status === 'approved') board.approved.push(taskData);
     });
 
     res.json(board);

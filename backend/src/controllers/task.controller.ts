@@ -512,7 +512,7 @@ export const getTasksByUser = async (req: Request, res: Response): Promise<void>
       if (!userTaskMap[userId]) {
         userTaskMap[userId] = {
           user: item.assignee,
-          tasks: { total: 0, todo: 0, in_progress: 0, in_review: 0, done: 0 },
+          tasks: { total: 0, todo: 0, in_progress: 0, done: 0, approved: 0 },
         };
       }
       const count = parseInt(item.get('count'));

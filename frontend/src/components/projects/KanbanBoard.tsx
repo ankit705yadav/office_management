@@ -27,7 +27,7 @@ interface KanbanBoardProps {
   onTaskUpdate?: () => void;
 }
 
-type TaskStatus = 'todo' | 'in_progress' | 'in_review' | 'done';
+type TaskStatus = 'todo' | 'in_progress' | 'done' | 'approved';
 
 interface Column {
   id: TaskStatus;
@@ -39,16 +39,16 @@ interface Column {
 const columns: Column[] = [
   { id: 'todo', title: 'To Do', color: '#9e9e9e', bgColor: 'var(--surface)' },
   { id: 'in_progress', title: 'In Progress', color: '#1976d2', bgColor: 'var(--surface)' },
-  { id: 'in_review', title: 'In Review', color: '#9c27b0', bgColor: 'var(--surface)' },
   { id: 'done', title: 'Done', color: '#2e7d32', bgColor: 'var(--surface)' },
+  { id: 'approved', title: 'Approved', color: '#9c27b0', bgColor: 'var(--surface)' },
 ];
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskUpdate }) => {
   const [boardData, setBoardData] = useState<BoardData>({
     todo: [],
     in_progress: [],
-    in_review: [],
     done: [],
+    approved: [],
   });
   const [loading, setLoading] = useState(true);
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
@@ -62,7 +62,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskU
 
   const loadBoard = async () => {
     if (!projectId) {
-      setBoardData({ todo: [], in_progress: [], in_review: [], done: [] });
+      setBoardData({ todo: [], in_progress: [], done: [], approved: [] });
       setLoading(false);
       return;
     }

@@ -41,8 +41,8 @@ export interface Project {
     total: number;
     todo: number;
     inProgress: number;
-    inReview: number;
     done: number;
+    approved: number;
   };
   progress?: number;
 }
@@ -52,7 +52,7 @@ export interface Task {
   projectId: number;
   title: string;
   description?: string;
-  status: 'todo' | 'in_progress' | 'in_review' | 'done';
+  status: 'todo' | 'in_progress' | 'done' | 'approved';
   priority: 'low' | 'medium' | 'high' | 'critical';
   assigneeId?: number;
   dueDate?: string;
@@ -139,7 +139,7 @@ export interface CreateTaskRequest {
   projectId: number;
   title: string;
   description?: string;
-  status?: 'todo' | 'in_progress' | 'in_review' | 'done';
+  status?: 'todo' | 'in_progress' | 'done' | 'approved';
   priority?: 'low' | 'medium' | 'high' | 'critical';
   assigneeId?: number;
   dueDate?: string;
@@ -154,7 +154,7 @@ export interface CreateTaskRequest {
 export interface UpdateTaskRequest {
   title?: string;
   description?: string;
-  status?: 'todo' | 'in_progress' | 'in_review' | 'done';
+  status?: 'todo' | 'in_progress' | 'done' | 'approved';
   priority?: 'low' | 'medium' | 'high' | 'critical';
   assigneeId?: number | null;
   dueDate?: string | null;
@@ -178,7 +178,7 @@ export interface ProjectStats {
   tasksByStatus: {
     todo?: number;
     in_progress?: number;
-    in_review?: number;
+    approved?: number;
     done?: number;
   };
   overdueTasks: number;
@@ -237,13 +237,13 @@ export interface TaskFilterParams {
 export interface BoardData {
   todo: Task[];
   in_progress: Task[];
-  in_review: Task[];
+  approved: Task[];
   done: Task[];
 }
 
 export interface ReorderTaskItem {
   id: number;
-  status: 'todo' | 'in_progress' | 'in_review' | 'done';
+  status: 'todo' | 'in_progress' | 'done' | 'approved';
   sortOrder: number;
 }
 
@@ -363,7 +363,7 @@ class ProjectService {
 
   async getTasksByUser(): Promise<Array<{
     user: { id: number; firstName: string; lastName: string };
-    tasks: { total: number; todo: number; in_progress: number; in_review: number; done: number };
+    tasks: { total: number; todo: number; in_progress: number; done: number; approved: number };
   }>> {
     const response = await api.get('/projects/tasks/by-user');
     return response.data;

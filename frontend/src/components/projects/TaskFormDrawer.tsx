@@ -291,8 +291,8 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               >
                 <MenuItem value="todo">To Do</MenuItem>
                 <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="in_review">In Review</MenuItem>
                 <MenuItem value="done">Done</MenuItem>
+                <MenuItem value="approved">Approved</MenuItem>
               </Select>
             </FormControl>
 
