@@ -5,6 +5,7 @@ import { ProjectStatus, ProjectPriority } from '../types/enums';
 export interface ProjectAttributes {
   id: number;
   name: string;
+  projectCode?: string;
   description?: string;
   departmentId?: number;
   ownerId?: number;
@@ -25,6 +26,7 @@ interface ProjectCreationAttributes extends Optional<ProjectAttributes, 'id' | '
 class Project extends Model<ProjectAttributes, ProjectCreationAttributes> implements ProjectAttributes {
   public id!: number;
   public name!: string;
+  public projectCode?: string;
   public description?: string;
   public departmentId?: number;
   public ownerId?: number;
@@ -58,6 +60,11 @@ Project.init(
     name: {
       type: DataTypes.STRING(200),
       allowNull: false,
+    },
+    projectCode: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      field: 'project_code',
     },
     description: {
       type: DataTypes.TEXT,
