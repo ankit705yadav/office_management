@@ -521,8 +521,8 @@ const HolidaysPage: React.FC = () => {
                           </ListItemIcon>
                           <ListItemText
                             primary={
-                              <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                                <Typography variant="body1" fontWeight="medium" sx={{ color: 'var(--text-primary)' }}>
+                              <Box component="span" display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                                <Typography component="span" variant="body1" fontWeight="medium" sx={{ color: 'var(--text-primary)' }}>
                                   {holiday.name}
                                 </Typography>
                                 {holiday.isOptional && (
@@ -537,8 +537,8 @@ const HolidaysPage: React.FC = () => {
                               </Box>
                             }
                             secondary={
-                              <Box>
-                                <Typography variant="body2" sx={{ color: '#3d9be9', fontWeight: 'medium' }}>
+                              <Box component="span" display="block">
+                                <Typography component="span" variant="body2" sx={{ color: '#3d9be9', fontWeight: 'medium' }}>
                                   {format(parseISO(holiday.date), 'EEEE, MMMM dd')}
                                 </Typography>
                                 {holiday.description && (
@@ -606,8 +606,8 @@ const HolidaysPage: React.FC = () => {
                     </ListItemIcon>
                     <ListItemText
                       primary={
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="body1" fontWeight="medium" sx={{ color: 'var(--text-primary)' }}>
+                        <Box component="span" display="flex" alignItems="center" gap={1}>
+                          <Typography component="span" variant="body1" fontWeight="medium" sx={{ color: 'var(--text-primary)' }}>
                             {holiday.name}
                           </Typography>
                           {holiday.isOptional && (
@@ -621,12 +621,12 @@ const HolidaysPage: React.FC = () => {
                         </Box>
                       }
                       secondary={
-                        <Box>
-                          <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+                        <Box component="span" display="block">
+                          <Typography component="span" variant="body2" sx={{ color: 'var(--text-secondary)', display: 'block' }}>
                             {format(parseISO(holiday.date), 'EEEE, MMMM dd, yyyy')}
                           </Typography>
                           {holiday.description && (
-                            <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+                            <Typography component="span" variant="body2" sx={{ color: 'var(--text-secondary)', display: 'block' }}>
                               {holiday.description}
                             </Typography>
                           )}
