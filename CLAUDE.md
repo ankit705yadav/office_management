@@ -1,181 +1,376 @@
-# Quick Start Guide for Claude
+# Claude Code Reference for Operation Management Platform
 
-This guide will help you get the Operation Management Platform running in under 10 minutes.
+This document provides Claude with comprehensive context about the codebase structure, patterns, and conventions.
 
-## Prerequisites
+## Project Overview
 
-- Node.js v18+ installed
-- PostgreSQL 14+ installed
-- Git installed
+**Operation Management Platform** is an internal business management system for HR, projects, attendance, and payroll. Built with a modern TypeScript stack.
 
-## Step 1: Database Setup (2 minutes)
+| Layer | Technology |
+|-------|------------|
+| Backend | Node.js + Express + TypeScript + Sequelize ORM |
+| Frontend | React 18 + TypeScript + Vite + Material-UI |
+| Database | PostgreSQL 14+ |
+| Real-time | Socket.io |
+| Auth | JWT (15m access / 7d refresh tokens) |
+
+## Project Structure
+
+```
+office_management/
+├── backend/                     # Express API Server
+│   ├── src/
+│   │   ├── app.ts              # Express app, middleware setup
+│   │   ├── index.ts            # Server entry, DB connection
+│   │   ├── config/
+│   │   │   ├── database.ts     # Sequelize connection
+│   │   │   └── environment.ts  # Env config loader
+│   │   ├── controllers/        # Route handlers (12 files)
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── user.controller.ts
+│   │   │   ├── leave.controller.ts
+│   │   │   ├── attendance.controller.ts
+│   │   │   ├── project.controller.ts
+│   │   │   ├── task.controller.ts
+│   │   │   ├── client.controller.ts
+│   │   │   ├── payment.controller.ts
+│   │   │   ├── holiday.controller.ts
+│   │   │   ├── dashboard.controller.ts
+│   │   │   ├── dailyReport.controller.ts
+│   │   │   └── notification.controller.ts
+│   │   ├── routes/             # API route definitions (10 files)
+│   │   ├── models/             # Sequelize models (18 models)
+│   │   │   ├── User.ts
+│   │   │   ├── Department.ts
+│   │   │   ├── LeaveBalance.ts
+│   │   │   ├── LeaveRequest.ts
+│   │   │   ├── Project.ts
+│   │   │   ├── Task.ts
+│   │   │   ├── Client.ts
+│   │   │   ├── Attendance.ts
+│   │   │   ├── DailyReport.ts
+│   │   │   ├── Payment.ts
+│   │   │   ├── Notification.ts
+│   │   │   └── index.ts        # Model associations
+│   │   ├── middleware/
+│   │   │   ├── auth.ts         # JWT auth & role middleware
+│   │   │   ├── roleCheck.ts    # Role-based access
+│   │   │   └── validateRequest.ts
+│   │   ├── services/           # Business logic
+│   │   │   ├── email.service.ts
+│   │   │   ├── notification.service.ts
+│   │   │   ├── attendance.service.ts
+│   │   │   ├── storage.service.ts
+│   │   │   └── socket.service.ts
+│   │   ├── types/
+│   │   │   └── enums.ts        # All enums (LeaveType, TaskStatus, etc.)
+│   │   └── utils/
+│   │       ├── jwt.ts          # Token generation/verification
+│   │       ├── logger.ts       # Winston logger
+│   │       └── validators.ts   # Express-validator rules
+│   ├── database/
+│   │   └── schema.sql          # Full DB schema with seeds
+│   └── uploads/                # File storage
+│
+├── frontend/                    # React SPA
+│   ├── src/
+│   │   ├── App.tsx             # Main routing
+│   │   ├── main.tsx            # Vite entry
+│   │   ├── pages/              # Route pages (11 pages)
+│   │   │   ├── LoginPage.tsx
+│   │   │   ├── DashboardPage.tsx
+│   │   │   ├── LeavesPage.tsx
+│   │   │   ├── AttendancePage.tsx
+│   │   │   ├── EmployeesPage.tsx
+│   │   │   ├── ProjectsPage.tsx
+│   │   │   ├── ClientsPage.tsx
+│   │   │   ├── PaymentsPage.tsx
+│   │   │   ├── DailyReportsPage.tsx
+│   │   │   ├── HolidaysPage.tsx
+│   │   │   └── ProfilePage.tsx
+│   │   ├── components/
+│   │   │   ├── layout/
+│   │   │   │   └── DashboardLayout.tsx  # Sidebar & header
+│   │   │   ├── projects/
+│   │   │   │   ├── KanbanBoard.tsx      # Drag-drop board
+│   │   │   │   ├── TaskCard.tsx
+│   │   │   │   └── TaskFormDrawer.tsx
+│   │   │   └── notifications/
+│   │   │       └── NotificationBell.tsx
+│   │   ├── contexts/
+│   │   │   ├── AuthContext.tsx          # Auth state
+│   │   │   ├── ThemeContext.tsx
+│   │   │   ├── SocketContext.tsx
+│   │   │   └── NotificationContext.tsx
+│   │   ├── services/           # API client services
+│   │   │   ├── api.ts          # Axios instance + interceptors
+│   │   │   ├── auth.service.ts
+│   │   │   ├── user.service.ts
+│   │   │   ├── leave.service.ts
+│   │   │   ├── project.service.ts
+│   │   │   └── [feature].service.ts
+│   │   └── types/
+│   │       └── index.ts        # TypeScript interfaces
+│   └── public/
+│
+└── database/schema.sql         # Alternative schema location
+```
+
+## Key Patterns & Conventions
+
+### Naming Conventions
+- **Files**: `camelCase.ts` for most files, `PascalCase.ts` for models
+- **Controllers**: Export named functions (`export const getUsers = ...`)
+- **Routes**: Export Router instance
+- **Database columns**: `snake_case` (Sequelize auto-converts)
+- **TypeScript**: `PascalCase` interfaces, `camelCase` properties
+
+### API Response Format
+```typescript
+// Success
+{ status: 'success', message: string, data: T }
+
+// Error
+{ status: 'error', message: string }
+
+// Paginated
+{ status: 'success', data: T[], meta: { page, limit, total } }
+```
+
+### Error Handling
+- Controllers use try-catch with 500 fallback
+- Validation errors return 400
+- Auth errors return 401/403
+- Not found returns 404
+
+### Database Patterns
+- Timestamps auto-managed via PostgreSQL triggers
+- Soft deletes: User status → 'inactive'
+- Associations defined in `models/index.ts`
+- Decimal fields for leave days (half-day support)
+
+## Database Schema Overview
+
+### Core Tables
+| Table | Purpose |
+|-------|---------|
+| `users` | Employee records (id, email, role, departmentId, managerId) |
+| `departments` | Department info |
+| `refresh_tokens` | JWT refresh tokens |
+
+### Leave Management
+| Table | Purpose |
+|-------|---------|
+| `leave_balances` | Annual quota per user (sick, casual, earned, compOff, paternity) |
+| `leave_requests` | Leave applications (supports half-day) |
+| `leave_approvals` | Multi-level approval chain |
+| `holidays` | Company holidays |
+
+### Attendance
+| Table | Purpose |
+|-------|---------|
+| `attendance` | Daily check-in/out records |
+| `attendance_regularizations` | Regularization requests |
+
+### Projects
+| Table | Purpose |
+|-------|---------|
+| `clients` | Client information |
+| `projects` | Project records |
+| `tasks` | Tasks with dependencies |
+| `task_attachments` | File attachments |
+
+### Finance
+| Table | Purpose |
+|-------|---------|
+| `employee_salaries` | Salary records |
+| `payments` | Payment transactions |
+
+### Other
+| Table | Purpose |
+|-------|---------|
+| `daily_reports` | Daily work summaries |
+| `daily_report_entries` | Time entries per project/task |
+| `notifications` | User notifications |
+
+## API Endpoints Summary
+
+### Auth (`/api/auth`)
+- `POST /login` - Login
+- `POST /refresh-token` - Refresh JWT
+- `POST /logout` - Logout
+- `GET /me` - Current user
+- `PUT /change-password` - Change password
+
+### Users (`/api/users`)
+- `GET /` - List users (Manager/Admin)
+- `GET /:id` - Get user
+- `POST /` - Create user (Admin)
+- `PUT /:id` - Update user
+- `DELETE /:id` - Soft delete (Admin)
+
+### Leaves (`/api/leaves`)
+- `GET /balance` - Leave balance
+- `GET /` - List requests
+- `POST /` - Apply for leave
+- `PUT /:id/approve` - Approve
+- `PUT /:id/reject` - Reject
+- `PUT /:id/cancel` - Cancel
+
+### Attendance (`/api/attendance`)
+- `POST /check-in` - Check in
+- `POST /check-out` - Check out
+- `GET /today` - Today's status
+- `GET /my` - My records
+- `GET /team` - Team records (Manager)
+- `POST /regularize` - Request regularization
+
+### Projects (`/api/projects`)
+- `GET /` - List projects
+- `GET /:id` - Get project
+- `GET /:id/board` - Kanban board data
+- `POST /` - Create project
+- `PUT /:id` - Update
+- `DELETE /:id` - Delete
+- Task endpoints under `/tasks`
+
+### Other Routes
+- `/api/clients` - Client CRUD
+- `/api/payments` - Payroll management
+- `/api/holidays` - Holiday calendar
+- `/api/daily-reports` - Time tracking
+- `/api/dashboard` - Stats & calendar
+- `/api/notifications` - Notifications
+
+## Authentication & Authorization
+
+### Roles
+| Role | Permissions |
+|------|-------------|
+| `admin` | Full access to all features |
+| `manager` | Team management, approvals |
+| `employee` | Own data only |
+
+### Auth Flow
+1. Login → Access token (15m) + Refresh token (7d)
+2. API requests use Bearer token
+3. On 401, frontend auto-refreshes token
+4. Both expired → Redirect to login
+
+### Key Middleware
+- `authenticate` - Verify JWT, attach user to request
+- `authorize(roles)` - Check user role
+- `requireAdmin` - Admin only
+- `requireManagerOrAdmin` - Manager or Admin
+- `canManageUser` - Self or Admin
+
+## Enums (from `types/enums.ts`)
+
+```typescript
+// User roles
+enum UserRole { ADMIN = 'admin', MANAGER = 'manager', EMPLOYEE = 'employee' }
+
+// Leave types
+enum LeaveType { SICK = 'sick', CASUAL = 'casual', EARNED = 'earned', COMP_OFF = 'comp_off', PATERNITY = 'paternity', MATERNITY = 'maternity' }
+
+// Leave status
+enum LeaveStatus { PENDING = 'pending', APPROVED = 'approved', REJECTED = 'rejected', CANCELLED = 'cancelled' }
+
+// Task status
+enum TaskStatus { TODO = 'todo', IN_PROGRESS = 'in_progress', DONE = 'done', BLOCKED = 'blocked' }
+
+// Task priority
+enum TaskPriority { LOW = 'low', MEDIUM = 'medium', HIGH = 'high', URGENT = 'urgent' }
+
+// Project status
+enum ProjectStatus { ACTIVE = 'active', COMPLETED = 'completed', ON_HOLD = 'on_hold', CANCELLED = 'cancelled' }
+
+// Payment status
+enum PaymentStatus { PENDING = 'pending', PAID = 'paid', CANCELLED = 'cancelled' }
+```
+
+## Common Development Tasks
+
+### Adding a New API Endpoint
+1. Create/update controller in `backend/src/controllers/`
+2. Add route in `backend/src/routes/`
+3. Add validation in `backend/src/utils/validators.ts`
+4. Register route in `backend/src/app.ts` if new file
+
+### Adding a New Frontend Page
+1. Create page in `frontend/src/pages/`
+2. Add route in `frontend/src/App.tsx`
+3. Create service in `frontend/src/services/`
+4. Add to sidebar in `DashboardLayout.tsx`
+
+### Adding a New Database Table
+1. Add CREATE TABLE in `backend/database/schema.sql`
+2. Create model in `backend/src/models/`
+3. Add associations in `models/index.ts`
+4. Add to Sequelize sync in `index.ts`
+
+## Environment Variables
+
+### Backend (.env)
+```env
+NODE_ENV=development
+PORT=5000
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=office_management
+DB_USER=postgres
+DB_PASSWORD=password
+JWT_SECRET=your-secret
+JWT_REFRESH_SECRET=your-refresh-secret
+CORS_ORIGIN=http://localhost:3000
+```
+
+### Frontend (.env)
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_APP_NAME=Operation Management
+```
+
+## Quick Start
 
 ```bash
-# Open PostgreSQL
-psql -U postgres
-
-# Create database
-CREATE DATABASE office_management;
-
-# Exit PostgreSQL
-\q
-
-# Run the schema
+# Database
+psql -U postgres -c "CREATE DATABASE office_management;"
 psql -U postgres -d office_management -f backend/database/schema.sql
+
+# Backend (Terminal 1)
+cd backend && npm install && cp .env.example .env && npm run dev
+
+# Frontend (Terminal 2)
+cd frontend && npm install && cp .env.example .env && npm run dev
 ```
 
-## Step 2: Backend Setup (3 minutes)
-
-```bash
-# Navigate to backend
-cd backend
-
-# Install dependencies
-npm install
-
-# Create .env file
-cp .env.example .env
-
-# Edit .env and update these required fields:
-# DB_HOST=localhost
-# DB_PORT=5432
-# DB_NAME=office_management
-# DB_USER=postgres
-# DB_PASSWORD=your_postgres_password
-# JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-# JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-this-in-production
-
-# Start backend server
-npm run dev
-```
-
-Backend will run at: `http://localhost:5000`
-
-## Step 3: Frontend Setup (2 minutes)
-
-```bash
-# Open new terminal
-# Navigate to frontend
-cd frontend
-
-# Install dependencies
-npm install
-
-# Create .env file
-cp .env.example .env
-
-# The defaults should work fine:
-# VITE_API_URL=http://localhost:5000/api
-# VITE_APP_NAME=Operation Management
-# VITE_ENV=development
-
-# Start frontend server
-npm run dev
-```
-
-Frontend will run at: `http://localhost:3000`
-
-## Step 4: Login and Test
-
-1. Open browser: `http://localhost:3000`
-2. Login with default admin credentials:
-   - **Email**: `admin@company.com`
-   - **Password**: `Admin@123`
-
-## Default Users (from schema.sql)
-
+### Default Logins
 | Email | Password | Role |
 |-------|----------|------|
 | admin@company.com | Admin@123 | Admin |
 | john.doe@company.com | Password@123 | Manager |
 | jane.smith@company.com | Password@123 | Employee |
 
-## Quick Test Checklist
-
-- [ ] Login successfully
-- [ ] View dashboard with stats
-- [ ] Check leave balance
-- [ ] Apply for leave
-- [ ] View holidays calendar
-- [ ] Check profile page
-- [ ] Change password
-- [ ] Logout
-
 ## Troubleshooting
 
-### Backend won't start
-- Check if PostgreSQL is running: `sudo systemctl status postgresql`
-- Verify database exists: `psql -U postgres -l | grep office_management`
-- Check .env file has correct database credentials
+- **Backend won't start**: Check PostgreSQL running, verify .env credentials
+- **Frontend won't start**: Ensure backend is on :5000, check .env exists
+- **Login fails**: Check backend logs, verify seed data exists
+- **CORS errors**: Match CORS_ORIGIN with frontend URL
 
-### Frontend won't start
-- Check if backend is running at `http://localhost:5000`
-- Verify .env file exists in frontend folder
-- Clear node_modules: `rm -rf node_modules && npm install`
+## Key Files Reference
 
-### Login fails
-- Check backend logs for errors
-- Verify database has seed data: `psql -U postgres -d office_management -c "SELECT * FROM users;"`
-- Ensure JWT secrets are set in backend .env
-
-### CORS errors
-- Verify backend CORS_ORIGIN in .env matches frontend URL
-- Check backend is running on port 5000
-
-## Email Configuration (Optional)
-
-To enable email notifications:
-
-### Using Gmail (Development)
-```env
-# In backend/.env
-EMAIL_SERVICE=gmail
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-app-specific-password
-EMAIL_FROM=your-email@gmail.com
-```
-
-### Using AWS SES (Production)
-```env
-# In backend/.env
-EMAIL_SERVICE=ses
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_SES_REGION=us-east-1
-EMAIL_FROM=noreply@yourdomain.com
-```
-
-## Next Steps
-
-- Customize branding in `frontend/src/components/layout/DashboardLayout.tsx`
-- Add company holidays via API or database
-- Configure email service for notifications
-- Set up proper environment variables for production
-- Deploy to AWS
-
-## Project Structure
-
-```
-office_management/
-├── backend/              # Node.js + Express API
-│   ├── src/
-│   ├── database/
-│   └── .env
-├── frontend/             # React + TypeScript
-│   ├── src/
-│   └── .env
-├── README.md            # Full documentation
-├── PROJECT_COMPLETE.md  # Feature summary
-└── CLAUDE.md           # This quick start guide
-```
-
-## Support
-
-- API Documentation: `/backend/API_DOCUMENTATION.md`
-- Setup Guide: `/backend/SETUP_GUIDE.md`
-- Frontend Guide: `/frontend/README.md`
+| File | Purpose |
+|------|---------|
+| `backend/src/app.ts` | Express setup, all middleware |
+| `backend/src/models/index.ts` | All model associations |
+| `backend/src/types/enums.ts` | All enums |
+| `backend/src/middleware/auth.ts` | Auth middleware |
+| `frontend/src/App.tsx` | All routes |
+| `frontend/src/contexts/AuthContext.tsx` | Auth state |
+| `frontend/src/services/api.ts` | Axios config |
+| `frontend/src/components/layout/DashboardLayout.tsx` | Main layout |
 
 ---
-
-**Built with Claude Code**
-Version 1.0.0 - Phase 1 Complete
+Version 1.0.0 | Built with Claude Code
