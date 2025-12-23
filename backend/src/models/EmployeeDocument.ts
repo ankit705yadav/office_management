@@ -4,11 +4,9 @@ import sequelize from '../config/database';
 interface EmployeeDocumentAttributes {
   id: number;
   userId: number;
-  documentName: string;
-  documentUrl: string;
-  documentType?: string;
+  linkTitle: string;
+  linkUrl: string;
   createdAt?: Date;
-  updatedAt?: Date;
 }
 
 interface EmployeeDocumentCreationAttributes extends Optional<EmployeeDocumentAttributes, 'id'> {}
@@ -16,12 +14,10 @@ interface EmployeeDocumentCreationAttributes extends Optional<EmployeeDocumentAt
 class EmployeeDocument extends Model<EmployeeDocumentAttributes, EmployeeDocumentCreationAttributes> implements EmployeeDocumentAttributes {
   public id!: number;
   public userId!: number;
-  public documentName!: string;
-  public documentUrl!: string;
-  public documentType?: string;
+  public linkTitle!: string;
+  public linkUrl!: string;
 
   public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
 }
 
 EmployeeDocument.init(
@@ -36,26 +32,22 @@ EmployeeDocument.init(
       allowNull: false,
       field: 'user_id',
     },
-    documentName: {
+    linkTitle: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      field: 'document_name',
+      field: 'link_title',
     },
-    documentUrl: {
+    linkUrl: {
       type: DataTypes.TEXT,
       allowNull: false,
-      field: 'document_url',
-    },
-    documentType: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-      field: 'document_type',
+      field: 'link_url',
     },
   },
   {
     sequelize,
     tableName: 'employee_documents',
     timestamps: true,
+    updatedAt: false,
     underscored: true,
   }
 );

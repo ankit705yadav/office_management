@@ -78,15 +78,13 @@ CREATE TABLE employee_custom_fields (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Employee documents
+-- Employee documents (link attachments)
 CREATE TABLE employee_documents (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    document_name VARCHAR(255) NOT NULL,
-    document_type VARCHAR(100),
-    file_url TEXT NOT NULL,
-    file_size INTEGER,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    link_title VARCHAR(255) NOT NULL,
+    link_url TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -242,27 +240,23 @@ CREATE TABLE tasks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Task attachments table
+-- Task attachments table (link attachments)
 CREATE TABLE task_attachments (
     id SERIAL PRIMARY KEY,
     task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
     uploaded_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    file_name VARCHAR(255) NOT NULL,
-    file_path TEXT NOT NULL,
-    file_size INTEGER,
-    file_type VARCHAR(100),
+    link_title VARCHAR(255) NOT NULL,
+    link_url TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Project attachments table
+-- Project attachments table (link attachments)
 CREATE TABLE project_attachments (
     id SERIAL PRIMARY KEY,
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     uploaded_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    file_name VARCHAR(255) NOT NULL,
-    file_url TEXT NOT NULL,
-    file_size INTEGER,
-    mime_type VARCHAR(100),
+    link_title VARCHAR(255) NOT NULL,
+    link_url TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -11,6 +11,11 @@ export interface CustomField {
   fieldValue: string;
 }
 
+export interface DocumentLink {
+  linkTitle: string;
+  linkUrl: string;
+}
+
 export interface CreateEmployeeRequest {
   email: string;
   password: string;
@@ -27,8 +32,8 @@ export interface CreateEmployeeRequest {
   emergencyContactPhone?: string;
   panNumber?: string;
   aadharNumber?: string;
-  profileImage?: File;
-  documents?: File[];
+  profileImageUrl?: string;
+  documentLinks?: DocumentLink[];
   customFields?: CustomField[];
 }
 
@@ -81,46 +86,12 @@ export const employeeService = {
   },
 
   /**
-   * Create new employee with optional profile image and documents
+   * Create new employee with profile image URL and document links
    */
   createEmployee: async (data: CreateEmployeeRequest): Promise<User> => {
-    const { profileImage, documents, customFields, ...employeeData } = data;
-
-    // Always use FormData for flexibility with files
-    const formData = new FormData();
-
-    // Append profile image if provided
-    if (profileImage) {
-      formData.append('profileImage', profileImage);
-    }
-
-    // Append documents if provided
-    if (documents && documents.length > 0) {
-      documents.forEach((doc) => {
-        formData.append('documents', doc);
-      });
-    }
-
-    // Append custom fields as JSON string
-    if (customFields && customFields.length > 0) {
-      formData.append('customFields', JSON.stringify(customFields));
-    }
-
-    // Append all other fields to FormData
-    Object.entries(employeeData).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        formData.append(key, String(value));
-      }
-    });
-
     const response = await api.post<ApiResponse<{ user: User }>>(
       '/users',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
+      data
     );
     return response.data.data!.user;
   },

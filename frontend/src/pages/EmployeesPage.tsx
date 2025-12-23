@@ -37,7 +37,7 @@ import {
   Email,
   CalendarMonth,
   Close,
-  CloudUpload,
+  Link as LinkIcon,
   Person,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
@@ -169,11 +169,11 @@ const EmployeesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('');
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState('');
   const [panNumber, setPanNumber] = useState('');
   const [aadharNumber, setAadharNumber] = useState('');
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
-  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+  const [documentLinks, setDocumentLinks] = useState<{ linkTitle: string; linkUrl: string }[]>([]);
 
   const {
     control: createControl,
@@ -240,8 +240,10 @@ const EmployeesPage: React.FC = () => {
         ...data,
         panNumber: panNumber || undefined,
         aadharNumber: aadharNumber || undefined,
-        profileImage: profileImageFile || undefined,
-        documents: documentFiles.length > 0 ? documentFiles : undefined,
+        profileImageUrl: profileImageUrl || undefined,
+        documentLinks: documentLinks.filter(d => d.linkUrl && d.linkTitle).length > 0
+          ? documentLinks.filter(d => d.linkUrl && d.linkTitle)
+          : undefined,
         customFields: customFields.filter(f => f.fieldName && f.fieldValue).length > 0
           ? customFields.filter(f => f.fieldName && f.fieldValue)
           : undefined,
@@ -322,11 +324,11 @@ const EmployeesPage: React.FC = () => {
     setSelectedEmployee(null);
     resetCreate();
     resetEdit();
-    setProfileImageFile(null);
+    setProfileImageUrl('');
     setPanNumber('');
     setAadharNumber('');
     setCustomFields([]);
-    setDocumentFiles([]);
+    setDocumentLinks([]);
   };
 
   const handleViewEmployee = async (employee: User) => {
@@ -835,7 +837,7 @@ const EmployeesPage: React.FC = () => {
                 {(selectedEmployee as any).documents && (selectedEmployee as any).documents.length > 0 && (
                   <>
                     <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mb: 1 }}>
-                      Documents
+                      Document Links
                     </Typography>
                     <Divider sx={{ borderColor: 'var(--border)', mb: 2 }} />
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -843,7 +845,7 @@ const EmployeesPage: React.FC = () => {
                         <Box
                           key={index}
                           component="a"
-                          href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${doc.documentUrl}`}
+                          href={doc.linkUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           sx={{
@@ -855,8 +857,8 @@ const EmployeesPage: React.FC = () => {
                             '&:hover': { textDecoration: 'underline' },
                           }}
                         >
-                          <CloudUpload sx={{ fontSize: 18 }} />
-                          <Typography variant="body2">{doc.documentName}</Typography>
+                          <LinkIcon sx={{ fontSize: 18 }} />
+                          <Typography variant="body2">{doc.linkTitle}</Typography>
                         </Box>
                       ))}
                     </Box>
@@ -874,78 +876,34 @@ const EmployeesPage: React.FC = () => {
                   </Typography>
                   <Divider sx={{ borderColor: 'var(--border)' }} />
 
-                  {/* Profile Image Upload */}
-                  <Box
+                  {/* Profile Image URL */}
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Profile Image URL"
+                    value={profileImageUrl}
+                    onChange={(e) => setProfileImageUrl(e.target.value)}
+                    placeholder="https://example.com/profile-image.jpg"
+                    disabled={submitting}
                     sx={{
-                      border: '2px dashed',
-                      borderColor: profileImageFile ? '#10B981' : 'var(--border)',
-                      borderRadius: 2,
-                      p: 2,
-                      textAlign: 'center',
-                      bgcolor: profileImageFile ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-elevated)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        borderColor: 'var(--accent-primary)',
-                        bgcolor: 'var(--bg-primary)',
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: 'var(--bg-elevated)',
+                        '& fieldset': { borderColor: 'var(--border)' },
+                        '&:hover fieldset': { borderColor: 'var(--accent-primary)' },
+                        '&.Mui-focused fieldset': { borderColor: 'var(--accent-primary)' },
                       },
+                      '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
+                      '& .MuiInputBase-input': { color: 'var(--text-primary)' },
                     }}
-                    component="label"
-                  >
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/jpeg,image/png,image/gif,image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          if (file.size > 5 * 1024 * 1024) {
-                            toast.error('File size must be less than 5MB');
-                            return;
-                          }
-                          setProfileImageFile(file);
-                        }
-                      }}
-                      disabled={submitting}
-                    />
-                    {profileImageFile ? (
-                      <Box display="flex" alignItems="center" justifyContent="center" gap={1.5}>
-                        <Avatar
-                          src={URL.createObjectURL(profileImageFile)}
-                          sx={{ width: 56, height: 56 }}
-                        />
-                        <Box textAlign="left">
-                          <Typography variant="body2" color="#10B981" fontWeight={500}>
-                            {profileImageFile.name}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>
-                            {(profileImageFile.size / 1024).toFixed(1)} KB
-                          </Typography>
-                        </Box>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setProfileImageFile(null);
-                          }}
-                          sx={{ color: 'var(--text-secondary)' }}
-                        >
-                          <Close fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    ) : (
-                      <Box>
-                        <Person sx={{ fontSize: 32, color: 'var(--text-muted)', mb: 0.5 }} />
-                        <Typography variant="body2" sx={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                          Click to upload profile photo
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                          JPEG, PNG, GIF or WebP (max 5MB)
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
+                  />
+                  {profileImageUrl && (
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Avatar src={profileImageUrl} sx={{ width: 40, height: 40 }} />
+                      <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>
+                        Preview
+                      </Typography>
+                    </Box>
+                  )}
 
                   <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
                     Personal Information
@@ -1277,89 +1235,74 @@ const EmployeesPage: React.FC = () => {
                   </Button>
 
                   <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
-                    Document Uploads
+                    Document Links
                   </Typography>
                   <Divider sx={{ borderColor: 'var(--border)' }} />
 
-                  <Box
-                    sx={{
-                      border: '2px dashed',
-                      borderColor: documentFiles.length > 0 ? '#10B981' : 'var(--border)',
-                      borderRadius: 2,
-                      p: 2,
-                      textAlign: 'center',
-                      bgcolor: documentFiles.length > 0 ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-elevated)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        borderColor: 'var(--accent-primary)',
-                        bgcolor: 'var(--bg-primary)',
-                      },
-                    }}
-                    component="label"
-                  >
-                    <input
-                      type="file"
-                      hidden
-                      multiple
-                      accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        const validFiles = files.filter(file => {
-                          if (file.size > 10 * 1024 * 1024) {
-                            toast.error(`${file.name} exceeds 10MB limit`);
-                            return false;
-                          }
-                          return true;
-                        });
-                        setDocumentFiles([...documentFiles, ...validFiles]);
-                        e.target.value = '';
+                  {documentLinks.map((doc, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 1,
+                        p: 1.5,
+                        bgcolor: 'var(--bg-elevated)',
+                        borderRadius: 1,
+                        border: '1px solid var(--border)',
                       }}
-                      disabled={submitting}
-                    />
-                    <CloudUpload sx={{ fontSize: 32, color: 'var(--text-muted)', mb: 0.5 }} />
-                    <Typography variant="body2" sx={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                      Click to upload documents
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                      JPEG, PNG, GIF, WebP or PDF (max 10MB each)
-                    </Typography>
-                  </Box>
-
-                  {documentFiles.length > 0 && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {documentFiles.map((file, index) => (
-                        <Box
-                          key={index}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            p: 1,
-                            bgcolor: 'var(--bg-elevated)',
-                            borderRadius: 1,
+                    >
+                      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Document Title"
+                          value={doc.linkTitle}
+                          onChange={(e) => {
+                            const updated = [...documentLinks];
+                            updated[index].linkTitle = e.target.value;
+                            setDocumentLinks(updated);
                           }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2" sx={{ color: 'var(--text-primary)', fontSize: '0.8rem' }}>
-                              {file.name}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>
-                              ({(file.size / 1024).toFixed(1)} KB)
-                            </Typography>
-                          </Box>
-                          <IconButton
-                            size="small"
-                            onClick={() => setDocumentFiles(documentFiles.filter((_, i) => i !== index))}
-                            disabled={submitting}
-                            sx={{ color: 'var(--text-secondary)' }}
-                          >
-                            <Close fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      ))}
+                          placeholder="e.g., Passport, Aadhar Card"
+                          disabled={submitting}
+                          sx={textFieldSx}
+                        />
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Document URL"
+                          value={doc.linkUrl}
+                          onChange={(e) => {
+                            const updated = [...documentLinks];
+                            updated[index].linkUrl = e.target.value;
+                            setDocumentLinks(updated);
+                          }}
+                          placeholder="https://drive.google.com/..."
+                          disabled={submitting}
+                          sx={textFieldSx}
+                        />
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => setDocumentLinks(documentLinks.filter((_, i) => i !== index))}
+                        disabled={submitting}
+                        sx={{ color: '#EF4444', mt: 0.5 }}
+                      >
+                        <Close fontSize="small" />
+                      </IconButton>
                     </Box>
-                  )}
+                  ))}
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Add />}
+                    onClick={() => setDocumentLinks([...documentLinks, { linkTitle: '', linkUrl: '' }])}
+                    disabled={submitting}
+                    sx={{ alignSelf: 'flex-start', color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}
+                  >
+                    Add Document Link
+                  </Button>
                 </Box>
               </form>
             )}

@@ -96,7 +96,7 @@ export const getAllTasks = async (req: Request, res: Response): Promise<void> =>
         {
           model: TaskAttachment,
           as: 'attachments',
-          attributes: ['id', 'fileName', 'filePath', 'fileSize', 'fileType'],
+          attributes: ['id', 'linkTitle', 'linkUrl'],
         },
       ],
     });
@@ -422,10 +422,11 @@ export const updateTaskStatus = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// Add attachment to task
+// Add link attachment to task
 export const addTaskAttachment = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const { links } = req.body;
 
     const task = await Task.findByPk(id);
     if (!task) {
@@ -433,20 +434,25 @@ export const addTaskAttachment = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const uploadedFiles = req.files as Express.Multer.File[];
-    if (!uploadedFiles || uploadedFiles.length === 0) {
-      res.status(400).json({ message: 'No files uploaded' });
+    if (!links || !Array.isArray(links) || links.length === 0) {
+      res.status(400).json({ message: 'No links provided' });
       return;
     }
 
+    // Validate each link has required fields
+    for (const link of links) {
+      if (!link.linkUrl || !link.linkTitle) {
+        res.status(400).json({ message: 'Each link must have linkUrl and linkTitle' });
+        return;
+      }
+    }
+
     const attachments = await Promise.all(
-      uploadedFiles.map((file) =>
+      links.map((link: { linkUrl: string; linkTitle: string }) =>
         TaskAttachment.create({
           taskId: task.id,
-          fileName: file.originalname,
-          filePath: `/uploads/tasks/${file.filename}`,
-          fileSize: file.size,
-          fileType: file.mimetype,
+          linkTitle: link.linkTitle,
+          linkUrl: link.linkUrl,
           uploadedBy: req.user?.id,
         })
       )

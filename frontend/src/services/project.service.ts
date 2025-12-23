@@ -95,10 +95,8 @@ export interface Task {
 export interface TaskAttachment {
   id: number;
   taskId: number;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-  fileType: string;
+  linkTitle: string;
+  linkUrl: string;
   uploadedBy?: number;
   createdAt: string;
   uploader?: {
@@ -106,6 +104,11 @@ export interface TaskAttachment {
     firstName: string;
     lastName: string;
   };
+}
+
+export interface TaskAttachmentLink {
+  linkTitle: string;
+  linkUrl: string;
 }
 
 export interface CreateProjectRequest {
@@ -344,16 +347,8 @@ class ProjectService {
     return response.data;
   }
 
-  async addTaskAttachments(taskId: number, files: File[]): Promise<TaskAttachment[]> {
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('files', file);
-    });
-    const response = await api.post(`/projects/tasks/${taskId}/attachments`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  async addTaskAttachments(taskId: number, links: TaskAttachmentLink[]): Promise<TaskAttachment[]> {
+    const response = await api.post(`/projects/tasks/${taskId}/attachments`, { links });
     return response.data;
   }
 

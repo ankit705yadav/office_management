@@ -138,6 +138,8 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       panNumber,
       aadharNumber,
       customFields,
+      profileImageUrl,
+      documentLinks,
     } = req.body;
 
     // Check if email already exists
@@ -149,15 +151,6 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
         message: 'Email already exists',
       });
       return;
-    }
-
-    // Get profile image URL from uploaded file
-    let profileImageUrl: string | undefined;
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-    if (files?.profileImage?.[0]) {
-      profileImageUrl = `/uploads/profiles/${files.profileImage[0].filename}`;
-    } else if (req.file) {
-      profileImageUrl = `/uploads/profiles/${req.file.filename}`;
     }
 
     // Create user
@@ -178,7 +171,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       emergencyContactPhone,
       panNumber,
       aadharNumber,
-      profileImageUrl,
+      profileImageUrl: profileImageUrl || null,
     });
 
     // Create custom fields if provided
@@ -195,15 +188,17 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
-    // Create employee documents from uploaded files
-    if (files?.documents) {
-      for (const file of files.documents) {
-        await EmployeeDocument.create({
-          userId: user.id,
-          documentName: file.originalname,
-          documentUrl: `/uploads/documents/${file.filename}`,
-          documentType: file.mimetype,
-        });
+    // Create employee documents from link data
+    if (documentLinks) {
+      const parsedDocLinks = typeof documentLinks === 'string' ? JSON.parse(documentLinks) : documentLinks;
+      for (const doc of parsedDocLinks) {
+        if (doc.linkUrl && doc.linkTitle) {
+          await EmployeeDocument.create({
+            userId: user.id,
+            linkTitle: doc.linkTitle,
+            linkUrl: doc.linkUrl,
+          });
+        }
       }
     }
 

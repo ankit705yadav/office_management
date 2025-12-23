@@ -28,7 +28,7 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import { CalendarMonth, Event, ChevronLeft, ChevronRight, Add, Delete, Upload, FileDownload } from '@mui/icons-material';
+import { CalendarMonth, Event, ChevronLeft, ChevronRight, Add, Delete } from '@mui/icons-material';
 import {
   format,
   isSameMonth,
@@ -66,8 +66,6 @@ const HolidaysPage: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [openImportDialog, setOpenImportDialog] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const {
     control,
@@ -163,62 +161,6 @@ const HolidaysPage: React.FC = () => {
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (!file.name.endsWith('.csv')) {
-        toast.error('Please select a CSV file');
-        return;
-      }
-      setSelectedFile(file);
-    }
-  };
-
-  const handleImportCSV = async () => {
-    if (!selectedFile) {
-      toast.error('Please select a file to upload');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const result = await holidayService.importHolidaysFromCSV(selectedFile);
-
-      if (result.errors && result.errors.length > 0) {
-        toast.warning(`Imported ${result.imported} holidays with ${result.errors.length} errors. Check console for details.`);
-        console.log('Import errors:', result.errors);
-      } else {
-        toast.success(`Successfully imported ${result.imported} holidays`);
-      }
-
-      setOpenImportDialog(false);
-      setSelectedFile(null);
-      loadHolidays();
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || 'Failed to import holidays';
-      toast.error(errorMessage);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDownloadTemplate = async () => {
-    try {
-      const blob = await holidayService.downloadCSVTemplate();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'holidays-template.csv';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success('Template downloaded successfully');
-    } catch (error) {
-      toast.error('Failed to download template');
-    }
-  };
-
   const isAdmin = user?.role === 'admin';
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -287,24 +229,14 @@ const HolidaysPage: React.FC = () => {
           </FormControl>
 
           {isAdmin && (
-            <>
-              <Button
-                variant="outlined"
-                startIcon={<Upload />}
-                onClick={() => setOpenImportDialog(true)}
-                sx={{ borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', '&:hover': { bgcolor: 'rgba(241, 78, 30, 0.1)', borderColor: 'var(--accent-hover)' } }}
-              >
-                Import CSV
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => setOpenCreateDialog(true)}
-                sx={{ bgcolor: 'var(--accent-primary)', color: '#ffffff', '&:hover': { bgcolor: 'var(--accent-hover)' } }}
-              >
-                Add Holiday
-              </Button>
-            </>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setOpenCreateDialog(true)}
+              sx={{ bgcolor: 'var(--accent-primary)', color: '#ffffff', '&:hover': { bgcolor: 'var(--accent-hover)' } }}
+            >
+              Add Holiday
+            </Button>
           )}
         </Box>
       </Box>
@@ -865,94 +797,6 @@ const HolidaysPage: React.FC = () => {
             </Button>
           </DialogActions>
         </form>
-      </Dialog>
-
-      {/* Import CSV Dialog */}
-      <Dialog
-        open={openImportDialog}
-        onClose={() => !submitting && setOpenImportDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: { bgcolor: 'var(--surface)', border: '1px solid var(--border)' } }}
-      >
-        <DialogTitle sx={{ color: 'var(--text-primary)' }}>Import Holidays from CSV</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <Alert
-              severity="info"
-              sx={{
-                mb: 3,
-                bgcolor: 'rgba(59, 130, 246, 0.1)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                '& .MuiAlert-message': { color: 'var(--text-primary)' },
-                '& .MuiAlert-icon': { color: '#3b82f6' },
-              }}
-            >
-              Upload a CSV file with columns: name, date (YYYY-MM-DD), description, isOptional (true/false)
-            </Alert>
-
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Button
-                variant="outlined"
-                startIcon={<FileDownload />}
-                onClick={handleDownloadTemplate}
-                fullWidth
-                sx={{ borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', '&:hover': { borderColor: 'var(--accent-hover)', bgcolor: 'rgba(241, 78, 30, 0.1)' } }}
-              >
-                Download CSV Template
-              </Button>
-
-              <input
-                accept=".csv"
-                style={{ display: 'none' }}
-                id="csv-file-input"
-                type="file"
-                onChange={handleFileSelect}
-              />
-              <label htmlFor="csv-file-input">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  fullWidth
-                  startIcon={<Upload />}
-                  sx={{ borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', '&:hover': { borderColor: 'var(--accent-hover)', bgcolor: 'rgba(241, 78, 30, 0.1)' } }}
-                >
-                  {selectedFile ? selectedFile.name : 'Select CSV File'}
-                </Button>
-              </label>
-
-              {selectedFile && (
-                <Alert
-                  severity="success"
-                  sx={{
-                    bgcolor: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    '& .MuiAlert-message': { color: 'var(--text-primary)' },
-                    '& .MuiAlert-icon': { color: '#10B981' },
-                  }}
-                >
-                  File selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                </Alert>
-              )}
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ borderTop: '1px solid var(--border)', px: 3, py: 2 }}>
-          <Button onClick={() => {
-            setOpenImportDialog(false);
-            setSelectedFile(null);
-          }} disabled={submitting} sx={{ color: 'var(--text-secondary)' }}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleImportCSV}
-            variant="contained"
-            disabled={!selectedFile || submitting}
-            sx={{ bgcolor: 'var(--accent-primary)', '&:hover': { bgcolor: 'var(--accent-hover)' } }}
-          >
-            {submitting ? <CircularProgress size={24} /> : 'Import'}
-          </Button>
-        </DialogActions>
       </Dialog>
     </Box>
   );

@@ -4,10 +4,8 @@ import sequelize from '../config/database';
 export interface TaskAttachmentAttributes {
   id: number;
   taskId: number;
-  fileName: string;
-  filePath: string;
-  fileSize?: number;
-  fileType?: string;
+  linkTitle: string;
+  linkUrl: string;
   uploadedBy?: number;
   createdAt?: Date;
 }
@@ -17,10 +15,8 @@ interface TaskAttachmentCreationAttributes extends Optional<TaskAttachmentAttrib
 class TaskAttachment extends Model<TaskAttachmentAttributes, TaskAttachmentCreationAttributes> implements TaskAttachmentAttributes {
   public id!: number;
   public taskId!: number;
-  public fileName!: string;
-  public filePath!: string;
-  public fileSize?: number;
-  public fileType?: string;
+  public linkTitle!: string;
+  public linkUrl!: string;
   public uploadedBy?: number;
   public readonly createdAt!: Date;
 
@@ -41,25 +37,15 @@ TaskAttachment.init(
       allowNull: false,
       field: 'task_id',
     },
-    fileName: {
+    linkTitle: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      field: 'file_name',
+      field: 'link_title',
     },
-    filePath: {
+    linkUrl: {
       type: DataTypes.TEXT,
       allowNull: false,
-      field: 'file_path',
-    },
-    fileSize: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      field: 'file_size',
-    },
-    fileType: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-      field: 'file_type',
+      field: 'link_url',
     },
     uploadedBy: {
       type: DataTypes.INTEGER,
