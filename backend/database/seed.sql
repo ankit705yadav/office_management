@@ -2,6 +2,7 @@
 -- This script populates the database with initial test data
 
 -- Clear existing data (in reverse order of dependencies)
+TRUNCATE TABLE daily_reports CASCADE;
 TRUNCATE TABLE attendance_regularizations CASCADE;
 TRUNCATE TABLE attendance CASCADE;
 TRUNCATE TABLE attendance_settings CASCADE;
@@ -22,6 +23,7 @@ ALTER SEQUENCE notifications_id_seq RESTART WITH 1;
 ALTER SEQUENCE attendance_settings_id_seq RESTART WITH 1;
 ALTER SEQUENCE attendance_id_seq RESTART WITH 1;
 ALTER SEQUENCE attendance_regularizations_id_seq RESTART WITH 1;
+ALTER SEQUENCE daily_reports_id_seq RESTART WITH 1;
 
 -- =====================================================
 -- DEPARTMENTS
@@ -184,6 +186,32 @@ INSERT INTO notifications (user_id, type, title, message, is_read, created_at) V
 (2, 'general', 'New Regularization Request', 'Carol has submitted attendance regularization request', false, CURRENT_TIMESTAMP - INTERVAL '1 day');
 
 -- =====================================================
+-- DAILY REPORTS (Sample)
+-- =====================================================
+INSERT INTO daily_reports (user_id, report_date, title, description, status, submitted_at, created_at, updated_at) VALUES
+-- Submitted reports
+(7, CURRENT_DATE - 1, 'API Development Progress', 'Worked on implementing the user authentication API endpoints. Completed login, logout, and token refresh endpoints.
+
+Key achievements:
+- Implemented JWT-based authentication
+- Added rate limiting to prevent brute force attacks
+- Wrote unit tests for auth endpoints', 'submitted', CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+
+(7, CURRENT_DATE - 2, 'Database Schema Design', 'Designed and implemented the database schema for the new inventory management module. Created tables for products, stock movements, and material assignments.', 'submitted', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
+
+(8, CURRENT_DATE - 1, 'Frontend Dashboard Updates', 'Completed the dashboard redesign with new charts and widgets. Added real-time data refresh and improved the overall user experience.
+
+Key tasks:
+- Implemented ApexCharts for data visualization
+- Added dark mode support
+- Fixed responsive layout issues on mobile devices', 'submitted', CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+
+(8, CURRENT_DATE - 2, 'Bug Fixes and Code Review', 'Fixed several bugs reported by QA team including the login redirect issue and date formatting problems. Also conducted code review for team members.', 'submitted', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
+
+-- Draft report
+(9, CURRENT_DATE, 'Daily Standup and Planning', 'Attended the daily standup meeting and sprint planning session. Identified tasks for the week.', 'draft', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- =====================================================
 -- SUMMARY
 -- =====================================================
 SELECT 'SEED DATA SUMMARY' as info;
@@ -196,6 +224,7 @@ SELECT 'Attendance Settings: ' || COUNT(*) as count FROM attendance_settings;
 SELECT 'Attendance Records: ' || COUNT(*) as count FROM attendance;
 SELECT 'Regularizations: ' || COUNT(*) as count FROM attendance_regularizations;
 SELECT 'Notifications: ' || COUNT(*) as count FROM notifications;
+SELECT 'Daily Reports: ' || COUNT(*) as count FROM daily_reports;
 
 -- Show sample users
 SELECT

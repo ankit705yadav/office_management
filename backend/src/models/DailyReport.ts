@@ -11,22 +11,22 @@ interface DailyReportAttributes {
   id: number;
   userId: number;
   reportDate: Date;
-  summary?: string;
-  totalHours: number;
+  title: string;
+  description?: string;
   status: DailyReportStatus;
   submittedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface DailyReportCreationAttributes extends Optional<DailyReportAttributes, 'id' | 'status' | 'totalHours' | 'createdAt' | 'updatedAt'> {}
+interface DailyReportCreationAttributes extends Optional<DailyReportAttributes, 'id' | 'status' | 'createdAt' | 'updatedAt'> {}
 
 class DailyReport extends Model<DailyReportAttributes, DailyReportCreationAttributes> implements DailyReportAttributes {
   public id!: number;
   public userId!: number;
   public reportDate!: Date;
-  public summary?: string;
-  public totalHours!: number;
+  public title!: string;
+  public description?: string;
   public status!: DailyReportStatus;
   public submittedAt?: Date;
 
@@ -35,7 +35,6 @@ class DailyReport extends Model<DailyReportAttributes, DailyReportCreationAttrib
 
   // Associations
   public readonly user?: User;
-  public readonly entries?: any[];
 }
 
 DailyReport.init(
@@ -55,15 +54,13 @@ DailyReport.init(
       allowNull: false,
       field: 'report_date',
     },
-    summary: {
+    title: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
+    description: {
       type: DataTypes.TEXT,
       allowNull: true,
-    },
-    totalHours: {
-      type: DataTypes.DECIMAL(4, 2),
-      allowNull: false,
-      defaultValue: 0,
-      field: 'total_hours',
     },
     status: {
       type: DataTypes.STRING(20),

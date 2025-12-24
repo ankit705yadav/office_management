@@ -1,30 +1,11 @@
 import api from './api';
 
-export interface DailyReportEntry {
-  id?: number;
-  dailyReportId?: number;
-  projectId?: number;
-  taskId?: number;
-  description: string;
-  hours: number;
-  project?: {
-    id: number;
-    name: string;
-    projectCode?: string;
-  };
-  task?: {
-    id: number;
-    title: string;
-    taskCode?: string;
-  };
-}
-
 export interface DailyReport {
   id: number;
   userId: number;
   reportDate: string;
-  summary?: string;
-  totalHours: number;
+  title: string;
+  description?: string;
   status: 'draft' | 'submitted';
   submittedAt?: string;
   createdAt: string;
@@ -35,18 +16,12 @@ export interface DailyReport {
     lastName: string;
     email: string;
   };
-  entries?: DailyReportEntry[];
 }
 
 export interface CreateReportRequest {
   reportDate: string;
-  summary?: string;
-  entries: {
-    projectId?: number;
-    taskId?: number;
-    description: string;
-    hours: number;
-  }[];
+  title: string;
+  description?: string;
 }
 
 export interface DailyReportFilters {

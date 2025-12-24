@@ -13,7 +13,6 @@ import EmployeeDocument from './EmployeeDocument';
 import TaskAttachment from './TaskAttachment';
 import ProjectAttachment from './ProjectAttachment';
 import DailyReport from './DailyReport';
-import DailyReportEntry from './DailyReportEntry';
 import EmployeeSalary from './EmployeeSalary';
 import Payment from './Payment';
 import Attendance from './Attendance';
@@ -109,18 +108,6 @@ User.hasMany(EmployeeDocument, { foreignKey: 'userId', as: 'documents' });
 DailyReport.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(DailyReport, { foreignKey: 'userId', as: 'dailyReports' });
 
-// Daily Report Entry - Daily Report relationship
-DailyReportEntry.belongsTo(DailyReport, { foreignKey: 'dailyReportId', as: 'dailyReport' });
-DailyReport.hasMany(DailyReportEntry, { foreignKey: 'dailyReportId', as: 'entries' });
-
-// Daily Report Entry - Project relationship
-DailyReportEntry.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
-Project.hasMany(DailyReportEntry, { foreignKey: 'projectId', as: 'dailyReportEntries' });
-
-// Daily Report Entry - Task relationship
-DailyReportEntry.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
-Task.hasMany(DailyReportEntry, { foreignKey: 'taskId', as: 'dailyReportEntries' });
-
 // EmployeeSalary - User relationships
 EmployeeSalary.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(EmployeeSalary, { foreignKey: 'userId', as: 'salaries' });
@@ -161,7 +148,6 @@ export {
   EmployeeCustomField,
   EmployeeDocument,
   DailyReport,
-  DailyReportEntry,
   EmployeeSalary,
   Payment,
   Attendance,
@@ -184,7 +170,6 @@ export default {
   EmployeeCustomField,
   EmployeeDocument,
   DailyReport,
-  DailyReportEntry,
   EmployeeSalary,
   Payment,
   Attendance,

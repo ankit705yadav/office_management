@@ -4,6 +4,7 @@ import {
   Avatar,
   CircularProgress,
   Alert,
+  Chip,
 } from '@mui/material';
 import {
   EventAvailable,
@@ -14,10 +15,13 @@ import {
   TrendingUp,
   Groups,
   CheckCircle,
+  Assignment,
+  AccessTime,
 } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, isPast, parseISO } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { dashboardService } from '@/services/dashboard.service';
+import { projectService, Task } from '@/services/project.service';
 import StatCard from '@/components/cards/StatCard';
 import LeaveCalendar from '@/components/calendar/LeaveCalendar';
 import EmployeesOnLeave from '@/components/dashboard/EmployeesOnLeave';
@@ -29,6 +33,7 @@ const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [birthdays, setBirthdays] = useState<Birthday[]>([]);
   const [anniversaries, setAnniversaries] = useState<WorkAnniversary[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,21 +44,50 @@ const DashboardPage: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsData, birthdaysData, anniversariesData] = await Promise.all([
+      const [statsData, birthdaysData, anniversariesData, tasksData] = await Promise.all([
         dashboardService.getStats(),
         dashboardService.getBirthdays(5),
         dashboardService.getAnniversaries(5),
+        projectService.getAllTasks({ myTasks: true, limit: 10 }),
       ]);
 
       setStats(statsData);
       setBirthdays(birthdaysData);
       setAnniversaries(anniversariesData);
+      // Filter for pending tasks (todo and in_progress)
+      const pending = tasksData.items.filter(
+        (task) => task.status === 'todo' || task.status === 'in_progress'
+      );
+      setPendingTasks(pending);
     } catch (err) {
       setError('Failed to load dashboard data');
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return '#EF4444';
+      case 'high': return '#F59E0B';
+      case 'medium': return '#3B82F6';
+      case 'low': return '#10B981';
+      default: return '#6B7280';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'todo': return 'default';
+      case 'in_progress': return 'primary';
+      default: return 'default';
+    }
+  };
+
+  const isOverdue = (dueDate?: string) => {
+    if (!dueDate) return false;
+    return isPast(parseISO(dueDate));
   };
 
   if (loading) {
@@ -326,6 +360,110 @@ const DashboardPage: React.FC = () => {
 
       {/* Employees On Leave (Manager/Admin only) */}
       {user?.role !== 'employee' && <EmployeesOnLeave />}
+
+      {/* Pending Tasks */}
+      <div
+        className="rounded-xl p-5"
+        style={{
+          backgroundColor: 'var(--surface)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)' }}
+            >
+              <Assignment sx={{ fontSize: 18, color: '#F59E0B' }} />
+            </div>
+            <h3
+              className="text-base font-semibold"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              My Pending Tasks
+            </h3>
+          </div>
+          <button
+            onClick={() => navigate('/projects')}
+            className="text-sm font-medium hover:underline"
+            style={{ color: 'var(--accent-primary)' }}
+          >
+            View All
+          </button>
+        </div>
+        {pendingTasks.length > 0 ? (
+          <div className="space-y-2">
+            {pendingTasks.map((task) => (
+              <div
+                key={task.id}
+                className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                style={{ backgroundColor: 'var(--bg-elevated)' }}
+                onClick={() => navigate(`/projects?taskId=${task.id}`)}
+              >
+                <div
+                  className="w-1 h-10 rounded-full"
+                  style={{ backgroundColor: getPriorityColor(task.priority) }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p
+                      className="text-sm font-medium truncate"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {task.title}
+                    </p>
+                    {task.taskCode && (
+                      <span
+                        className="text-xs px-1.5 py-0.5 rounded"
+                        style={{
+                          backgroundColor: 'var(--surface)',
+                          color: 'var(--text-muted)',
+                        }}
+                      >
+                        {task.taskCode}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span
+                      className="text-xs"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {task.project?.name}
+                    </span>
+                    {task.dueDate && (
+                      <span
+                        className="text-xs flex items-center gap-1"
+                        style={{
+                          color: isOverdue(task.dueDate) ? '#EF4444' : 'var(--text-muted)',
+                        }}
+                      >
+                        <AccessTime sx={{ fontSize: 12 }} />
+                        {format(parseISO(task.dueDate), 'MMM dd')}
+                        {isOverdue(task.dueDate) && ' (Overdue)'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Chip
+                  label={task.status === 'todo' ? 'To Do' : 'In Progress'}
+                  size="small"
+                  color={getStatusColor(task.status) as 'default' | 'primary'}
+                  sx={{ fontSize: '11px', height: '22px' }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p
+            className="text-sm text-center py-4"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            No pending tasks assigned to you
+          </p>
+        )}
+      </div>
 
       {/* Leave & Holiday Calendar */}
       <div

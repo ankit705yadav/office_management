@@ -264,30 +264,18 @@ CREATE TABLE project_attachments (
 -- DAILY REPORTS
 -- ============================================
 
--- Daily reports table
+-- Daily reports table (simplified - title and description only)
 CREATE TABLE daily_reports (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     report_date DATE NOT NULL,
-    summary TEXT,
-    total_hours DECIMAL(4, 2) DEFAULT 0,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
     status VARCHAR(20) DEFAULT 'draft',
     submitted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, report_date)
-);
-
--- Daily report entries table
-CREATE TABLE daily_report_entries (
-    id SERIAL PRIMARY KEY,
-    daily_report_id INTEGER NOT NULL REFERENCES daily_reports(id) ON DELETE CASCADE,
-    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
-    task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
-    description TEXT NOT NULL,
-    hours DECIMAL(4, 2) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -338,8 +326,6 @@ CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX idx_daily_reports_user_id ON daily_reports(user_id);
 CREATE INDEX idx_daily_reports_report_date ON daily_reports(report_date);
 CREATE INDEX idx_daily_reports_user_date ON daily_reports(user_id, report_date);
-CREATE INDEX idx_daily_report_entries_report_id ON daily_report_entries(daily_report_id);
-CREATE INDEX idx_daily_report_entries_project_id ON daily_report_entries(project_id);
 
 -- ============================================
 -- FUNCTIONS & TRIGGERS

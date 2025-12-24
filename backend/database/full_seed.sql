@@ -164,11 +164,27 @@ CREATE TABLE notifications (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(200) NOT NULL,
     message TEXT NOT NULL,
-    type VARCHAR(50) DEFAULT 'info' CHECK (type IN ('info', 'success', 'warning', 'error', 'birthday', 'anniversary', 'leave', 'attendance', 'expense', 'advance_salary', 'payroll', 'inventory', 'task', 'project')),
+    type VARCHAR(50) DEFAULT 'info' CHECK (type IN ('info', 'success', 'warning', 'error', 'birthday', 'anniversary', 'leave', 'attendance', 'expense', 'advance_salary', 'payroll', 'inventory', 'task', 'project', 'daily_report')),
     is_read BOOLEAN DEFAULT FALSE,
     action_url TEXT,
+    related_id INTEGER,
+    related_type VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Daily reports table (simplified - title and description only)
+CREATE TABLE daily_reports (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    report_date DATE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'submitted')),
+    submitted_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, report_date)
 );
 
 -- Employee salary details table
@@ -501,6 +517,9 @@ CREATE INDEX idx_attendance_user_date ON attendance(user_id, date);
 CREATE INDEX idx_attendance_regularizations_user ON attendance_regularizations(user_id);
 CREATE INDEX idx_notifications_user ON notifications(user_id);
 CREATE INDEX idx_notifications_read ON notifications(is_read);
+CREATE INDEX idx_daily_reports_user_id ON daily_reports(user_id);
+CREATE INDEX idx_daily_reports_report_date ON daily_reports(report_date);
+CREATE INDEX idx_daily_reports_user_date ON daily_reports(user_id, report_date);
 CREATE INDEX idx_employee_salary_user_id ON employee_salary_details(user_id);
 CREATE INDEX idx_payroll_user_month_year ON payroll(user_id, month, year);
 CREATE INDEX idx_advance_salary_user ON advance_salary_requests(user_id);
@@ -539,6 +558,9 @@ CREATE TRIGGER update_attendance_regularizations_updated_at BEFORE UPDATE ON att
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_notifications_updated_at BEFORE UPDATE ON notifications
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_daily_reports_updated_at BEFORE UPDATE ON daily_reports
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_employee_salary_details_updated_at BEFORE UPDATE ON employee_salary_details
@@ -705,6 +727,15 @@ INSERT INTO payroll (user_id, month, year, basic_salary, hra, transport_allowanc
 (2, 11, 2025, 65000.00, 26000.00, 1600.00, 4000.00, 96600.00, 7800.00, 12000.00, 20000.00, 76600.00, 1, '2025-11-25'),
 (5, 11, 2025, 50000.00, 20000.00, 1600.00, 2500.00, 74100.00, 6000.00, 8000.00, 14200.00, 59900.00, 1, '2025-11-25'),
 (6, 11, 2025, 48000.00, 19200.00, 1600.00, 2000.00, 70800.00, 5760.00, 7500.00, 13460.00, 57340.00, 1, '2025-11-25');
+
+-- Insert sample daily reports
+INSERT INTO daily_reports (user_id, report_date, title, description, status, submitted_at, created_at) VALUES
+(5, CURRENT_DATE - 1, 'API Development Progress', 'Worked on implementing the user authentication API endpoints. Completed login, logout, and token refresh endpoints. Also started working on the password reset functionality.\n\nKey achievements:\n- Implemented JWT-based authentication\n- Added rate limiting to prevent brute force attacks\n- Wrote unit tests for auth endpoints', 'submitted', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day'),
+(5, CURRENT_DATE - 2, 'Database Schema Design', 'Designed and implemented the database schema for the new inventory management module. Created tables for products, stock movements, and material assignments.\n\nAlso reviewed the existing leave management schema and made some optimizations.', 'submitted', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
+(6, CURRENT_DATE - 1, 'Frontend Dashboard Updates', 'Completed the dashboard redesign with new charts and widgets. Added real-time data refresh and improved the overall user experience.\n\nKey tasks:\n- Implemented ApexCharts for data visualization\n- Added dark mode support\n- Fixed responsive layout issues on mobile devices', 'submitted', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day'),
+(6, CURRENT_DATE - 2, 'Bug Fixes and Code Review', 'Fixed several bugs reported by QA team including the login redirect issue and date formatting problems. Also conducted code review for junior developers'' PRs.', 'submitted', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
+(7, CURRENT_DATE - 1, 'Server Infrastructure Setup', 'Set up the staging environment on AWS. Configured EC2 instances, RDS database, and S3 buckets. Also implemented CI/CD pipeline using GitHub Actions.', 'submitted', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day'),
+(8, CURRENT_DATE, 'Daily Standup and Planning', 'Attended the daily standup meeting and sprint planning session. Identified tasks for the week and assigned them to team members.', 'draft', NULL, NOW());
 
 -- Material Assignments table (for lending equipment to employees)
 CREATE TABLE IF NOT EXISTS material_assignments (

@@ -23,13 +23,9 @@ import {
   Tab,
   Card,
   CardContent,
-  Grid,
-  Autocomplete,
   Paper,
 } from '@mui/material';
 import {
-  Add,
-  Delete,
   Save,
   Send,
   Visibility,
@@ -37,26 +33,14 @@ import {
   AccessTime,
   Person,
 } from '@mui/icons-material';
-import { format, subDays, parseISO, isValid } from 'date-fns';
+import { format, subDays, parseISO } from 'date-fns';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   dailyReportService,
   DailyReport,
-  DailyReportEntry,
   TeamMember,
 } from '@/services/dailyReport.service';
-import { projectService, Project, Task } from '@/services/project.service';
-
-interface ReportEntry {
-  id?: number;
-  projectId?: number;
-  taskId?: number;
-  description: string;
-  hours: number;
-  project?: { id: number; name: string; projectCode?: string };
-  task?: { id: number; title: string; taskCode?: string };
-}
 
 const getStatusColor = (status: string): 'default' | 'warning' | 'success' => {
   switch (status) {
@@ -109,12 +93,8 @@ const DailyReportsPage: React.FC = () => {
   // Today's Report State
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [currentReport, setCurrentReport] = useState<DailyReport | null>(null);
-  const [summary, setSummary] = useState('');
-  const [entries, setEntries] = useState<ReportEntry[]>([{ description: '', hours: 0 }]);
-
-  // Projects and Tasks
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectTasks, setProjectTasks] = useState<{ [key: number]: Task[] }>({});
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
 
   // My Reports State
   const [myReports, setMyReports] = useState<DailyReport[]>([]);
@@ -141,48 +121,17 @@ const DailyReportsPage: React.FC = () => {
     };
   });
 
-  const loadProjects = useCallback(async () => {
-    try {
-      const response = await projectService.getAllProjects({ status: 'active', limit: 100 });
-      setProjects(response.items.filter((p: Project) => !p.isFolder));
-    } catch (error) {
-      console.error('Error loading projects:', error);
-    }
-  }, []);
-
-  const loadTasksForProject = async (projectId: number) => {
-    if (projectTasks[projectId]) return;
-    try {
-      const response = await projectService.getAllTasks({ projectId, limit: 100 });
-      setProjectTasks((prev) => ({ ...prev, [projectId]: response.items }));
-    } catch (error) {
-      console.error('Error loading tasks:', error);
-    }
-  };
-
   const loadReportForDate = useCallback(async (date: string) => {
     try {
       setLoading(true);
       const report = await dailyReportService.getReportByDate(date);
       setCurrentReport(report);
       if (report) {
-        setSummary(report.summary || '');
-        setEntries(
-          report.entries && report.entries.length > 0
-            ? report.entries.map((e) => ({
-                id: e.id,
-                projectId: e.projectId,
-                taskId: e.taskId,
-                description: e.description,
-                hours: e.hours,
-                project: e.project,
-                task: e.task,
-              }))
-            : [{ description: '', hours: 0 }]
-        );
+        setTitle(report.title || '');
+        setDescription(report.description || '');
       } else {
-        setSummary('');
-        setEntries([{ description: '', hours: 0 }]);
+        setTitle('');
+        setDescription('');
       }
     } catch (error) {
       console.error('Error loading report:', error);
@@ -239,11 +188,10 @@ const DailyReportsPage: React.FC = () => {
   }, [isManagerOrAdmin]);
 
   useEffect(() => {
-    loadProjects();
     if (isManagerOrAdmin) {
       loadTeamMembers();
     }
-  }, [loadProjects, loadTeamMembers, isManagerOrAdmin]);
+  }, [loadTeamMembers, isManagerOrAdmin]);
 
   useEffect(() => {
     if (activeTab === 0) {
@@ -255,45 +203,9 @@ const DailyReportsPage: React.FC = () => {
     }
   }, [activeTab, selectedDate, loadReportForDate, loadMyReports, loadTeamReports, isManagerOrAdmin]);
 
-  const handleAddEntry = () => {
-    setEntries([...entries, { description: '', hours: 0 }]);
-  };
-
-  const handleRemoveEntry = (index: number) => {
-    if (entries.length > 1) {
-      setEntries(entries.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleEntryChange = (
-    index: number,
-    field: keyof ReportEntry,
-    value: any
-  ) => {
-    const newEntries = [...entries];
-    newEntries[index] = { ...newEntries[index], [field]: value };
-
-    // Clear task when project changes
-    if (field === 'projectId') {
-      newEntries[index].taskId = undefined;
-      newEntries[index].task = undefined;
-      if (value) {
-        loadTasksForProject(value);
-      }
-    }
-
-    setEntries(newEntries);
-  };
-
-  const calculateTotalHours = () => {
-    return entries.reduce((sum, entry) => sum + Number(entry.hours || 0), 0);
-  };
-
   const handleSave = async (submit: boolean = false) => {
-    // Validate entries
-    const validEntries = entries.filter((e) => e.description.trim() && e.hours > 0);
-    if (validEntries.length === 0) {
-      toast.error('Please add at least one entry with description and hours');
+    if (!title.trim()) {
+      toast.error('Please enter a title for your report');
       return;
     }
 
@@ -301,13 +213,8 @@ const DailyReportsPage: React.FC = () => {
       setSubmitting(true);
       const report = await dailyReportService.createOrUpdateReport({
         reportDate: selectedDate,
-        summary,
-        entries: validEntries.map((e) => ({
-          projectId: e.projectId,
-          taskId: e.taskId,
-          description: e.description,
-          hours: e.hours,
-        })),
+        title: title.trim(),
+        description: description.trim() || undefined,
       });
 
       if (submit) {
@@ -356,10 +263,6 @@ const DailyReportsPage: React.FC = () => {
             size="small"
           />
         )}
-
-        <Typography variant="body2" sx={{ color: 'var(--text-secondary)', ml: 'auto' }}>
-          Total Hours: <strong>{calculateTotalHours().toFixed(1)}</strong>
-        </Typography>
       </Box>
 
       {currentReport?.status === 'submitted' ? (
@@ -372,126 +275,24 @@ const DailyReportsPage: React.FC = () => {
 
       <Card sx={{ mb: 3, bgcolor: 'var(--surface)', border: '1px solid var(--border)' }}>
         <CardContent>
-          <Typography variant="subtitle2" sx={{ mb: 2, color: 'var(--text-primary)' }}>
-            Work Entries
-          </Typography>
+          <TextField
+            fullWidth
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter a title for your daily report..."
+            disabled={currentReport?.status === 'submitted'}
+            sx={{ mb: 3, ...textFieldSx }}
+          />
 
-          {entries.map((entry, index) => (
-            <Box
-              key={index}
-              sx={{
-                display: 'flex',
-                gap: 2,
-                mb: 2,
-                p: 2,
-                bgcolor: 'var(--background)',
-                borderRadius: 1,
-                flexWrap: 'wrap',
-              }}
-            >
-              <Autocomplete
-                options={projects}
-                getOptionLabel={(option) =>
-                  option.projectCode
-                    ? `${option.name} (${option.projectCode})`
-                    : option.name
-                }
-                value={projects.find((p) => p.id === entry.projectId) || null}
-                onChange={(_, newValue) =>
-                  handleEntryChange(index, 'projectId', newValue?.id || undefined)
-                }
-                renderInput={(params) => (
-                  <TextField {...params} label="Project" size="small" sx={textFieldSx} />
-                )}
-                sx={{ minWidth: 200, flex: 1 }}
-                disabled={currentReport?.status === 'submitted'}
-              />
-
-              {entry.projectId && projectTasks[entry.projectId] && (
-                <Autocomplete
-                  options={projectTasks[entry.projectId] || []}
-                  getOptionLabel={(option) =>
-                    option.taskCode
-                      ? `${option.title} (${option.taskCode})`
-                      : option.title
-                  }
-                  value={
-                    projectTasks[entry.projectId]?.find((t) => t.id === entry.taskId) ||
-                    null
-                  }
-                  onChange={(_, newValue) =>
-                    handleEntryChange(index, 'taskId', newValue?.id || undefined)
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} label="Task" size="small" sx={textFieldSx} />
-                  )}
-                  sx={{ minWidth: 200, flex: 1 }}
-                  disabled={currentReport?.status === 'submitted'}
-                />
-              )}
-
-              <TextField
-                label="Description"
-                value={entry.description}
-                onChange={(e) =>
-                  handleEntryChange(index, 'description', e.target.value)
-                }
-                size="small"
-                sx={{ flex: 2, minWidth: 200, ...textFieldSx }}
-                multiline
-                disabled={currentReport?.status === 'submitted'}
-              />
-
-              <TextField
-                label="Hours"
-                type="number"
-                value={entry.hours}
-                onChange={(e) =>
-                  handleEntryChange(index, 'hours', parseFloat(e.target.value) || 0)
-                }
-                size="small"
-                sx={{ width: 100, ...textFieldSx }}
-                inputProps={{ min: 0, max: 24, step: 0.5 }}
-                disabled={currentReport?.status === 'submitted'}
-              />
-
-              {entries.length > 1 && currentReport?.status !== 'submitted' && (
-                <IconButton
-                  onClick={() => handleRemoveEntry(index)}
-                  color="error"
-                  size="small"
-                >
-                  <Delete />
-                </IconButton>
-              )}
-            </Box>
-          ))}
-
-          {currentReport?.status !== 'submitted' && (
-            <Button
-              startIcon={<Add />}
-              onClick={handleAddEntry}
-              variant="outlined"
-              size="small"
-            >
-              Add Entry
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card sx={{ mb: 3, bgcolor: 'var(--surface)', border: '1px solid var(--border)' }}>
-        <CardContent>
-          <Typography variant="subtitle2" sx={{ mb: 2, color: 'var(--text-primary)' }}>
-            Summary
-          </Typography>
           <TextField
             fullWidth
             multiline
-            rows={4}
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            placeholder="Write a summary of your day's work..."
+            rows={8}
+            label="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe your work for the day..."
             disabled={currentReport?.status === 'submitted'}
             sx={textFieldSx}
           />
@@ -528,8 +329,7 @@ const DailyReportsPage: React.FC = () => {
           <TableRow>
             <TableCell sx={{ color: 'var(--text-primary)' }}>Date</TableCell>
             {showUser && <TableCell sx={{ color: 'var(--text-primary)' }}>Employee</TableCell>}
-            <TableCell sx={{ color: 'var(--text-primary)' }}>Total Hours</TableCell>
-            <TableCell sx={{ color: 'var(--text-primary)' }}>Entries</TableCell>
+            <TableCell sx={{ color: 'var(--text-primary)' }}>Title</TableCell>
             <TableCell sx={{ color: 'var(--text-primary)' }}>Status</TableCell>
             <TableCell sx={{ color: 'var(--text-primary)' }}>Actions</TableCell>
           </TableRow>
@@ -537,7 +337,7 @@ const DailyReportsPage: React.FC = () => {
         <TableBody>
           {reports.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={showUser ? 6 : 5} align="center">
+              <TableCell colSpan={showUser ? 5 : 4} align="center">
                 <Typography variant="body2" sx={{ color: 'var(--text-secondary)', py: 4 }}>
                   No reports found
                 </Typography>
@@ -554,9 +354,10 @@ const DailyReportsPage: React.FC = () => {
                     {report.user?.firstName} {report.user?.lastName}
                   </TableCell>
                 )}
-                <TableCell sx={{ color: 'var(--text-primary)' }}>{report.totalHours}h</TableCell>
-                <TableCell sx={{ color: 'var(--text-primary)' }}>
-                  {report.entries?.length || 0} entries
+                <TableCell sx={{ color: 'var(--text-primary)', maxWidth: 300 }}>
+                  <Typography noWrap title={report.title}>
+                    {report.title}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Chip
@@ -746,61 +547,21 @@ const DailyReportsPage: React.FC = () => {
 
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)' }}>
-                  Total Hours
+                  Title
                 </Typography>
-                <Typography sx={{ color: 'var(--text-primary)' }}>
-                  {viewingReport.totalHours} hours
+                <Typography sx={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                  {viewingReport.title}
                 </Typography>
               </Box>
 
-              <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-secondary)' }}>
-                Work Entries
-              </Typography>
-              <Paper sx={{ mb: 2, bgcolor: 'var(--background)' }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ color: 'var(--text-primary)' }}>Project</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)' }}>Task</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)' }}>Description</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)' }}>Hours</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {viewingReport.entries?.map((entry, index) => (
-                      <TableRow key={index}>
-                        <TableCell sx={{ color: 'var(--text-primary)' }}>
-                          {entry.project?.name || '-'}
-                          {entry.project?.projectCode && (
-                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block' }}>
-                              {entry.project.projectCode}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell sx={{ color: 'var(--text-primary)' }}>
-                          {entry.task?.title || '-'}
-                          {entry.task?.taskCode && (
-                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block' }}>
-                              {entry.task.taskCode}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell sx={{ color: 'var(--text-primary)' }}>{entry.description}</TableCell>
-                        <TableCell sx={{ color: 'var(--text-primary)' }}>{entry.hours}h</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Paper>
-
-              {viewingReport.summary && (
+              {viewingReport.description && (
                 <Box>
                   <Typography variant="subtitle2" sx={{ mb: 1, color: 'var(--text-secondary)' }}>
-                    Summary
+                    Description
                   </Typography>
                   <Paper sx={{ p: 2, bgcolor: 'var(--background)' }}>
                     <Typography sx={{ color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
-                      {viewingReport.summary}
+                      {viewingReport.description}
                     </Typography>
                   </Paper>
                 </Box>

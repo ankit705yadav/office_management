@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { DailyReport, DailyReportEntry, User, Project, Task } from '../models';
+import { DailyReport, User } from '../models';
 import { DailyReportStatus } from '../models/DailyReport';
 import { UserRole } from '../types/enums';
 import logger from '../utils/logger';
@@ -16,7 +16,7 @@ const MAX_BACKDATE_DAYS = 7;
 export const createOrUpdateReport = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { reportDate, summary, entries } = req.body;
+    const { reportDate, title, description } = req.body;
 
     // Validate report date
     const parsedDate = parseISO(reportDate);
@@ -53,51 +53,24 @@ export const createOrUpdateReport = async (req: Request, res: Response): Promise
       return;
     }
 
-    // Calculate total hours
-    const totalHours = entries?.reduce((sum: number, entry: any) => sum + Number(entry.hours || 0), 0) || 0;
-
     if (report) {
       // Update existing report
-      await report.update({ summary, totalHours });
-
-      // Delete existing entries and create new ones
-      await DailyReportEntry.destroy({ where: { dailyReportId: report.id } });
+      await report.update({ title, description });
     } else {
       // Create new report
       report = await DailyReport.create({
         userId,
         reportDate: parsedDate,
-        summary,
-        totalHours,
+        title,
+        description,
         status: DailyReportStatus.DRAFT,
       });
-    }
-
-    // Create entries
-    if (entries && entries.length > 0) {
-      for (const entry of entries) {
-        await DailyReportEntry.create({
-          dailyReportId: report.id,
-          projectId: entry.projectId || null,
-          taskId: entry.taskId || null,
-          description: entry.description,
-          hours: entry.hours,
-        });
-      }
     }
 
     // Reload with associations
     const updatedReport = await DailyReport.findByPk(report.id, {
       include: [
         { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
-        {
-          model: DailyReportEntry,
-          as: 'entries',
-          include: [
-            { model: Project, as: 'project', attributes: ['id', 'name', 'projectCode'] },
-            { model: Task, as: 'task', attributes: ['id', 'title', 'taskCode'] },
-          ],
-        },
       ],
     });
 
@@ -123,9 +96,7 @@ export const submitReport = async (req: Request, res: Response): Promise<void> =
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const report = await DailyReport.findByPk(id, {
-      include: [{ model: DailyReportEntry, as: 'entries' }],
-    });
+    const report = await DailyReport.findByPk(id);
 
     if (!report) {
       res.status(404).json({
@@ -151,11 +122,11 @@ export const submitReport = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Validate report has entries
-    if (!report.entries || report.entries.length === 0) {
+    // Validate report has title
+    if (!report.title || report.title.trim() === '') {
       res.status(400).json({
         status: 'error',
-        message: 'Cannot submit empty report. Add at least one entry.',
+        message: 'Cannot submit report without a title.',
       });
       return;
     }
@@ -222,16 +193,6 @@ export const getMyReports = async (req: Request, res: Response): Promise<void> =
 
     const { count, rows: reports } = await DailyReport.findAndCountAll({
       where,
-      include: [
-        {
-          model: DailyReportEntry,
-          as: 'entries',
-          include: [
-            { model: Project, as: 'project', attributes: ['id', 'name', 'projectCode'] },
-            { model: Task, as: 'task', attributes: ['id', 'title', 'taskCode'] },
-          ],
-        },
-      ],
       order: [['reportDate', 'DESC']],
       limit: Number(limit),
       offset,
@@ -314,14 +275,6 @@ export const getTeamReports = async (req: Request, res: Response): Promise<void>
       where,
       include: [
         { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
-        {
-          model: DailyReportEntry,
-          as: 'entries',
-          include: [
-            { model: Project, as: 'project', attributes: ['id', 'name', 'projectCode'] },
-            { model: Task, as: 'task', attributes: ['id', 'title', 'taskCode'] },
-          ],
-        },
       ],
       order: [['reportDate', 'DESC'], ['userId', 'ASC']],
       limit: Number(limit),
@@ -364,14 +317,6 @@ export const getReportByDate = async (req: Request, res: Response): Promise<void
       where: { userId, reportDate: parsedDate },
       include: [
         { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
-        {
-          model: DailyReportEntry,
-          as: 'entries',
-          include: [
-            { model: Project, as: 'project', attributes: ['id', 'name', 'projectCode'] },
-            { model: Task, as: 'task', attributes: ['id', 'title', 'taskCode'] },
-          ],
-        },
       ],
     });
 
@@ -401,14 +346,6 @@ export const getReportById = async (req: Request, res: Response): Promise<void> 
     const report = await DailyReport.findByPk(id, {
       include: [
         { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'managerId'] },
-        {
-          model: DailyReportEntry,
-          as: 'entries',
-          include: [
-            { model: Project, as: 'project', attributes: ['id', 'name', 'projectCode'] },
-            { model: Task, as: 'task', attributes: ['id', 'title', 'taskCode'] },
-          ],
-        },
       ],
     });
 
