@@ -71,6 +71,33 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
 };
 
 /**
+ * Get basic users list for @mentions (accessible by all users)
+ * GET /api/users/list-basic
+ */
+export const getBasicUsersList = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { status = 'active' } = req.query;
+
+    const where: any = {};
+    if (status) where.status = status;
+
+    const users = await User.findAll({
+      where,
+      attributes: ['id', 'firstName', 'lastName', 'email', 'profileImageUrl'],
+      order: [['firstName', 'ASC'], ['lastName', 'ASC']],
+    });
+
+    res.status(200).json(users);
+  } catch (error) {
+    logger.error('Get basic users list error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred while fetching users',
+    });
+  }
+};
+
+/**
  * Get user by ID
  * GET /api/users/:id
  */

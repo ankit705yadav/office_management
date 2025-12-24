@@ -78,10 +78,12 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
 
   const loadUsers = async () => {
     try {
-      const response = await api.get('/users', { params: { status: 'active', limit: 100 } });
-      setUsers(response.data?.data?.users || response.data?.users || response.data?.items || []);
+      // Use a public endpoint that employees can access for @mentions
+      const response = await api.get('/users/list-basic', { params: { status: 'active', limit: 100 } });
+      setUsers(response.data || []);
     } catch (error) {
-      console.error('Error loading users:', error);
+      // Fallback - ignore if user can't fetch users list (employees may not have permission)
+      console.log('Could not load users for mentions');
     }
   };
 
@@ -236,9 +238,11 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
                   {comment.author?.firstName} {comment.author?.lastName}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                  {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                  {comment.isEdited && (
-                    <Tooltip title={`Edited ${format(new Date(comment.editedAt!), 'MMM d, HH:mm')}`}>
+                  {comment.createdAt && !isNaN(new Date(comment.createdAt).getTime())
+                    ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })
+                    : 'just now'}
+                  {comment.isEdited && comment.editedAt && !isNaN(new Date(comment.editedAt).getTime()) && (
+                    <Tooltip title={`Edited ${format(new Date(comment.editedAt), 'MMM d, HH:mm')}`}>
                       <span> (edited)</span>
                     </Tooltip>
                   )}

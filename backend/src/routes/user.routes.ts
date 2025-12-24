@@ -8,6 +8,7 @@ import {
   getUserTeam,
   getAllDepartments,
   generateIdCard,
+  getBasicUsersList,
 } from '../controllers/user.controller';
 import { authenticate } from '../middleware/auth';
 import { requireAdmin, requireManagerOrAdmin, canManageUser } from '../middleware/roleCheck';
@@ -23,6 +24,13 @@ router.use(authenticate);
  * @access  Private (All authenticated users)
  */
 router.get('/departments', getAllDepartments);
+
+/**
+ * @route   GET /api/users/list-basic
+ * @desc    Get basic users list (id, name, email) for @mentions
+ * @access  Private (All authenticated users)
+ */
+router.get('/list-basic', getBasicUsersList);
 
 /**
  * @route   GET /api/users
