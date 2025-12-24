@@ -7,10 +7,8 @@ import {
   Chip,
   Avatar,
   Tooltip,
-  IconButton,
 } from '@mui/material';
 import {
-  Flag,
   AttachFile,
   Warning,
   Schedule,

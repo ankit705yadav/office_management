@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Avatar, CircularProgress, Chip, Tooltip } from '@mui/material';
+import { Avatar, CircularProgress, Tooltip } from '@mui/material';
 import { EventBusy, Schedule, Person } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { dashboardService } from '@/services/dashboard.service';

@@ -17,7 +17,6 @@ const StatCard: React.FC<StatCardProps> = ({
   value,
   subtitle,
   trend,
-  chartColor = '#f14e1e',
   icon,
   iconBgColor,
 }) => {

@@ -38,7 +38,6 @@ import {
   CalendarMonth,
   Close,
   Link as LinkIcon,
-  Person,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -181,7 +180,7 @@ const EmployeesPage: React.FC = () => {
     formState: { errors: createErrors },
     reset: resetCreate,
   } = useForm<CreateEmployeeRequest>({
-    resolver: yupResolver(createEmployeeSchema),
+    resolver: yupResolver(createEmployeeSchema) as any,
     defaultValues: {
       email: '',
       password: '',
@@ -203,7 +202,7 @@ const EmployeesPage: React.FC = () => {
     reset: resetEdit,
     setValue: setEditValue,
   } = useForm<UpdateEmployeeRequest>({
-    resolver: yupResolver(updateEmployeeSchema),
+    resolver: yupResolver(updateEmployeeSchema) as any,
   });
 
   useEffect(() => {

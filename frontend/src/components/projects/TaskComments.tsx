@@ -10,7 +10,6 @@ import {
   Paper,
   Menu,
   MenuItem,
-  Divider,
   Tooltip,
   Chip,
 } from '@mui/material';
@@ -251,13 +250,12 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
       u.lastName.toLowerCase().includes(mentionSearch.toLowerCase())
   );
 
-  const renderMentions = (content: string, mentions: number[]) => {
+  const renderMentions = (content: string, _mentions: number[]) => {
     // Parse @[id:name] pattern and render as chips
     const parts = content.split(/(@\[\d+:[^\]]+\])/g);
     return parts.map((part, i) => {
       const match = part.match(/@\[(\d+):([^\]]+)\]/);
       if (match) {
-        const userId = parseInt(match[1]);
         const userName = match[2];
         return (
           <Chip

@@ -14,7 +14,6 @@ const MiniBarChart: React.FC<MiniBarChartProps> = ({
   if (!data || data.length === 0) return null;
 
   const max = Math.max(...data);
-  const barWidth = 100 / data.length;
 
   return (
     <div className="flex items-end gap-1 h-full">

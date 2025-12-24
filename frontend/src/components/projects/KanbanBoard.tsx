@@ -56,7 +56,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskU
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewOnlyMode, setViewOnlyMode] = useState(false);
-  const [addToColumn, setAddToColumn] = useState<TaskStatus | null>(null);
+  const [, setAddToColumn] = useState<TaskStatus | null>(null);
 
   useEffect(() => {
     loadBoard();
@@ -82,7 +82,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskU
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+    const { destination, source } = result;
 
     // Dropped outside the list
     if (!destination) return;
@@ -97,7 +97,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskU
 
     const sourceColumn = source.droppableId as TaskStatus;
     const destColumn = destination.droppableId as TaskStatus;
-    const taskId = parseInt(draggableId.replace('task-', ''));
 
     // Create new board data
     const newBoardData = { ...boardData };

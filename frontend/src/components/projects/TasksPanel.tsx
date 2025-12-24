@@ -23,7 +23,6 @@ import {
   Avatar,
   FormControlLabel,
   Switch,
-  Alert,
 } from '@mui/material';
 import {
   Add,
@@ -148,21 +147,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
     } catch (error: any) {
       console.error('Error updating task status:', error);
       toast.error('Failed to update task status');
-    }
-  };
-
-  const getStatusColor = (status: string): 'default' | 'info' | 'warning' | 'success' | 'secondary' => {
-    switch (status) {
-      case 'todo':
-        return 'default';
-      case 'in_progress':
-        return 'info';
-      case 'done':
-        return 'success';
-      case 'approved':
-        return 'secondary';
-      default:
-        return 'default';
     }
   };
 

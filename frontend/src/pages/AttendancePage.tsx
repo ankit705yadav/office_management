@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Button,
   Grid,
-  Card,
-  CardContent,
   Chip,
   Table,
   TableBody,

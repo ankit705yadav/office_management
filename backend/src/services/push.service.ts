@@ -26,6 +26,16 @@ export function initializeFirebase(): void {
       return;
     }
 
+    // Check for placeholder values
+    if (
+      config.firebase.projectId.includes('your-') ||
+      config.firebase.clientEmail.includes('your-') ||
+      config.firebase.privateKey.includes('Your_Private_Key_Here')
+    ) {
+      logger.warn('Firebase credentials contain placeholder values. Push notifications will be disabled.');
+      return;
+    }
+
     firebaseApp = admin.initializeApp({
       credential: admin.credential.cert({
         projectId: config.firebase.projectId,
@@ -36,7 +46,8 @@ export function initializeFirebase(): void {
 
     logger.info('Firebase Admin SDK initialized successfully');
   } catch (error) {
-    logger.error('Failed to initialize Firebase Admin SDK:', error);
+    logger.warn('Failed to initialize Firebase Admin SDK. Push notifications will be disabled.');
+    logger.debug('Firebase error details:', error);
   }
 }
 

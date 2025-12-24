@@ -18,7 +18,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  Edit,
   Lock,
   Email,
   Phone,
@@ -53,7 +52,7 @@ const changePasswordSchema = yup.object().shape({
 });
 
 const ProfilePage: React.FC = () => {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
