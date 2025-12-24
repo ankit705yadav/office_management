@@ -597,6 +597,7 @@ export const getTasksForBoard = async (req: Request, res: Response): Promise<voi
     const board = {
       todo: [] as any[],
       in_progress: [] as any[],
+      blocked: [] as any[],
       done: [] as any[],
       approved: [] as any[],
     };
@@ -611,6 +612,7 @@ export const getTasksForBoard = async (req: Request, res: Response): Promise<voi
       const status = task.status as string;
       if (status === 'todo') board.todo.push(taskData);
       else if (status === 'in_progress') board.in_progress.push(taskData);
+      else if (status === 'blocked') board.blocked.push(taskData);
       else if (status === 'done') board.done.push(taskData);
       else if (status === 'approved') board.approved.push(taskData);
     });

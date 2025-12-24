@@ -17,7 +17,12 @@ import {
   Paper,
   Alert,
 } from '@mui/material';
-import { Close, Save, Warning, Link as LinkIcon } from '@mui/icons-material';
+import { Close, Save, Warning, Link as LinkIcon, ExpandMore } from '@mui/icons-material';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import TaskComments from './TaskComments';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import {
@@ -53,9 +58,11 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
   viewOnly = false,
   onSaved,
 }) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [fullTask, setFullTask] = useState<Task | null>(null); // Full task data with dependencies
   const [formData, setFormData] = useState({
     projectId: defaultProjectId || null as number | null,
     title: '',
@@ -67,27 +74,62 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
     estimatedHours: '',
     tags: [] as string[],
     attachmentUrl: '',
+    blockReason: '',
   });
   const [tagInput, setTagInput] = useState('');
+  const [originalTags, setOriginalTags] = useState<string[]>([]);
+  const [blockingDependencies, setBlockingDependencies] = useState<Task[]>([]);
+  const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
+
+  // Role-based permissions - use fullTask for accurate data
+  const currentTask = fullTask || task;
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+  const isAssignee = currentTask?.assigneeId === user?.id;
+  const canEditAllFields = isAdminOrManager || !task; // New tasks or admin/manager
+  const canEditTask = canEditAllFields || isAssignee;
+
+  // Fetch full task data including dependencies
+  const loadFullTask = async (taskId: number) => {
+    try {
+      const taskData = await projectService.getTaskById(taskId);
+      setFullTask(taskData);
+      return taskData;
+    } catch (error) {
+      console.error('Error loading task:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     if (open) {
       loadProjects();
       loadUsers();
       if (task) {
-        setFormData({
-          projectId: task.projectId,
-          title: task.title || '',
-          description: task.description || '',
-          status: task.status || 'todo',
-          priority: task.priority || 'medium',
-          assigneeId: task.assigneeId || null,
-          dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
-          estimatedHours: task.estimatedHours?.toString() || '',
-          tags: task.tags || [],
-          attachmentUrl: (task as any).attachmentUrl || '',
+        // Fetch full task data to get dependencies
+        loadFullTask(task.id).then((fetchedTask) => {
+          const taskData = fetchedTask || task;
+          const taskTags = taskData.tags || [];
+          setFormData({
+            projectId: taskData.projectId,
+            title: taskData.title || '',
+            description: taskData.description || '',
+            status: taskData.status || 'todo',
+            priority: taskData.priority || 'medium',
+            assigneeId: taskData.assigneeId || null,
+            dueDate: taskData.dueDate ? taskData.dueDate.split('T')[0] : '',
+            estimatedHours: taskData.estimatedHours?.toString() || '',
+            tags: taskTags,
+            attachmentUrl: (taskData as any).attachmentUrl || '',
+            blockReason: taskData.blockReason || '',
+          });
+          setOriginalTags(taskTags);
+          // Initialize blocking dependencies from existing task dependencies
+          setBlockingDependencies(taskData.dependencies || []);
+          // Load available tasks for blocking
+          loadAvailableTasks(taskData.projectId);
         });
       } else {
+        setFullTask(null);
         setFormData({
           projectId: defaultProjectId || null,
           title: '',
@@ -99,10 +141,26 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           estimatedHours: '',
           tags: [],
           attachmentUrl: '',
+          blockReason: '',
         });
+        setOriginalTags([]);
+        setBlockingDependencies([]);
+        setAvailableTasks([]);
       }
+    } else {
+      setFullTask(null);
     }
   }, [open, task, defaultProjectId]);
+
+  const loadAvailableTasks = async (projectId: number) => {
+    try {
+      const response = await projectService.getAllTasks({ projectId, limit: 100 });
+      // Filter out current task
+      setAvailableTasks(response.items.filter((t) => t.id !== task?.id));
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    }
+  };
 
   const loadProjects = async () => {
     try {
@@ -137,12 +195,52 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
       return;
     }
 
+    // Validate blocking requirements when status is blocked
+    if (formData.status === 'blocked' && task) {
+      const hasBlockingDeps = blockingDependencies.length > 0;
+      const hasBlockReason = formData.blockReason.trim().length > 0;
+
+      if (!hasBlockingDeps && !hasBlockReason) {
+        toast.error('To block a task, select blocking tasks or provide a reason');
+        return;
+      }
+    }
+
     try {
       setLoading(true);
 
       let savedTask: Task;
 
       if (task) {
+        // Handle blocked status - sync dependencies
+        if (formData.status === 'blocked') {
+          const currentDepIds = new Set((currentTask?.dependencies || []).map((d) => d.id));
+          const newDepIds = new Set(blockingDependencies.map((d) => d.id));
+
+          // Find dependencies to add
+          const toAdd = blockingDependencies.filter((d) => !currentDepIds.has(d.id)).map((d) => d.id);
+          // Find dependencies to remove
+          const toRemove = (currentTask?.dependencies || []).filter((d) => !newDepIds.has(d.id)).map((d) => d.id);
+
+          // Add new dependencies
+          if (toAdd.length > 0) {
+            await projectService.addTaskDependencies(task.id, toAdd);
+          }
+
+          // Remove deleted dependencies
+          for (const depId of toRemove) {
+            await projectService.removeTaskDependency(task.id, depId);
+          }
+
+          // Update task status if changing to blocked
+          if (currentTask?.status !== 'blocked') {
+            await projectService.updateTaskStatus(task.id, 'blocked', {
+              blockReason: formData.blockReason || undefined,
+            });
+          }
+        }
+
+        // Update task fields
         const data: UpdateTaskRequest = {
           title: formData.title,
           description: formData.description || undefined,
@@ -153,15 +251,18 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : null,
           tags: formData.tags,
           attachmentUrl: formData.attachmentUrl || undefined,
+          blockReason: formData.status === 'blocked' ? (formData.blockReason || null) : null,
         } as any;
         savedTask = await projectService.updateTask(task.id, data);
         toast.success('Task updated successfully');
       } else {
+        // New task - don't allow blocked status on creation
+        const createStatus = formData.status === 'blocked' ? 'todo' : formData.status;
         const data: CreateTaskRequest = {
           projectId: formData.projectId!,
           title: formData.title,
           description: formData.description || undefined,
-          status: formData.status as any,
+          status: createStatus as any,
           priority: formData.priority as any,
           assigneeId: formData.assigneeId || undefined,
           dueDate: formData.dueDate || undefined,
@@ -190,7 +291,19 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
   };
 
   const handleRemoveTag = (tag: string) => {
+    // Assignees can only remove tags they added (not original tags)
+    if (!canEditAllFields && originalTags.includes(tag)) {
+      return; // Assignee cannot remove original tags
+    }
     setFormData({ ...formData, tags: formData.tags.filter((t) => t !== tag) });
+  };
+
+  // Check if a tag can be deleted by the current user
+  const canDeleteTag = (tag: string) => {
+    if (viewOnly) return false;
+    if (canEditAllFields) return true; // Admin/manager can delete any tag
+    // Assignee can only delete tags they added (not in originalTags)
+    return !originalTags.includes(tag);
   };
 
   const selectedAssignee = users.find((u) => u.id === formData.assigneeId) || null;
@@ -208,13 +321,13 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
         </Box>
         <Divider sx={{ mb: 2 }} />
 
-        {task?.assigneeOnLeave && (
+        {currentTask?.assigneeOnLeave && (
           <Alert severity="warning" icon={<Warning />} sx={{ mb: 2 }}>
             The assignee is currently on leave
           </Alert>
         )}
 
-        {task?.isOverdue && (
+        {currentTask?.isOverdue && (
           <Alert severity="error" sx={{ mb: 2 }}>
             This task is overdue
           </Alert>
@@ -255,7 +368,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             required
-            disabled={viewOnly}
+            disabled={viewOnly || !canEditAllFields}
             sx={{ mb: 2 }}
           />
 
@@ -266,19 +379,30 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             multiline
             rows={3}
-            disabled={viewOnly}
+            disabled={viewOnly || !canEditAllFields}
             sx={{ mb: 2 }}
           />
 
-          <Autocomplete
-            options={users}
-            getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-            value={selectedAssignee}
-            onChange={(_, newValue) => setFormData({ ...formData, assigneeId: newValue?.id || null })}
-            disabled={viewOnly}
-            renderInput={(params) => <TextField {...params} label="Assignee" />}
-            sx={{ mb: 2 }}
-          />
+          {/* Assignee field - hidden for assignees, only visible to admin/manager */}
+          {canEditAllFields ? (
+            <Autocomplete
+              options={users}
+              getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+              value={selectedAssignee}
+              onChange={(_, newValue) => setFormData({ ...formData, assigneeId: newValue?.id || null })}
+              disabled={viewOnly}
+              renderInput={(params) => <TextField {...params} label="Assignee" />}
+              sx={{ mb: 2 }}
+            />
+          ) : task?.assignee ? (
+            <TextField
+              fullWidth
+              label="Assignee"
+              value={`${task.assignee.firstName} ${task.assignee.lastName}`}
+              disabled
+              sx={{ mb: 2 }}
+            />
+          ) : null}
 
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
             <FormControl fullWidth>
@@ -291,6 +415,8 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               >
                 <MenuItem value="todo">To Do</MenuItem>
                 <MenuItem value="in_progress">In Progress</MenuItem>
+                {/* Blocked status only available for existing tasks */}
+                {task && <MenuItem value="blocked">Blocked</MenuItem>}
                 <MenuItem value="done">Done</MenuItem>
                 <MenuItem value="approved">Approved</MenuItem>
               </Select>
@@ -302,7 +428,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                 value={formData.priority}
                 label="Priority"
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                disabled={viewOnly}
+                disabled={viewOnly || !canEditAllFields}
               >
                 <MenuItem value="low">Low</MenuItem>
                 <MenuItem value="medium">Medium</MenuItem>
@@ -312,6 +438,85 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             </FormControl>
           </Box>
 
+          {/* Blocking Section - shown when status is blocked */}
+          {formData.status === 'blocked' && currentTask && (
+            <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'error.lighter' }}>
+              <Typography variant="subtitle2" gutterBottom sx={{ color: 'error.main' }}>
+                Blocking Information
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                Specify blocking tasks and/or provide a reason
+              </Typography>
+
+              {/* Blocking Tasks - editable */}
+              <Autocomplete
+                multiple
+                options={availableTasks}
+                getOptionLabel={(option) =>
+                  `${option.taskCode || `#${option.id}`}: ${option.title}`
+                }
+                value={blockingDependencies}
+                onChange={(_, newValue) => setBlockingDependencies(newValue)}
+                disabled={viewOnly}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                      <Chip
+                        size="small"
+                        label={option.status === 'done' || option.status === 'approved' ? '✓' : '○'}
+                        color={option.status === 'done' || option.status === 'approved' ? 'success' : 'default'}
+                        sx={{ minWidth: 28 }}
+                      />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2">
+                          {option.taskCode || `#${option.id}`}: {option.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {option.status} {option.assignee ? `• ${option.assignee.firstName} ${option.assignee.lastName}` : ''}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </li>
+                )}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={option.id}
+                      size="small"
+                      label={`${option.taskCode || `#${option.id}`}: ${option.title.substring(0, 20)}${option.title.length > 20 ? '...' : ''}`}
+                      color={option.status === 'done' || option.status === 'approved' ? 'success' : 'warning'}
+                      variant="outlined"
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size="small"
+                    label="Blocking Tasks"
+                    placeholder="Select tasks that are blocking this one..."
+                  />
+                )}
+                sx={{ mb: 2 }}
+              />
+
+              {/* Block Reason */}
+              <TextField
+                fullWidth
+                size="small"
+                label="Block Reason"
+                value={formData.blockReason}
+                onChange={(e) => setFormData({ ...formData, blockReason: e.target.value })}
+                placeholder="e.g., Waiting for client approval, external dependency..."
+                multiline
+                rows={2}
+                disabled={viewOnly}
+              />
+            </Paper>
+          )}
+
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
             <TextField
               fullWidth
@@ -320,7 +525,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               value={formData.dueDate}
               onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
               InputLabelProps={{ shrink: true }}
-              disabled={viewOnly}
+              disabled={viewOnly || !canEditAllFields}
             />
             <TextField
               fullWidth
@@ -328,7 +533,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               type="number"
               value={formData.estimatedHours}
               onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
-              disabled={viewOnly}
+              disabled={viewOnly || !canEditAllFields}
             />
           </Box>
 
@@ -343,11 +548,12 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                   key={tag}
                   label={tag}
                   size="small"
-                  onDelete={viewOnly ? undefined : () => handleRemoveTag(tag)}
+                  onDelete={canDeleteTag(tag) ? () => handleRemoveTag(tag) : undefined}
+                  variant={originalTags.includes(tag) && !canEditAllFields ? 'outlined' : 'filled'}
                 />
               ))}
             </Box>
-            {!viewOnly && (
+            {!viewOnly && canEditTask && (
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField
                   size="small"
@@ -363,13 +569,13 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             )}
           </Box>
 
-          {/* Attachment Link */}
+          {/* Attachment Link - only editable by admin/manager */}
           <TextField
             fullWidth
             label="Attachment Link"
             value={formData.attachmentUrl}
             onChange={(e) => setFormData({ ...formData, attachmentUrl: e.target.value })}
-            disabled={viewOnly}
+            disabled={viewOnly || !canEditAllFields}
             placeholder="https://drive.google.com/..."
             InputProps={{
               startAdornment: <LinkIcon sx={{ mr: 1, color: 'var(--text-muted)' }} />,
@@ -378,27 +584,49 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           />
 
           {/* Task Meta */}
-          {task && (
+          {currentTask && (
             <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-              {task.creator && (
+              {currentTask.creator && (
                 <Typography variant="caption" color="text.secondary" display="block">
-                  Created by: {task.creator.firstName} {task.creator.lastName}
+                  Created by: {currentTask.creator.firstName} {currentTask.creator.lastName}
                 </Typography>
               )}
-              {task.createdAt && (
+              {currentTask.createdAt && (
                 <Typography variant="caption" color="text.secondary" display="block">
-                  Created: {format(new Date(task.createdAt), 'MMM dd, yyyy HH:mm')}
+                  Created: {format(new Date(currentTask.createdAt), 'MMM dd, yyyy HH:mm')}
                 </Typography>
               )}
-              {task.updatedAt && (
+              {currentTask.updatedAt && (
                 <Typography variant="caption" color="text.secondary" display="block">
-                  Updated: {format(new Date(task.updatedAt), 'MMM dd, yyyy HH:mm')}
+                  Updated: {format(new Date(currentTask.updatedAt), 'MMM dd, yyyy HH:mm')}
                 </Typography>
               )}
             </Paper>
           )}
 
-          {!viewOnly && (
+          {/* Comments Section */}
+          {currentTask && (
+            <Accordion sx={{ mb: 2 }} defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography variant="subtitle2">
+                  Comments {currentTask.commentCount ? `(${currentTask.commentCount})` : ''}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <TaskComments
+                  taskId={currentTask.id}
+                  canComment={
+                    user?.role === 'admin' ||
+                    user?.role === 'manager' ||
+                    currentTask.assigneeId === user?.id ||
+                    currentTask.createdBy === user?.id
+                  }
+                />
+              </AccordionDetails>
+            </Accordion>
+          )}
+
+          {!viewOnly && canEditTask && (
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button variant="outlined" fullWidth onClick={onClose}>
                 Cancel

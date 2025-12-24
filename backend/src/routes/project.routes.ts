@@ -23,6 +23,13 @@ import {
   addTaskAttachment,
   deleteTaskAttachment,
   getTasksByUser,
+  getTaskDependencies,
+  addTaskDependencies,
+  removeTaskDependency,
+  getTaskComments,
+  createTaskComment,
+  updateTaskComment,
+  deleteTaskComment,
 } from '../controllers/task.controller';
 
 const router = express.Router();
@@ -88,5 +95,30 @@ router.patch('/tasks/:id/status', updateTaskStatus);
 // Task attachments (link-based)
 router.post('/tasks/:id/attachments', addTaskAttachment);
 router.delete('/tasks/:id/attachments/:attachmentId', deleteTaskAttachment);
+
+// ==================== Task Dependencies ====================
+
+// Get task dependencies
+router.get('/tasks/:id/dependencies', getTaskDependencies);
+
+// Add dependencies to a task (admin/manager or task assignee)
+router.post('/tasks/:id/dependencies', addTaskDependencies);
+
+// Remove a dependency from a task (admin/manager or task assignee)
+router.delete('/tasks/:id/dependencies/:dependencyId', removeTaskDependency);
+
+// ==================== Task Comments ====================
+
+// Get task comments
+router.get('/tasks/:taskId/comments', getTaskComments);
+
+// Create a comment
+router.post('/tasks/:taskId/comments', createTaskComment);
+
+// Update a comment
+router.put('/tasks/:taskId/comments/:commentId', updateTaskComment);
+
+// Delete a comment
+router.delete('/tasks/:taskId/comments/:commentId', deleteTaskComment);
 
 export default router;

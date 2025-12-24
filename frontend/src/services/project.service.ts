@@ -52,7 +52,7 @@ export interface Task {
   projectId: number;
   title: string;
   description?: string;
-  status: 'todo' | 'in_progress' | 'done' | 'approved';
+  status: 'todo' | 'in_progress' | 'blocked' | 'done' | 'approved';
   priority: 'low' | 'medium' | 'high' | 'critical';
   assigneeId?: number;
   dueDate?: string;
@@ -88,6 +88,11 @@ export interface Task {
   attachments?: TaskAttachment[];
   dependsOn?: Task;
   dependentTasks?: Task[];
+  dependencies?: Task[];
+  blockingTasks?: Task[];
+  isBlocked?: boolean;
+  blockReason?: string;
+  commentCount?: number;
   assigneeOnLeave?: boolean;
   isOverdue?: boolean;
 }
@@ -109,6 +114,32 @@ export interface TaskAttachment {
 export interface TaskAttachmentLink {
   linkTitle: string;
   linkUrl: string;
+}
+
+export interface TaskComment {
+  id: number;
+  taskId: number;
+  userId: number;
+  parentId?: number;
+  content: string;
+  mentions: number[];
+  isEdited: boolean;
+  editedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  author?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    profileImageUrl?: string;
+  };
+  replies?: TaskComment[];
+}
+
+export interface TaskDependencyInfo {
+  dependencies: Task[];
+  isBlocked: boolean;
+  blockingTasks: Task[];
 }
 
 export interface CreateProjectRequest {
@@ -157,7 +188,7 @@ export interface CreateTaskRequest {
 export interface UpdateTaskRequest {
   title?: string;
   description?: string;
-  status?: 'todo' | 'in_progress' | 'done' | 'approved';
+  status?: 'todo' | 'in_progress' | 'blocked' | 'done' | 'approved';
   priority?: 'low' | 'medium' | 'high' | 'critical';
   assigneeId?: number | null;
   dueDate?: string | null;
@@ -169,6 +200,7 @@ export interface UpdateTaskRequest {
   actualHours?: number;
   dependsOnTaskId?: number | null;
   sortOrder?: number;
+  blockReason?: string | null;
 }
 
 export interface ProjectStats {
@@ -181,6 +213,7 @@ export interface ProjectStats {
   tasksByStatus: {
     todo?: number;
     in_progress?: number;
+    blocked?: number;
     approved?: number;
     done?: number;
   };
@@ -240,13 +273,14 @@ export interface TaskFilterParams {
 export interface BoardData {
   todo: Task[];
   in_progress: Task[];
-  approved: Task[];
+  blocked: Task[];
   done: Task[];
+  approved: Task[];
 }
 
 export interface ReorderTaskItem {
   id: number;
-  status: 'todo' | 'in_progress' | 'done' | 'approved';
+  status: 'todo' | 'in_progress' | 'blocked' | 'done' | 'approved';
   sortOrder: number;
 }
 
@@ -342,8 +376,16 @@ class ProjectService {
     await api.delete(`/projects/tasks/${id}`);
   }
 
-  async updateTaskStatus(id: number, status: string): Promise<Task> {
-    const response = await api.patch(`/projects/tasks/${id}/status`, { status });
+  async updateTaskStatus(
+    id: number,
+    status: string,
+    options?: { blockReason?: string; dependencyIds?: number[] }
+  ): Promise<Task> {
+    const response = await api.patch(`/projects/tasks/${id}/status`, {
+      status,
+      blockReason: options?.blockReason,
+      dependencyIds: options?.dependencyIds,
+    });
     return response.data;
   }
 
@@ -362,6 +404,40 @@ class ProjectService {
   }>> {
     const response = await api.get('/projects/tasks/by-user');
     return response.data;
+  }
+
+  // Task Dependencies
+  async getTaskDependencies(taskId: number): Promise<TaskDependencyInfo> {
+    const response = await api.get(`/projects/tasks/${taskId}/dependencies`);
+    return response.data;
+  }
+
+  async addTaskDependencies(taskId: number, dependencyIds: number[]): Promise<void> {
+    await api.post(`/projects/tasks/${taskId}/dependencies`, { dependencyIds });
+  }
+
+  async removeTaskDependency(taskId: number, dependencyId: number): Promise<void> {
+    await api.delete(`/projects/tasks/${taskId}/dependencies/${dependencyId}`);
+  }
+
+  // Task Comments
+  async getTaskComments(taskId: number): Promise<TaskComment[]> {
+    const response = await api.get(`/projects/tasks/${taskId}/comments`);
+    return response.data;
+  }
+
+  async createTaskComment(taskId: number, content: string, parentId?: number): Promise<TaskComment> {
+    const response = await api.post(`/projects/tasks/${taskId}/comments`, { content, parentId });
+    return response.data;
+  }
+
+  async updateTaskComment(taskId: number, commentId: number, content: string): Promise<TaskComment> {
+    const response = await api.put(`/projects/tasks/${taskId}/comments/${commentId}`, { content });
+    return response.data;
+  }
+
+  async deleteTaskComment(taskId: number, commentId: number): Promise<void> {
+    await api.delete(`/projects/tasks/${taskId}/comments/${commentId}`);
   }
 }
 

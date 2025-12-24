@@ -12,6 +12,8 @@ import EmployeeCustomField from './EmployeeCustomField';
 import EmployeeDocument from './EmployeeDocument';
 import TaskAttachment from './TaskAttachment';
 import ProjectAttachment from './ProjectAttachment';
+import TaskDependency from './TaskDependency';
+import TaskComment from './TaskComment';
 import DailyReport from './DailyReport';
 import EmployeeSalary from './EmployeeSalary';
 import Payment from './Payment';
@@ -74,9 +76,27 @@ User.hasMany(Task, { foreignKey: 'assigneeId', as: 'assignedTasks' });
 Task.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
 User.hasMany(Task, { foreignKey: 'createdBy', as: 'createdTasks' });
 
-// Task - self-referential relationship (dependencies)
+// Task - self-referential relationship (single dependency - legacy)
 Task.belongsTo(Task, { foreignKey: 'dependsOnTaskId', as: 'dependsOn' });
 Task.hasMany(Task, { foreignKey: 'dependsOnTaskId', as: 'dependentTasks' });
+
+// Task Dependencies (many-to-many via junction table)
+TaskDependency.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
+TaskDependency.belongsTo(Task, { foreignKey: 'dependsOnTaskId', as: 'dependsOnTask' });
+TaskDependency.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+
+Task.hasMany(TaskDependency, { foreignKey: 'taskId', as: 'taskDependencies' });
+Task.hasMany(TaskDependency, { foreignKey: 'dependsOnTaskId', as: 'dependentTaskRelations' });
+
+// Task Comments (with threading)
+TaskComment.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
+Task.hasMany(TaskComment, { foreignKey: 'taskId', as: 'comments' });
+
+TaskComment.belongsTo(User, { foreignKey: 'userId', as: 'author' });
+User.hasMany(TaskComment, { foreignKey: 'userId', as: 'taskComments' });
+
+TaskComment.belongsTo(TaskComment, { foreignKey: 'parentId', as: 'parent' });
+TaskComment.hasMany(TaskComment, { foreignKey: 'parentId', as: 'replies' });
 
 // Task Attachment relationships
 TaskAttachment.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
@@ -144,6 +164,8 @@ export {
   Task,
   TaskAttachment,
   ProjectAttachment,
+  TaskDependency,
+  TaskComment,
   Notification,
   EmployeeCustomField,
   EmployeeDocument,
@@ -166,6 +188,8 @@ export default {
   Task,
   TaskAttachment,
   ProjectAttachment,
+  TaskDependency,
+  TaskComment,
   Notification,
   EmployeeCustomField,
   EmployeeDocument,

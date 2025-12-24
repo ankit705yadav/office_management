@@ -15,6 +15,9 @@ import {
   Warning,
   Schedule,
   PriorityHigh,
+  Block,
+  Link as LinkIcon,
+  Comment,
 } from '@mui/icons-material';
 import { format, isPast, isToday } from 'date-fns';
 import { Task } from '../../services/project.service';
@@ -37,7 +40,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index, onClick }) => {
     }
   };
 
+  const isBlocked = task.status === 'blocked' || task.isBlocked;
   const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== 'done';
+  const dependencyCount = task.dependencies?.length || 0;
+  const blockingCount = task.blockingTasks?.length || 0;
   const isDueToday = task.dueDate && isToday(new Date(task.dueDate));
 
   return (
@@ -53,8 +59,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index, onClick }) => {
             cursor: 'pointer',
             transition: 'box-shadow 0.2s, transform 0.2s',
             borderLeft: 4,
-            borderLeftColor: getPriorityColor(task.priority),
-            backgroundColor: snapshot.isDragging ? 'action.selected' : 'background.paper',
+            borderLeftColor: isBlocked ? '#d32f2f' : getPriorityColor(task.priority),
+            backgroundColor: snapshot.isDragging ? 'action.selected' : isBlocked ? 'error.lighter' : 'background.paper',
             transform: snapshot.isDragging ? 'rotate(3deg)' : 'none',
             boxShadow: snapshot.isDragging ? 4 : 1,
             '&:hover': {
@@ -65,11 +71,22 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index, onClick }) => {
           <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
             {/* Task Code & Action Required */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-              {task.taskCode && (
-                <Typography variant="caption" color="text.secondary" fontFamily="monospace">
-                  {task.taskCode}
-                </Typography>
-              )}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {task.taskCode && (
+                  <Typography variant="caption" color="text.secondary" fontFamily="monospace">
+                    {task.taskCode}
+                  </Typography>
+                )}
+                {isBlocked && (
+                  <Chip
+                    icon={<Block sx={{ fontSize: 12 }} />}
+                    label="Blocked"
+                    size="small"
+                    color="error"
+                    sx={{ height: 18, fontSize: 10, '& .MuiChip-icon': { fontSize: 12, ml: 0.5 } }}
+                  />
+                )}
+              </Box>
               {task.actionRequired && (
                 <Tooltip title="Action Required">
                   <PriorityHigh fontSize="small" color="error" />
@@ -148,8 +165,30 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index, onClick }) => {
                 )}
               </Box>
 
-              {/* Right side: Due date & attachments */}
+              {/* Right side: Due date, attachments, dependencies, comments */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {dependencyCount > 0 && (
+                  <Tooltip title={`${dependencyCount} ${dependencyCount === 1 ? 'dependency' : 'dependencies'}${blockingCount > 0 ? ` (${blockingCount} blocking)` : ''}`}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <LinkIcon fontSize="small" sx={{ fontSize: 14, color: blockingCount > 0 ? 'error.main' : 'text.secondary' }} />
+                      <Typography variant="caption" color={blockingCount > 0 ? 'error.main' : 'text.secondary'}>
+                        {dependencyCount}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                )}
+
+                {task.commentCount !== undefined && task.commentCount > 0 && (
+                  <Tooltip title={`${task.commentCount} ${task.commentCount === 1 ? 'comment' : 'comments'}`}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Comment fontSize="small" sx={{ fontSize: 14, color: 'text.secondary' }} />
+                      <Typography variant="caption" color="text.secondary">
+                        {task.commentCount}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                )}
+
                 {task.attachments && task.attachments.length > 0 && (
                   <Tooltip title={`${task.attachments.length} attachment(s)`}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>

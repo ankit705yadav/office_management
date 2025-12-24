@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op, Sequelize } from 'sequelize';
-import { Task, Project, User, TaskAttachment, LeaveRequest } from '../models';
+import { Task, Project, User, TaskAttachment, LeaveRequest, TaskDependency, TaskComment } from '../models';
 import { TaskStatus, TaskPriority } from '../types/enums';
 import logger from '../utils/logger';
 import { createNotification } from '../services/notification.service';
@@ -197,10 +197,32 @@ export const getTaskById = async (req: Request, res: Response): Promise<void> =>
       assigneeOnLeave = !!leave;
     }
 
+    // Fetch dependencies for blocked status info
+    const dependencies = await TaskDependency.findAll({
+      where: { taskId: id },
+      include: [{
+        model: Task,
+        as: 'dependsOnTask',
+        attributes: ['id', 'title', 'taskCode', 'status', 'priority', 'assigneeId', 'dueDate'],
+        include: [{
+          model: User,
+          as: 'assignee',
+          attributes: ['id', 'firstName', 'lastName'],
+        }],
+      }],
+    });
+
+    const dependencyTasks = dependencies.map((d: any) => d.dependsOnTask);
+
+    // Get comment count
+    const commentCount = await TaskComment.count({ where: { taskId: id } });
+
     res.json({
       ...task.toJSON(),
       assigneeOnLeave,
       isOverdue: task.dueDate && new Date(task.dueDate) < today && task.status !== TaskStatus.DONE,
+      dependencies: dependencyTasks,
+      commentCount,
     });
   } catch (error) {
     logger.error('Error fetching task:', error);
@@ -280,7 +302,7 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
 export const updateTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { title, description, status, priority, assigneeId, dueDate, estimatedHours, tags, attachmentUrl } = req.body;
+    const { title, description, status, priority, assigneeId, dueDate, estimatedHours, tags, attachmentUrl, blockReason } = req.body;
 
     const task = await Task.findByPk(id, {
       include: [{ model: Project, as: 'project', attributes: ['id', 'name'] }],
@@ -294,6 +316,19 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
     const previousAssigneeId = task.assigneeId;
     const previousStatus = task.status;
 
+    // Determine blockReason value
+    let newBlockReason: string | undefined = task.blockReason;
+    if (status === TaskStatus.BLOCKED || task.status === TaskStatus.BLOCKED) {
+      // If moving to blocked or already blocked, update blockReason if provided
+      if (blockReason !== undefined) {
+        newBlockReason = blockReason || undefined;
+      }
+    }
+    if (status && status !== TaskStatus.BLOCKED && task.status === TaskStatus.BLOCKED) {
+      // If moving out of blocked status, clear blockReason
+      newBlockReason = undefined;
+    }
+
     await task.update({
       title: title ?? task.title,
       description: description ?? task.description,
@@ -304,6 +339,7 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
       estimatedHours: estimatedHours !== undefined ? estimatedHours : task.estimatedHours,
       tags: tags ?? task.tags,
       attachmentUrl: attachmentUrl !== undefined ? attachmentUrl : task.attachmentUrl,
+      blockReason: newBlockReason,
     });
 
     // Send notification if assignee changed
@@ -382,7 +418,7 @@ export const deleteTask = async (req: Request, res: Response): Promise<void> => 
 export const updateTaskStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, blockReason, dependencyIds } = req.body;
 
     if (!status || !Object.values(TaskStatus).includes(status)) {
       res.status(400).json({ message: 'Valid status is required' });
@@ -398,8 +434,60 @@ export const updateTaskStatus = async (req: Request, res: Response): Promise<voi
       return;
     }
 
+    // Check if task is blocked and trying to move to in_progress
+    if (status === TaskStatus.IN_PROGRESS && task.status === TaskStatus.BLOCKED) {
+      const { isBlocked, blockingTasks } = await computeBlockedStatus(parseInt(id));
+      if (isBlocked) {
+        res.status(400).json({
+          message: 'Cannot move blocked task to In Progress. Complete blocking dependencies first.',
+          blockingTasks,
+        });
+        return;
+      }
+    }
+
+    // If setting to blocked, must provide either dependencies or blockReason
+    if (status === TaskStatus.BLOCKED && task.status !== TaskStatus.BLOCKED) {
+      const hasDependencies = dependencyIds && dependencyIds.length > 0;
+      const hasBlockReason = blockReason && blockReason.trim().length > 0;
+
+      // Check existing dependencies
+      const existingDeps = await TaskDependency.count({ where: { taskId: parseInt(id) } });
+
+      if (!hasDependencies && existingDeps === 0 && !hasBlockReason) {
+        res.status(400).json({
+          message: 'To block a task, you must either add blocking dependencies or provide a block reason',
+        });
+        return;
+      }
+
+      // Add new dependencies if provided
+      if (hasDependencies) {
+        for (const depId of dependencyIds) {
+          // Check for circular dependency
+          const wouldBeCircular = await checkCircularDependency(parseInt(id), depId);
+          if (!wouldBeCircular) {
+            await TaskDependency.findOrCreate({
+              where: { taskId: parseInt(id), dependsOnTaskId: depId },
+              defaults: { taskId: parseInt(id), dependsOnTaskId: depId, createdBy: req.user?.id },
+            });
+          }
+        }
+      }
+    }
+
     const previousStatus = task.status;
-    await task.update({ status });
+
+    // Update task with status and blockReason
+    const updateData: any = { status };
+    if (status === TaskStatus.BLOCKED) {
+      updateData.blockReason = blockReason || task.blockReason;
+    } else {
+      // Clear blockReason when moving out of blocked status
+      updateData.blockReason = null;
+    }
+
+    await task.update(updateData);
 
     // Send notification if completed
     if (status === TaskStatus.DONE && previousStatus !== TaskStatus.DONE && task.createdBy && task.createdBy !== req.user?.id) {
@@ -412,6 +500,12 @@ export const updateTaskStatus = async (req: Request, res: Response): Promise<voi
         relatedId: task.id,
         relatedType: 'task',
       });
+    }
+
+    // Update dependent tasks when completed
+    if ((status === TaskStatus.DONE || status === TaskStatus.APPROVED) &&
+        previousStatus !== TaskStatus.DONE && previousStatus !== TaskStatus.APPROVED) {
+      await updateDependentTasksOnCompletion(parseInt(id));
     }
 
     logger.info(`Task status updated: ${id} -> ${status}`);
@@ -530,5 +624,512 @@ export const getTasksByUser = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     logger.error('Error fetching tasks by user:', error);
     res.status(500).json({ message: 'Failed to fetch tasks by user' });
+  }
+};
+
+// ============================================
+// TASK DEPENDENCIES
+// ============================================
+
+// Helper function to compute blocked status for a task
+export const computeBlockedStatus = async (taskId: number): Promise<{
+  isBlocked: boolean;
+  blockingTasks: any[];
+}> => {
+  const dependencies = await TaskDependency.findAll({
+    where: { taskId },
+    include: [{
+      model: Task,
+      as: 'dependsOnTask',
+      attributes: ['id', 'title', 'taskCode', 'status'],
+    }],
+  });
+
+  const blockingTasks = dependencies
+    .filter((dep: any) => {
+      const status = dep.dependsOnTask?.status;
+      return status !== TaskStatus.DONE && status !== TaskStatus.APPROVED;
+    })
+    .map((dep: any) => dep.dependsOnTask);
+
+  return {
+    isBlocked: blockingTasks.length > 0,
+    blockingTasks,
+  };
+};
+
+// Get task dependencies
+export const getTaskDependencies = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const task = await Task.findByPk(id);
+    if (!task) {
+      res.status(404).json({ message: 'Task not found' });
+      return;
+    }
+
+    const dependencies = await TaskDependency.findAll({
+      where: { taskId: id },
+      include: [{
+        model: Task,
+        as: 'dependsOnTask',
+        attributes: ['id', 'title', 'taskCode', 'status', 'priority', 'assigneeId', 'dueDate'],
+        include: [{
+          model: User,
+          as: 'assignee',
+          attributes: ['id', 'firstName', 'lastName'],
+        }],
+      }],
+    });
+
+    const { isBlocked, blockingTasks } = await computeBlockedStatus(parseInt(id));
+
+    res.json({
+      dependencies: dependencies.map((d: any) => d.dependsOnTask),
+      isBlocked,
+      blockingTasks,
+    });
+  } catch (error) {
+    logger.error('Error fetching task dependencies:', error);
+    res.status(500).json({ message: 'Failed to fetch dependencies' });
+  }
+};
+
+// Add dependencies to a task
+export const addTaskDependencies = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { dependencyIds } = req.body;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    if (!dependencyIds || !Array.isArray(dependencyIds) || dependencyIds.length === 0) {
+      res.status(400).json({ message: 'dependencyIds array is required' });
+      return;
+    }
+
+    const task = await Task.findByPk(id);
+    if (!task) {
+      res.status(404).json({ message: 'Task not found' });
+      return;
+    }
+
+    // Permission check: admin/manager or task assignee
+    const isAdminOrManager = userRole === 'admin' || userRole === 'manager';
+    const isAssignee = task.assigneeId === userId;
+    if (!isAdminOrManager && !isAssignee) {
+      res.status(403).json({ message: 'You do not have permission to modify dependencies for this task' });
+      return;
+    }
+
+    // Validate all dependency tasks exist and are in the same project
+    const dependencyTasks = await Task.findAll({
+      where: { id: { [Op.in]: dependencyIds } },
+    });
+
+    if (dependencyTasks.length !== dependencyIds.length) {
+      res.status(400).json({ message: 'Some dependency tasks not found' });
+      return;
+    }
+
+    // Check for same project constraint
+    const invalidDeps = dependencyTasks.filter((t: any) => t.projectId !== task.projectId);
+    if (invalidDeps.length > 0) {
+      res.status(400).json({ message: 'Dependencies must be from the same project' });
+      return;
+    }
+
+    // Check for circular dependencies
+    for (const depId of dependencyIds) {
+      if (depId === parseInt(id)) {
+        res.status(400).json({ message: 'Task cannot depend on itself' });
+        return;
+      }
+
+      // Check if adding this would create a cycle
+      const wouldCreateCycle = await checkCircularDependency(parseInt(id), depId);
+      if (wouldCreateCycle) {
+        res.status(400).json({ message: `Adding dependency ${depId} would create a circular dependency` });
+        return;
+      }
+    }
+
+    // Create dependencies (ignore duplicates)
+    const created = [];
+    for (const depId of dependencyIds) {
+      const existing = await TaskDependency.findOne({
+        where: { taskId: id, dependsOnTaskId: depId },
+      });
+
+      if (!existing) {
+        const dep = await TaskDependency.create({
+          taskId: parseInt(id),
+          dependsOnTaskId: depId,
+          createdBy: req.user?.id,
+        });
+        created.push(dep);
+      }
+    }
+
+    // Update task blocked status
+    const { isBlocked } = await computeBlockedStatus(parseInt(id));
+    if (isBlocked && task.status !== TaskStatus.BLOCKED) {
+      await task.update({ status: TaskStatus.BLOCKED });
+    }
+
+    logger.info(`Dependencies added to task ${id}: ${dependencyIds.join(', ')}`);
+    res.status(201).json({ message: 'Dependencies added', count: created.length });
+  } catch (error) {
+    logger.error('Error adding task dependencies:', error);
+    res.status(500).json({ message: 'Failed to add dependencies' });
+  }
+};
+
+// Helper to check for circular dependencies
+const checkCircularDependency = async (taskId: number, newDepId: number, visited: Set<number> = new Set()): Promise<boolean> => {
+  if (visited.has(newDepId)) {
+    return newDepId === taskId;
+  }
+
+  visited.add(newDepId);
+
+  // Get dependencies of the new dependency
+  const deps = await TaskDependency.findAll({
+    where: { taskId: newDepId },
+    attributes: ['dependsOnTaskId'],
+  });
+
+  for (const dep of deps) {
+    if ((dep as any).dependsOnTaskId === taskId) {
+      return true;
+    }
+    const hasCycle = await checkCircularDependency(taskId, (dep as any).dependsOnTaskId, visited);
+    if (hasCycle) return true;
+  }
+
+  return false;
+};
+
+// Remove a dependency from a task
+export const removeTaskDependency = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, dependencyId } = req.params;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    const task = await Task.findByPk(id);
+    if (!task) {
+      res.status(404).json({ message: 'Task not found' });
+      return;
+    }
+
+    // Permission check: admin/manager or task assignee
+    const isAdminOrManager = userRole === 'admin' || userRole === 'manager';
+    const isAssignee = task.assigneeId === userId;
+    if (!isAdminOrManager && !isAssignee) {
+      res.status(403).json({ message: 'You do not have permission to modify dependencies for this task' });
+      return;
+    }
+
+    const dependency = await TaskDependency.findOne({
+      where: { taskId: id, dependsOnTaskId: dependencyId },
+    });
+
+    if (!dependency) {
+      res.status(404).json({ message: 'Dependency not found' });
+      return;
+    }
+
+    await dependency.destroy();
+
+    // Re-check blocked status
+    if (task.status === TaskStatus.BLOCKED) {
+      const { isBlocked } = await computeBlockedStatus(parseInt(id));
+      if (!isBlocked) {
+        await task.update({ status: TaskStatus.TODO });
+      }
+    }
+
+    logger.info(`Dependency removed from task ${id}: ${dependencyId}`);
+    res.json({ message: 'Dependency removed' });
+  } catch (error) {
+    logger.error('Error removing task dependency:', error);
+    res.status(500).json({ message: 'Failed to remove dependency' });
+  }
+};
+
+// Update dependent tasks when a task is completed
+export const updateDependentTasksOnCompletion = async (completedTaskId: number): Promise<void> => {
+  try {
+    // Find all tasks that depend on this completed task
+    const dependentRelations = await TaskDependency.findAll({
+      where: { dependsOnTaskId: completedTaskId },
+    });
+
+    for (const relation of dependentRelations) {
+      const taskId = (relation as any).taskId;
+      const task = await Task.findByPk(taskId);
+
+      if (task && task.status === TaskStatus.BLOCKED) {
+        const { isBlocked } = await computeBlockedStatus(taskId);
+        if (!isBlocked) {
+          await task.update({ status: TaskStatus.TODO });
+          logger.info(`Task ${taskId} unblocked after completion of ${completedTaskId}`);
+        }
+      }
+    }
+  } catch (error) {
+    logger.error('Error updating dependent tasks:', error);
+  }
+};
+
+// ============================================
+// TASK COMMENTS
+// ============================================
+
+// Helper to parse @mentions from content
+const parseMentions = (content: string): number[] => {
+  const mentionPattern = /@\[(\d+)\]/g;
+  const mentions: number[] = [];
+  let match;
+  while ((match = mentionPattern.exec(content)) !== null) {
+    mentions.push(parseInt(match[1], 10));
+  }
+  return [...new Set(mentions)];
+};
+
+// Check if user can comment on a task
+const canComment = async (userId: number, userRole: string, task: any): Promise<boolean> => {
+  if (userRole === 'admin' || userRole === 'manager') {
+    return true;
+  }
+  // Assignee or creator can comment
+  return task.assigneeId === userId || task.createdBy === userId;
+};
+
+// Get task comments
+export const getTaskComments = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { taskId } = req.params;
+
+    const task = await Task.findByPk(taskId);
+    if (!task) {
+      res.status(404).json({ message: 'Task not found' });
+      return;
+    }
+
+    // Get top-level comments (no parent)
+    const comments = await TaskComment.findAll({
+      where: { taskId, parentId: { [Op.eq]: null as any } },
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['id', 'firstName', 'lastName', 'profileImageUrl'],
+        },
+        {
+          model: TaskComment,
+          as: 'replies',
+          include: [{
+            model: User,
+            as: 'author',
+            attributes: ['id', 'firstName', 'lastName', 'profileImageUrl'],
+          }],
+          separate: true,
+          order: [['createdAt', 'ASC']],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json(comments);
+  } catch (error) {
+    logger.error('Error fetching task comments:', error);
+    res.status(500).json({ message: 'Failed to fetch comments' });
+  }
+};
+
+// Create a comment
+export const createTaskComment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { taskId } = req.params;
+    const { content, parentId } = req.body;
+    const userId = req.user?.id;
+    const userRole = req.user?.role || '';
+
+    if (!content || content.trim().length === 0) {
+      res.status(400).json({ message: 'Content is required' });
+      return;
+    }
+
+    const task = await Task.findByPk(taskId, {
+      include: [{ model: Project, as: 'project', attributes: ['id', 'name'] }],
+    });
+
+    if (!task) {
+      res.status(404).json({ message: 'Task not found' });
+      return;
+    }
+
+    // Check permission
+    const hasPermission = await canComment(userId!, userRole, task);
+    if (!hasPermission) {
+      res.status(403).json({ message: 'You do not have permission to comment on this task' });
+      return;
+    }
+
+    // Validate parent comment if provided
+    if (parentId) {
+      const parentComment = await TaskComment.findOne({
+        where: { id: parentId, taskId },
+      });
+      if (!parentComment) {
+        res.status(400).json({ message: 'Parent comment not found' });
+        return;
+      }
+    }
+
+    // Parse mentions
+    const mentions = parseMentions(content);
+
+    // Create comment
+    const comment = await TaskComment.create({
+      taskId: parseInt(taskId),
+      userId: userId!,
+      parentId: parentId || null,
+      content: content.trim(),
+      mentions,
+    });
+
+    // Send notifications to mentioned users
+    for (const mentionedUserId of mentions) {
+      if (mentionedUserId !== userId) {
+        await createNotification({
+          userId: mentionedUserId,
+          type: 'task',
+          title: 'You were mentioned in a comment',
+          message: `You were mentioned in a comment on task "${task.title}"`,
+          actionUrl: `/projects?task=${taskId}`,
+          relatedId: parseInt(taskId),
+          relatedType: 'task_comment',
+        });
+      }
+    }
+
+    // Notify task assignee if not the commenter and not already mentioned
+    if (task.assigneeId && task.assigneeId !== userId && !mentions.includes(task.assigneeId)) {
+      await createNotification({
+        userId: task.assigneeId,
+        type: 'task',
+        title: 'New comment on your task',
+        message: `New comment on task "${task.title}"`,
+        actionUrl: `/projects?task=${taskId}`,
+        relatedId: parseInt(taskId),
+        relatedType: 'task_comment',
+      });
+    }
+
+    // Fetch comment with author
+    const createdComment = await TaskComment.findByPk(comment.id, {
+      include: [{
+        model: User,
+        as: 'author',
+        attributes: ['id', 'firstName', 'lastName', 'profileImageUrl'],
+      }],
+    });
+
+    logger.info(`Comment created on task ${taskId} by user ${userId}`);
+    res.status(201).json(createdComment);
+  } catch (error) {
+    logger.error('Error creating task comment:', error);
+    res.status(500).json({ message: 'Failed to create comment' });
+  }
+};
+
+// Update a comment
+export const updateTaskComment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { taskId, commentId } = req.params;
+    const { content } = req.body;
+    const userId = req.user?.id;
+    const userRole = req.user?.role || '';
+
+    if (!content || content.trim().length === 0) {
+      res.status(400).json({ message: 'Content is required' });
+      return;
+    }
+
+    const comment = await TaskComment.findOne({
+      where: { id: commentId, taskId },
+    });
+
+    if (!comment) {
+      res.status(404).json({ message: 'Comment not found' });
+      return;
+    }
+
+    // Only author or admin can edit
+    if (comment.userId !== userId && userRole !== 'admin') {
+      res.status(403).json({ message: 'You can only edit your own comments' });
+      return;
+    }
+
+    // Parse new mentions
+    const mentions = parseMentions(content);
+
+    await comment.update({
+      content: content.trim(),
+      mentions,
+      isEdited: true,
+      editedAt: new Date(),
+    });
+
+    // Fetch updated comment with author
+    const updatedComment = await TaskComment.findByPk(commentId, {
+      include: [{
+        model: User,
+        as: 'author',
+        attributes: ['id', 'firstName', 'lastName', 'profileImageUrl'],
+      }],
+    });
+
+    logger.info(`Comment ${commentId} updated on task ${taskId}`);
+    res.json(updatedComment);
+  } catch (error) {
+    logger.error('Error updating task comment:', error);
+    res.status(500).json({ message: 'Failed to update comment' });
+  }
+};
+
+// Delete a comment
+export const deleteTaskComment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { taskId, commentId } = req.params;
+    const userId = req.user?.id;
+    const userRole = req.user?.role || '';
+
+    const comment = await TaskComment.findOne({
+      where: { id: commentId, taskId },
+    });
+
+    if (!comment) {
+      res.status(404).json({ message: 'Comment not found' });
+      return;
+    }
+
+    // Only author, admin, or manager can delete
+    if (comment.userId !== userId && userRole !== 'admin' && userRole !== 'manager') {
+      res.status(403).json({ message: 'You do not have permission to delete this comment' });
+      return;
+    }
+
+    await comment.destroy();
+
+    logger.info(`Comment ${commentId} deleted from task ${taskId}`);
+    res.json({ message: 'Comment deleted' });
+  } catch (error) {
+    logger.error('Error deleting task comment:', error);
+    res.status(500).json({ message: 'Failed to delete comment' });
   }
 };

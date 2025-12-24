@@ -20,6 +20,7 @@ export interface TaskAttributes {
   actualHours: number;
   dependsOnTaskId?: number;
   sortOrder: number;
+  blockReason?: string; // Reason for manual blocking (when no dependencies)
   createdBy?: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -45,6 +46,7 @@ class Task extends Model<TaskAttributes, TaskCreationAttributes> implements Task
   public actualHours!: number;
   public dependsOnTaskId?: number;
   public sortOrder!: number;
+  public blockReason?: string;
   public createdBy?: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -143,6 +145,11 @@ Task.init(
       type: DataTypes.INTEGER,
       defaultValue: 0,
       field: 'sort_order',
+    },
+    blockReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'block_reason',
     },
   },
   {

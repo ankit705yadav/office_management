@@ -236,6 +236,7 @@ CREATE TABLE tasks (
     actual_hours DECIMAL(8, 2) DEFAULT 0,
     depends_on_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
     sort_order INTEGER DEFAULT 0,
+    block_reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -258,6 +259,31 @@ CREATE TABLE project_attachments (
     link_title VARCHAR(255) NOT NULL,
     link_url TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Task dependencies table (many-to-many for chained tasks)
+CREATE TABLE task_dependencies (
+    id SERIAL PRIMARY KEY,
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    depends_on_task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(task_id, depends_on_task_id),
+    CHECK(task_id != depends_on_task_id)
+);
+
+-- Task comments table (with threading support)
+CREATE TABLE task_comments (
+    id SERIAL PRIMARY KEY,
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    parent_id INTEGER REFERENCES task_comments(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    mentions INTEGER[] DEFAULT '{}',
+    is_edited BOOLEAN DEFAULT FALSE,
+    edited_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -320,6 +346,14 @@ CREATE INDEX idx_tasks_assignee_id ON tasks(assignee_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 CREATE INDEX idx_tasks_due_date ON tasks(due_date);
 
+CREATE INDEX idx_task_dependencies_task_id ON task_dependencies(task_id);
+CREATE INDEX idx_task_dependencies_depends_on ON task_dependencies(depends_on_task_id);
+
+CREATE INDEX idx_task_comments_task_id ON task_comments(task_id);
+CREATE INDEX idx_task_comments_user_id ON task_comments(user_id);
+CREATE INDEX idx_task_comments_parent_id ON task_comments(parent_id);
+CREATE INDEX idx_task_comments_created_at ON task_comments(created_at);
+
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 
@@ -361,6 +395,9 @@ CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON tasks
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_task_comments_updated_at BEFORE UPDATE ON task_comments
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
