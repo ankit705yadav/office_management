@@ -4,6 +4,7 @@ import { Task, Project, User, TaskAttachment, LeaveRequest, TaskDependency, Task
 import { TaskStatus, TaskPriority } from '../types/enums';
 import logger from '../utils/logger';
 import { createNotification } from '../services/notification.service';
+import { emitToUser, emitToUsers } from '../services/socket.service';
 
 // Get all tasks with pagination and filters
 export const getAllTasks = async (req: Request, res: Response): Promise<void> => {
@@ -889,8 +890,9 @@ export const updateDependentTasksOnCompletion = async (completedTaskId: number):
 // ============================================
 
 // Helper to parse @mentions from content
+// Matches both @[5] and @[5:John Doe] formats
 const parseMentions = (content: string): number[] => {
-  const mentionPattern = /@\[(\d+)\]/g;
+  const mentionPattern = /@\[(\d+)(?::[^\]]+)?\]/g;
   const mentions: number[] = [];
   let match;
   while ((match = mentionPattern.exec(content)) !== null) {
@@ -992,6 +994,7 @@ export const createTaskComment = async (req: Request, res: Response): Promise<vo
     }
 
     // Validate parent comment if provided
+    let parentCommentAuthorId: number | null = null;
     if (parentId) {
       const parentComment = await TaskComment.findOne({
         where: { id: parentId, taskId },
@@ -1000,6 +1003,7 @@ export const createTaskComment = async (req: Request, res: Response): Promise<vo
         res.status(400).json({ message: 'Parent comment not found' });
         return;
       }
+      parentCommentAuthorId = parentComment.userId;
     }
 
     // Parse mentions
@@ -1042,6 +1046,24 @@ export const createTaskComment = async (req: Request, res: Response): Promise<vo
       });
     }
 
+    // Notify parent comment author if this is a reply
+    if (
+      parentCommentAuthorId &&
+      parentCommentAuthorId !== userId &&
+      !mentions.includes(parentCommentAuthorId) &&
+      parentCommentAuthorId !== task.assigneeId
+    ) {
+      await createNotification({
+        userId: parentCommentAuthorId,
+        type: 'task',
+        title: 'Someone replied to your comment',
+        message: `Someone replied to your comment on task "${task.title}"`,
+        actionUrl: `/projects?task=${taskId}`,
+        relatedId: parseInt(taskId),
+        relatedType: 'task_comment',
+      });
+    }
+
     // Fetch comment with author
     const createdComment = await TaskComment.findByPk(comment.id, {
       include: [{
@@ -1052,6 +1074,22 @@ export const createTaskComment = async (req: Request, res: Response): Promise<vo
     });
 
     logger.info(`Comment created on task ${taskId} by user ${userId}`);
+
+    // Emit real-time event to task viewers
+    const viewers = new Set<number>();
+    if (task.assigneeId) viewers.add(task.assigneeId);
+    if (task.createdBy) viewers.add(task.createdBy);
+    if (parentCommentAuthorId) viewers.add(parentCommentAuthorId);
+    mentions.forEach((id) => viewers.add(id));
+    viewers.delete(userId!); // Don't notify the commenter
+
+    if (viewers.size > 0) {
+      emitToUsers([...viewers], 'taskCommentAdded', {
+        taskId: parseInt(taskId),
+        comment: createdComment,
+      });
+    }
+
     res.status(201).json(createdComment);
   } catch (error) {
     logger.error('Error creating task comment:', error);
@@ -1106,6 +1144,22 @@ export const updateTaskComment = async (req: Request, res: Response): Promise<vo
       }],
     });
 
+    // Emit real-time event
+    const task = await Task.findByPk(taskId);
+    if (task) {
+      const viewers = new Set<number>();
+      if (task.assigneeId) viewers.add(task.assigneeId);
+      if (task.createdBy) viewers.add(task.createdBy);
+      viewers.delete(userId!);
+
+      if (viewers.size > 0) {
+        emitToUsers([...viewers], 'taskCommentUpdated', {
+          taskId: parseInt(taskId),
+          comment: updatedComment,
+        });
+      }
+    }
+
     logger.info(`Comment ${commentId} updated on task ${taskId}`);
     res.json(updatedComment);
   } catch (error) {
@@ -1137,6 +1191,22 @@ export const deleteTaskComment = async (req: Request, res: Response): Promise<vo
     }
 
     await comment.destroy();
+
+    // Emit real-time event
+    const task = await Task.findByPk(taskId);
+    if (task) {
+      const viewers = new Set<number>();
+      if (task.assigneeId) viewers.add(task.assigneeId);
+      if (task.createdBy) viewers.add(task.createdBy);
+      viewers.delete(userId!);
+
+      if (viewers.size > 0) {
+        emitToUsers([...viewers], 'taskCommentDeleted', {
+          taskId: parseInt(taskId),
+          commentId: parseInt(commentId),
+        });
+      }
+    }
 
     logger.info(`Comment ${commentId} deleted from task ${taskId}`);
     res.json({ message: 'Comment deleted' });

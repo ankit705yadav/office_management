@@ -27,6 +27,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { projectService, TaskComment } from '../../services/project.service';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocket } from '../../contexts/SocketContext';
 
 interface User {
   id: number;
@@ -43,6 +44,7 @@ interface TaskCommentsProps {
 
 const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
   const { user: currentUser } = useAuth();
+  const { socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -63,6 +65,75 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
     loadComments();
     loadUsers();
   }, [taskId]);
+
+  // Real-time comment updates via socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleCommentAdded = (data: { taskId: number; comment: TaskComment }) => {
+      if (data.taskId === taskId) {
+        // Add new comment or reply
+        if (data.comment.parentId) {
+          // It's a reply - add to parent's replies
+          setComments((prev) =>
+            prev.map((c) =>
+              c.id === data.comment.parentId
+                ? { ...c, replies: [...(c.replies || []), data.comment] }
+                : c
+            )
+          );
+        } else {
+          // Top-level comment - add to beginning
+          setComments((prev) => [{ ...data.comment, replies: [] }, ...prev]);
+        }
+      }
+    };
+
+    const handleCommentUpdated = (data: { taskId: number; comment: TaskComment }) => {
+      if (data.taskId === taskId) {
+        setComments((prev) =>
+          prev.map((c) => {
+            if (c.id === data.comment.id) {
+              return { ...data.comment, replies: c.replies };
+            }
+            // Check replies
+            if (c.replies?.some((r) => r.id === data.comment.id)) {
+              return {
+                ...c,
+                replies: c.replies.map((r) =>
+                  r.id === data.comment.id ? data.comment : r
+                ),
+              };
+            }
+            return c;
+          })
+        );
+      }
+    };
+
+    const handleCommentDeleted = (data: { taskId: number; commentId: number }) => {
+      if (data.taskId === taskId) {
+        setComments((prev) => {
+          // Remove top-level comment or reply
+          const filtered = prev.filter((c) => c.id !== data.commentId);
+          return filtered.map((c) => ({
+            ...c,
+            replies: c.replies?.filter((r) => r.id !== data.commentId) || [],
+          }));
+        });
+      }
+    };
+
+    socket.on('taskCommentAdded', handleCommentAdded);
+    socket.on('taskCommentUpdated', handleCommentUpdated);
+    socket.on('taskCommentDeleted', handleCommentDeleted);
+
+    return () => {
+      socket.off('taskCommentAdded', handleCommentAdded);
+      socket.off('taskCommentUpdated', handleCommentUpdated);
+      socket.off('taskCommentDeleted', handleCommentDeleted);
+    };
+  }, [socket, taskId]);
 
   const loadComments = async () => {
     try {
