@@ -173,9 +173,9 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
 
   const loadUsers = async () => {
     try {
-      const response = await api.get('/users', { params: { status: 'active', limit: 100 } });
-      // API returns { status: 'success', data: { users: [...] } }
-      setUsers(response.data?.data?.users || response.data?.users || response.data?.items || []);
+      // Use list-basic endpoint that all users can access
+      const response = await api.get('/users/list-basic', { params: { status: 'active' } });
+      setUsers(response.data || []);
     } catch (error) {
       console.error('Error loading users:', error);
     }
@@ -415,8 +415,8 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               >
                 <MenuItem value="todo">To Do</MenuItem>
                 <MenuItem value="in_progress">In Progress</MenuItem>
-                {/* Blocked status only available for existing tasks */}
-                {task && <MenuItem value="blocked">Blocked</MenuItem>}
+                {/* Blocked status only available for existing tasks or when already blocked */}
+                {(task || formData.status === 'blocked') && <MenuItem value="blocked">Blocked</MenuItem>}
                 <MenuItem value="done">Done</MenuItem>
                 <MenuItem value="approved">Approved</MenuItem>
               </Select>
