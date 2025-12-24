@@ -937,10 +937,10 @@ export const getTaskComments = async (req: Request, res: Response): Promise<void
             attributes: ['id', 'firstName', 'lastName', 'profileImageUrl'],
           }],
           separate: true,
-          order: [['createdAt', 'ASC']],
+          order: [['created_at', 'ASC']],
         },
       ],
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
     });
 
     res.json(comments);
