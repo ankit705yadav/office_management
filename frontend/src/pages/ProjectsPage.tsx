@@ -12,6 +12,7 @@ import {
   ViewKanban,
   TableChart,
   FolderOpen,
+  Assessment,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,10 +21,11 @@ import ProjectFormDrawer from '../components/projects/ProjectFormDrawer';
 import TasksPanel from '../components/projects/TasksPanel';
 import ProjectSidebar from '../components/projects/ProjectSidebar';
 import KanbanBoard from '../components/projects/KanbanBoard';
+import TaskReportPanel from '../components/projects/TaskReportPanel';
 
 const ProjectsPage: React.FC = () => {
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState<'table' | 'board'>('board');
+  const [viewMode, setViewMode] = useState<'table' | 'board' | 'report'>('board');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [stats, setStats] = useState<ProjectStats | null>(null);
   const [tasksAtRisk, setTasksAtRisk] = useState<TasksAtRisk | null>(null);
@@ -188,9 +190,9 @@ const ProjectsPage: React.FC = () => {
           )}
 
           {/* View Mode Tabs */}
-          {selectedProject && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Tabs value={viewMode} onChange={(_, v) => setViewMode(v)}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tabs value={viewMode} onChange={(_, v) => setViewMode(v)}>
+              {selectedProject && (
                 <Tab
                   value="board"
                   icon={<ViewKanban fontSize="small" />}
@@ -198,21 +200,32 @@ const ProjectsPage: React.FC = () => {
                   iconPosition="start"
                   sx={{ minHeight: 40 }}
                 />
+              )}
+              <Tab
+                value="table"
+                icon={<TableChart fontSize="small" />}
+                label="Table"
+                iconPosition="start"
+                sx={{ minHeight: 40 }}
+              />
+              {canManage && (
                 <Tab
-                  value="table"
-                  icon={<TableChart fontSize="small" />}
-                  label="Table"
+                  value="report"
+                  icon={<Assessment fontSize="small" />}
+                  label="Report"
                   iconPosition="start"
                   sx={{ minHeight: 40 }}
                 />
-              </Tabs>
-            </Box>
-          )}
+              )}
+            </Tabs>
+          </Box>
         </Box>
 
         {/* Content Area */}
         <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
-          {selectedProject ? (
+          {viewMode === 'report' ? (
+            <TaskReportPanel projectId={selectedProject?.id} />
+          ) : selectedProject ? (
             viewMode === 'board' ? (
               <KanbanBoard
                 projectId={selectedProject.id}

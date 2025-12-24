@@ -764,3 +764,131 @@ export const createTaskWithCode = async (req: Request, res: Response): Promise<v
     res.status(500).json({ message: 'Failed to create task' });
   }
 };
+
+// Get task reports per user (Manager/Admin only)
+export const getTaskReports = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { projectId, userId: filterUserId, startDate, endDate } = req.query;
+
+    // Build where clause for tasks
+    const taskWhere: any = {};
+    if (projectId) {
+      taskWhere.projectId = projectId;
+    }
+    if (filterUserId) {
+      taskWhere.assigneeId = filterUserId;
+    }
+
+    // Get all users with their task counts
+    const users = await User.findAll({
+      where: { status: 'active' },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'profileImageUrl', 'role'],
+      include: [
+        {
+          model: Department,
+          as: 'department',
+          attributes: ['id', 'name'],
+        },
+      ],
+      order: [['firstName', 'ASC'], ['lastName', 'ASC']],
+    });
+
+    // Get task statistics for each user
+    const userReports = await Promise.all(
+      users.map(async (user) => {
+        const userTaskWhere: any = { ...taskWhere, assigneeId: user.id };
+
+        // Total tasks
+        const totalTasks = await Task.count({ where: userTaskWhere });
+
+        // Tasks by status
+        const todoTasks = await Task.count({
+          where: { ...userTaskWhere, status: TaskStatus.TODO },
+        });
+        const inProgressTasks = await Task.count({
+          where: { ...userTaskWhere, status: TaskStatus.IN_PROGRESS },
+        });
+        const doneTasks = await Task.count({
+          where: { ...userTaskWhere, status: TaskStatus.DONE },
+        });
+        const blockedTasks = await Task.count({
+          where: { ...userTaskWhere, status: TaskStatus.BLOCKED },
+        });
+        const approvedTasks = await Task.count({
+          where: { ...userTaskWhere, status: TaskStatus.APPROVED },
+        });
+
+        // Overdue tasks
+        const overdueTasks = await Task.count({
+          where: {
+            ...userTaskWhere,
+            dueDate: { [Op.lt]: new Date() },
+            status: { [Op.notIn]: [TaskStatus.DONE, TaskStatus.APPROVED] },
+          },
+        });
+
+        // Tasks completed this month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const completedThisMonth = await Task.count({
+          where: {
+            ...userTaskWhere,
+            status: { [Op.in]: [TaskStatus.DONE, TaskStatus.APPROVED] },
+            [Op.and]: Sequelize.literal(`"Task"."updated_at" >= '${startOfMonth.toISOString()}'`),
+          },
+        });
+
+        return {
+          user: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            profileImageUrl: user.profileImageUrl,
+            role: user.role,
+            department: (user as any).department,
+          },
+          stats: {
+            total: totalTasks,
+            todo: todoTasks,
+            inProgress: inProgressTasks,
+            done: doneTasks,
+            blocked: blockedTasks,
+            approved: approvedTasks,
+            overdue: overdueTasks,
+            completedThisMonth,
+          },
+        };
+      })
+    );
+
+    // Filter out users with no tasks if needed
+    const filteredReports = userReports.filter((r) => r.stats.total > 0 || filterUserId);
+
+    // Calculate totals
+    const totals = filteredReports.reduce(
+      (acc, r) => ({
+        total: acc.total + r.stats.total,
+        todo: acc.todo + r.stats.todo,
+        inProgress: acc.inProgress + r.stats.inProgress,
+        done: acc.done + r.stats.done,
+        blocked: acc.blocked + r.stats.blocked,
+        approved: acc.approved + r.stats.approved,
+        overdue: acc.overdue + r.stats.overdue,
+        completedThisMonth: acc.completedThisMonth + r.stats.completedThisMonth,
+      }),
+      { total: 0, todo: 0, inProgress: 0, done: 0, blocked: 0, approved: 0, overdue: 0, completedThisMonth: 0 }
+    );
+
+    res.json({
+      reports: filteredReports,
+      totals,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Error getting task reports:', error);
+    res.status(500).json({ message: 'Failed to get task reports' });
+  }
+};

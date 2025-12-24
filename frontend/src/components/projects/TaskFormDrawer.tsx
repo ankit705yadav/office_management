@@ -83,6 +83,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
   const [blockingDependencies, setBlockingDependencies] = useState<Task[]>([]);
   const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+  const [pendingLinks, setPendingLinks] = useState<TaskAttachmentLink[]>([]); // For new tasks
   const [newLinkTitle, setNewLinkTitle] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [addingLink, setAddingLink] = useState(false);
@@ -153,12 +154,14 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
         });
         setOriginalTags([]);
         setAttachments([]);
+        setPendingLinks([]);
         setBlockingDependencies([]);
         setAvailableTasks([]);
       }
     } else {
       setFullTask(null);
       setAttachments([]);
+      setPendingLinks([]);
     }
   }, [open, task, defaultProjectId]);
 
@@ -281,6 +284,17 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           attachmentUrl: formData.attachmentUrl || undefined,
         } as any;
         savedTask = await projectService.createTask(data);
+
+        // Add pending attachment links after task creation
+        if (pendingLinks.length > 0) {
+          try {
+            await projectService.addTaskAttachments(savedTask.id, pendingLinks);
+          } catch (error) {
+            console.error('Error adding attachments:', error);
+            // Don't fail the whole operation, task was created
+          }
+        }
+
         toast.success('Task created successfully');
       }
 
@@ -318,24 +332,37 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
 
   // Attachment handlers
   const handleAddAttachment = async () => {
-    if (!newLinkUrl.trim() || !currentTask) return;
+    if (!newLinkUrl.trim()) return;
 
-    try {
-      setAddingLink(true);
-      const links: TaskAttachmentLink[] = [{
-        linkUrl: newLinkUrl.trim(),
-        linkTitle: newLinkTitle.trim() || newLinkUrl.trim(),
-      }];
-      const newAttachments = await projectService.addTaskAttachments(currentTask.id, links);
-      setAttachments([...attachments, ...newAttachments]);
+    const newLink: TaskAttachmentLink = {
+      linkUrl: newLinkUrl.trim(),
+      linkTitle: newLinkTitle.trim() || newLinkUrl.trim(),
+    };
+
+    if (currentTask) {
+      // Existing task - save to API immediately
+      try {
+        setAddingLink(true);
+        const newAttachments = await projectService.addTaskAttachments(currentTask.id, [newLink]);
+        setAttachments([...attachments, ...newAttachments]);
+        setNewLinkUrl('');
+        setNewLinkTitle('');
+        toast.success('Link added');
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Failed to add link');
+      } finally {
+        setAddingLink(false);
+      }
+    } else {
+      // New task - store locally, will be saved after task creation
+      setPendingLinks([...pendingLinks, newLink]);
       setNewLinkUrl('');
       setNewLinkTitle('');
-      toast.success('Link added');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add link');
-    } finally {
-      setAddingLink(false);
     }
+  };
+
+  const handleRemovePendingLink = (index: number) => {
+    setPendingLinks(pendingLinks.filter((_, i) => i !== index));
   };
 
   const handleDeleteAttachment = async (attachmentId: number) => {
@@ -625,7 +652,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               Attachment Links
             </Typography>
 
-            {/* Existing attachments */}
+            {/* Existing attachments (for saved tasks) */}
             {attachments.length > 0 && (
               <Box sx={{ mb: 2 }}>
                 {attachments.map((attachment) => (
@@ -684,8 +711,53 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
               </Box>
             )}
 
-            {/* Add new link form - only for existing tasks */}
-            {currentTask && !viewOnly && canEditTask && (
+            {/* Pending links (for new tasks - not yet saved) */}
+            {pendingLinks.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                {pendingLinks.map((link, index) => (
+                  <Paper
+                    key={index}
+                    variant="outlined"
+                    sx={{
+                      p: 1,
+                      mb: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      borderStyle: 'dashed',
+                    }}
+                  >
+                    <LinkIcon fontSize="small" color="action" />
+                    <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                      <Typography variant="body2" noWrap title={link.linkTitle}>
+                        {link.linkTitle}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        noWrap
+                        title={link.linkUrl}
+                        sx={{ display: 'block' }}
+                      >
+                        {link.linkUrl}
+                      </Typography>
+                    </Box>
+                    <Chip label="Pending" size="small" variant="outlined" />
+                    <IconButton
+                      size="small"
+                      onClick={() => handleRemovePendingLink(index)}
+                      title="Remove link"
+                      color="error"
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Paper>
+                ))}
+              </Box>
+            )}
+
+            {/* Add new link form */}
+            {!viewOnly && canEditTask && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <TextField
                   size="small"
@@ -713,12 +785,6 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                   </Button>
                 </Box>
               </Box>
-            )}
-
-            {!currentTask && (
-              <Typography variant="caption" color="text.secondary">
-                Save the task first to add attachment links
-              </Typography>
             )}
           </Box>
 

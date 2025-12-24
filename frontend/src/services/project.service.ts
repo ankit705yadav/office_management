@@ -284,6 +284,46 @@ export interface ReorderTaskItem {
   sortOrder: number;
 }
 
+export interface UserTaskReport {
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    profileImageUrl?: string;
+    role: string;
+    department?: {
+      id: number;
+      name: string;
+    };
+  };
+  stats: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
+    blocked: number;
+    approved: number;
+    overdue: number;
+    completedThisMonth: number;
+  };
+}
+
+export interface TaskReportsResponse {
+  reports: UserTaskReport[];
+  totals: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
+    blocked: number;
+    approved: number;
+    overdue: number;
+    completedThisMonth: number;
+  };
+  generatedAt: string;
+}
+
 export interface AssigneeLeaveStatus {
   onLeave: boolean;
   currentLeaves: Array<{
@@ -438,6 +478,12 @@ class ProjectService {
 
   async deleteTaskComment(taskId: number, commentId: number): Promise<void> {
     await api.delete(`/projects/tasks/${taskId}/comments/${commentId}`);
+  }
+
+  // Task Reports
+  async getTaskReports(params?: { projectId?: number; userId?: number }): Promise<TaskReportsResponse> {
+    const response = await api.get('/projects/reports', { params });
+    return response.data;
   }
 }
 

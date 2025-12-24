@@ -12,6 +12,7 @@ import {
   reorderTasks,
   checkAssigneeLeave,
   createTaskWithCode,
+  getTaskReports,
 } from '../controllers/project.controller';
 import {
   getAllTasks,
@@ -41,6 +42,9 @@ router.use(authenticate);
 
 // Get project statistics/dashboard
 router.get('/stats', getProjectStats);
+
+// Get task reports per user (Manager/Admin only)
+router.get('/reports', authorize(['admin', 'manager']), getTaskReports);
 
 // Get tasks at risk due to leave
 router.get('/tasks-at-risk', getTasksAtRiskDueToLeave);
