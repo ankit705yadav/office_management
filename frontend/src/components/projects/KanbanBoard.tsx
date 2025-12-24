@@ -146,9 +146,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskU
     try {
       await projectService.reorderTasks(tasksToUpdate);
       onTaskUpdate?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error reordering tasks:', error);
-      toast.error('Failed to update task order');
+      toast.error(error.response?.data?.message || 'Failed to update task order');
       // Reload board on error
       loadBoard();
     }

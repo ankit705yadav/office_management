@@ -310,18 +310,21 @@ export const getTeamAttendance = async (
   res: Response
 ): Promise<void> => {
   try {
-    const managerId = req.user!.id;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
     const { date } = req.query;
 
     const targetDate = date ? new Date(date as string) : new Date();
     const dateStr = format(targetDate, 'yyyy-MM-dd');
 
-    // Get team members
+    // Get team members - admins see all users, managers see their direct reports
+    const whereClause: any = { status: 'active' };
+    if (userRole !== 'admin') {
+      whereClause.managerId = userId;
+    }
+
     const teamMembers = await User.findAll({
-      where: {
-        managerId,
-        status: 'active',
-      },
+      where: whereClause,
       attributes: ['id', 'firstName', 'lastName', 'email'],
     });
 

@@ -628,9 +628,17 @@ export const getTasksForBoard = async (req: Request, res: Response): Promise<voi
 export const reorderTasks = async (req: Request, res: Response): Promise<void> => {
   try {
     const { tasks } = req.body;
+    const userRole = req.user?.role;
 
     if (!Array.isArray(tasks)) {
       res.status(400).json({ message: 'Tasks array is required' });
+      return;
+    }
+
+    // Check if any task is being moved to 'approved' - only manager/admin can do this
+    const hasApprovedStatus = tasks.some((t: any) => t.status === 'approved');
+    if (hasApprovedStatus && userRole !== 'admin' && userRole !== 'manager') {
+      res.status(403).json({ message: 'Task approval can only be done by Manager/Admin' });
       return;
     }
 

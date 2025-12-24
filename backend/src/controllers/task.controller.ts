@@ -426,6 +426,13 @@ export const updateTaskStatus = async (req: Request, res: Response): Promise<voi
       return;
     }
 
+    // Only manager/admin can set status to approved
+    const userRole = req.user?.role;
+    if (status === TaskStatus.APPROVED && userRole !== 'admin' && userRole !== 'manager') {
+      res.status(403).json({ message: 'Task approval can only be done by Manager/Admin' });
+      return;
+    }
+
     const task = await Task.findByPk(id, {
       include: [{ model: Project, as: 'project', attributes: ['id', 'name'] }],
     });

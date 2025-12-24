@@ -17,7 +17,7 @@ import {
   Paper,
   Alert,
 } from '@mui/material';
-import { Close, Save, Warning, Link as LinkIcon, ExpandMore } from '@mui/icons-material';
+import { Close, Save, Warning, Link as LinkIcon, ExpandMore, ContentCopy, Delete, Add } from '@mui/icons-material';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
@@ -31,6 +31,8 @@ import {
   Project,
   CreateTaskRequest,
   UpdateTaskRequest,
+  TaskAttachment,
+  TaskAttachmentLink,
 } from '../../services/project.service';
 import api from '../../services/api';
 
@@ -80,6 +82,10 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
   const [originalTags, setOriginalTags] = useState<string[]>([]);
   const [blockingDependencies, setBlockingDependencies] = useState<Task[]>([]);
   const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
+  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [addingLink, setAddingLink] = useState(false);
 
   // Role-based permissions - use fullTask for accurate data
   const currentTask = fullTask || task;
@@ -123,6 +129,8 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             blockReason: taskData.blockReason || '',
           });
           setOriginalTags(taskTags);
+          // Initialize attachments
+          setAttachments(taskData.attachments || []);
           // Initialize blocking dependencies from existing task dependencies
           setBlockingDependencies(taskData.dependencies || []);
           // Load available tasks for blocking
@@ -144,11 +152,13 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
           blockReason: '',
         });
         setOriginalTags([]);
+        setAttachments([]);
         setBlockingDependencies([]);
         setAvailableTasks([]);
       }
     } else {
       setFullTask(null);
+      setAttachments([]);
     }
   }, [open, task, defaultProjectId]);
 
@@ -304,6 +314,45 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
     if (canEditAllFields) return true; // Admin/manager can delete any tag
     // Assignee can only delete tags they added (not in originalTags)
     return !originalTags.includes(tag);
+  };
+
+  // Attachment handlers
+  const handleAddAttachment = async () => {
+    if (!newLinkUrl.trim() || !currentTask) return;
+
+    try {
+      setAddingLink(true);
+      const links: TaskAttachmentLink[] = [{
+        linkUrl: newLinkUrl.trim(),
+        linkTitle: newLinkTitle.trim() || newLinkUrl.trim(),
+      }];
+      const newAttachments = await projectService.addTaskAttachments(currentTask.id, links);
+      setAttachments([...attachments, ...newAttachments]);
+      setNewLinkUrl('');
+      setNewLinkTitle('');
+      toast.success('Link added');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to add link');
+    } finally {
+      setAddingLink(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: number) => {
+    if (!currentTask) return;
+
+    try {
+      await projectService.deleteTaskAttachment(currentTask.id, attachmentId);
+      setAttachments(attachments.filter((a) => a.id !== attachmentId));
+      toast.success('Link removed');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to remove link');
+    }
+  };
+
+  const handleCopyLink = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success('Link copied to clipboard');
   };
 
   const selectedAssignee = users.find((u) => u.id === formData.assigneeId) || null;
@@ -569,19 +618,109 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             )}
           </Box>
 
-          {/* Attachment Link - only editable by admin/manager */}
-          <TextField
-            fullWidth
-            label="Attachment Link"
-            value={formData.attachmentUrl}
-            onChange={(e) => setFormData({ ...formData, attachmentUrl: e.target.value })}
-            disabled={viewOnly || !canEditAllFields}
-            placeholder="https://drive.google.com/..."
-            InputProps={{
-              startAdornment: <LinkIcon sx={{ mr: 1, color: 'var(--text-muted)' }} />,
-            }}
-            sx={{ mb: 3 }}
-          />
+          {/* Attachment Links */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LinkIcon fontSize="small" />
+              Attachment Links
+            </Typography>
+
+            {/* Existing attachments */}
+            {attachments.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                {attachments.map((attachment) => (
+                  <Paper
+                    key={attachment.id}
+                    variant="outlined"
+                    sx={{
+                      p: 1,
+                      mb: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                    }}
+                  >
+                    <LinkIcon fontSize="small" color="primary" />
+                    <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                      <Typography variant="body2" noWrap title={attachment.linkTitle}>
+                        {attachment.linkTitle}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        noWrap
+                        title={attachment.linkUrl}
+                        sx={{ display: 'block' }}
+                      >
+                        {attachment.linkUrl}
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleCopyLink(attachment.linkUrl)}
+                      title="Copy link"
+                    >
+                      <ContentCopy fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => window.open(attachment.linkUrl, '_blank')}
+                      title="Open link"
+                    >
+                      <LinkIcon fontSize="small" />
+                    </IconButton>
+                    {!viewOnly && canEditTask && (
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteAttachment(attachment.id)}
+                        title="Remove link"
+                        color="error"
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Paper>
+                ))}
+              </Box>
+            )}
+
+            {/* Add new link form - only for existing tasks */}
+            {currentTask && !viewOnly && canEditTask && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <TextField
+                  size="small"
+                  placeholder="Link title (optional)"
+                  value={newLinkTitle}
+                  onChange={(e) => setNewLinkTitle(e.target.value)}
+                />
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <TextField
+                    size="small"
+                    placeholder="https://..."
+                    value={newLinkUrl}
+                    onChange={(e) => setNewLinkUrl(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAttachment())}
+                    sx={{ flex: 1 }}
+                  />
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={handleAddAttachment}
+                    disabled={addingLink || !newLinkUrl.trim()}
+                    startIcon={addingLink ? <CircularProgress size={16} /> : <Add />}
+                  >
+                    Add
+                  </Button>
+                </Box>
+              </Box>
+            )}
+
+            {!currentTask && (
+              <Typography variant="caption" color="text.secondary">
+                Save the task first to add attachment links
+              </Typography>
+            )}
+          </Box>
 
           {/* Task Meta */}
           {currentTask && (
