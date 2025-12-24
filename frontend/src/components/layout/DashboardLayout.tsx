@@ -22,7 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Assignment,
-  Payments,
+  // Payments, // Hidden for now
   Business,
 } from "@mui/icons-material";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -87,11 +87,12 @@ const navSections: NavSection[] = [
         icon: <CalendarMonth />,
         path: "/holidays",
       },
-      {
-        text: "Payments",
-        icon: <Payments />,
-        path: "/payments",
-      },
+      // Payments hidden for now
+      // {
+      //   text: "Payments",
+      //   icon: <Payments />,
+      //   path: "/payments",
+      // },
       {
         text: "Clients",
         icon: <Business />,
