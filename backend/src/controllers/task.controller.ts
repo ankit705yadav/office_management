@@ -920,7 +920,7 @@ export const getTaskComments = async (req: Request, res: Response): Promise<void
     }
 
     // Get top-level comments (no parent)
-    const comments = await TaskComment.findAll({
+    const topLevelComments = await TaskComment.findAll({
       where: { taskId, parentId: { [Op.is]: null as any } },
       include: [
         {
@@ -928,22 +928,34 @@ export const getTaskComments = async (req: Request, res: Response): Promise<void
           as: 'author',
           attributes: ['id', 'firstName', 'lastName', 'profileImageUrl'],
         },
-        {
-          model: TaskComment,
-          as: 'replies',
-          include: [{
-            model: User,
-            as: 'author',
-            attributes: ['id', 'firstName', 'lastName', 'profileImageUrl'],
-          }],
-          separate: true,
-          order: [['created_at', 'ASC']],
-        },
       ],
       order: [['created_at', 'DESC']],
     });
 
-    res.json(comments);
+    // Get all replies for these comments
+    const commentIds = topLevelComments.map((c) => c.id);
+    const replies = commentIds.length > 0 ? await TaskComment.findAll({
+      where: { parentId: { [Op.in]: commentIds } },
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['id', 'firstName', 'lastName', 'profileImageUrl'],
+        },
+      ],
+      order: [['created_at', 'ASC']],
+    }) : [];
+
+    // Attach replies to their parent comments
+    const commentsWithReplies = topLevelComments.map((comment) => {
+      const commentReplies = replies.filter((r) => r.parentId === comment.id);
+      return {
+        ...comment.toJSON(),
+        replies: commentReplies.map((r) => r.toJSON()),
+      };
+    });
+
+    res.json(commentsWithReplies);
   } catch (error) {
     logger.error('Error fetching task comments:', error);
     res.status(500).json({ message: 'Failed to fetch comments' });
