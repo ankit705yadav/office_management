@@ -15,7 +15,6 @@ import { toast } from "react-toastify";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LoginCredentials } from "@/types";
-// import logoImage from '@/assets/logo_1.png';
 
 // Validation schema
 const loginSchema = yup.object().shape({

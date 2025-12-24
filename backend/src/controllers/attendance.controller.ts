@@ -41,16 +41,6 @@ export const checkIn = async (req: Request, res: Response): Promise<void> => {
       },
     });
 
-    // DEVELOPMENT MODE: Allow multiple check-ins for testing
-    // if (existing && existing.checkInTime) {
-    //   res.status(400).json({
-    //     status: 'error',
-    //     message: 'You have already checked in today',
-    //     data: { attendance: existing },
-    //   });
-    //   return;
-    // }
-
     // Get user's department for settings
     const user = await User.findByPk(userId);
     const isLate = await isLateArrival(now, user?.departmentId);
@@ -124,25 +114,6 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
-
-    // DEVELOPMENT MODE: Allow multiple check-outs for testing
-    // if (attendance.checkOutTime) {
-    //   res.status(400).json({
-    //     status: 'error',
-    //     message: 'You have already checked out today',
-    //     data: { attendance },
-    //   });
-    //   return;
-    // }
-
-    // DEVELOPMENT MODE: Allow check-out without check-in for testing
-    // if (!attendance.checkInTime) {
-    //   res.status(400).json({
-    //     status: 'error',
-    //     message: 'Invalid attendance record - no check-in time found',
-    //   });
-    //   return;
-    // }
 
     // Calculate work hours
     const workHours = attendance.checkInTime

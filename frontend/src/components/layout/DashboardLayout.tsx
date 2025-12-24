@@ -22,14 +22,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Assignment,
-  // Payments, // Hidden for now
   Business,
 } from "@mui/icons-material";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "react-toastify";
-// import logoImage from '@/assets/logo_1.png';
 
 const SIDEBAR_EXPANDED_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 64;
@@ -87,12 +85,6 @@ const navSections: NavSection[] = [
         icon: <CalendarMonth />,
         path: "/holidays",
       },
-      // Payments hidden for now
-      // {
-      //   text: "Payments",
-      //   icon: <Payments />,
-      //   path: "/payments",
-      // },
       {
         text: "Clients",
         icon: <Business />,
@@ -191,11 +183,6 @@ const DashboardLayout: React.FC = () => {
       >
         {!sidebarCollapsed ? (
           <div className="flex items-center gap-2 flex-1">
-            {/*<img
-              src={logoImage}
-              alt="Company"
-              style={{ height: 28, width: 'auto' }}
-            />*/}
             <ChevronLeft
               className="ml-auto cursor-pointer"
               style={{ color: "var(--text-muted)", fontSize: 18 }}
