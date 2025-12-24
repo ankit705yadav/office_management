@@ -921,7 +921,7 @@ export const getTaskComments = async (req: Request, res: Response): Promise<void
 
     // Get top-level comments (no parent)
     const comments = await TaskComment.findAll({
-      where: { taskId, parentId: { [Op.eq]: null as any } },
+      where: { taskId, parentId: { [Op.is]: null as any } },
       include: [
         {
           model: User,
