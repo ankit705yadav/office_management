@@ -187,8 +187,9 @@ const NotificationBell: React.FC = () => {
                       </Typography>
                     }
                     secondary={
-                      <Box>
+                      <>
                         <Typography
+                          component="span"
                           variant="caption"
                           sx={{
                             color: 'var(--text-secondary)',
@@ -199,12 +200,13 @@ const NotificationBell: React.FC = () => {
                           {notification.message}
                         </Typography>
                         <Typography
+                          component="span"
                           variant="caption"
                           sx={{ color: 'var(--text-muted)' }}
                         >
                           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </Typography>
-                      </Box>
+                      </>
                     }
                   />
                   {!notification.isRead && (

@@ -862,7 +862,7 @@ const LeavesPage: React.FC = () => {
                       disabled={submitting}
                     >
                       {leaveTypes.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
+                        <MenuItem key={option.label} value={option.value}>
                           {option.label}
                         </MenuItem>
                       ))}

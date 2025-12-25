@@ -25,7 +25,7 @@ import TaskReportPanel from '../components/projects/TaskReportPanel';
 
 const ProjectsPage: React.FC = () => {
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState<'table' | 'board' | 'report'>('board');
+  const [viewMode, setViewMode] = useState<'table' | 'board' | 'report'>('table');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [stats, setStats] = useState<ProjectStats | null>(null);
   const [tasksAtRisk, setTasksAtRisk] = useState<TasksAtRisk | null>(null);

@@ -4,6 +4,7 @@ import PDFDocument from 'pdfkit';
 import { User, Department, LeaveBalance, EmployeeCustomField, EmployeeDocument } from '../models';
 import { UserStatus } from '../types/enums';
 import logger from '../utils/logger';
+import sequelize from '../config/database';
 
 /**
  * Get all users (with pagination and filters)
@@ -146,6 +147,8 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
  * POST /api/users
  */
 export const createUser = async (req: Request, res: Response): Promise<void> => {
+  const transaction = await sequelize.transaction();
+
   try {
     const {
       email,
@@ -170,9 +173,10 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     } = req.body;
 
     // Check if email already exists
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ where: { email }, transaction });
 
     if (existingUser) {
+      await transaction.rollback();
       res.status(400).json({
         status: 'error',
         message: 'Email already exists',
@@ -199,7 +203,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       panNumber,
       aadharNumber,
       profileImageUrl: profileImageUrl || null,
-    });
+    }, { transaction });
 
     // Create custom fields if provided
     if (customFields) {
@@ -210,7 +214,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
             userId: user.id,
             fieldName: field.fieldName,
             fieldValue: field.fieldValue,
-          });
+          }, { transaction });
         }
       }
     }
@@ -224,7 +228,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
             userId: user.id,
             linkTitle: doc.linkTitle,
             linkUrl: doc.linkUrl,
-          });
+          }, { transaction });
         }
       }
     }
@@ -239,7 +243,10 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       earnedLeave: 15.0,
       compOff: 0.0,
       paternityMaternity: 0.0,
-    });
+    }, { transaction });
+
+    // Commit the transaction
+    await transaction.commit();
 
     logger.info(`New user created: ${user.email} by ${req.user?.email}`);
 
@@ -257,6 +264,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       data: { user: userResponse },
     });
   } catch (error) {
+    await transaction.rollback();
     logger.error('Create user error:', error);
     res.status(500).json({
       status: 'error',

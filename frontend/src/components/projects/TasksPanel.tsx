@@ -198,6 +198,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
               <MenuItem value="">All</MenuItem>
               <MenuItem value="todo">To Do</MenuItem>
               <MenuItem value="in_progress">In Progress</MenuItem>
+              <MenuItem value="blocked">Blocked</MenuItem>
               <MenuItem value="done">Done</MenuItem>
               <MenuItem value="approved">Approved</MenuItem>
             </Select>
@@ -372,6 +373,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
                       >
                         <MenuItem value="todo">To Do</MenuItem>
                         <MenuItem value="in_progress">In Progress</MenuItem>
+                        <MenuItem value="blocked">Blocked</MenuItem>
                         <MenuItem value="done">Done</MenuItem>
                         <MenuItem value="approved">Approved</MenuItem>
                       </Select>

@@ -190,8 +190,8 @@ const EmployeesPage: React.FC = () => {
       dateOfBirth: '',
       dateOfJoining: format(new Date(), 'yyyy-MM-dd'),
       role: 'employee',
-      departmentId: undefined,
-      managerId: undefined,
+      departmentId: '' as any,
+      managerId: '' as any,
     },
   });
 
@@ -1123,8 +1123,8 @@ const EmployeesPage: React.FC = () => {
                             }}
                           />
                         )}
-                        renderOption={(props, option) => (
-                          <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)', '&:hover': { bgcolor: 'var(--bg-elevated)' } }}>
+                        renderOption={({ key, ...props }, option) => (
+                          <Box component="li" key={key} {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)', '&:hover': { bgcolor: 'var(--bg-elevated)' } }}>
                             <Avatar sx={{ width: 32, height: 32, bgcolor: getRoleColor(option.role), fontSize: 14 }}>
                               {option.firstName[0]}{option.lastName[0]}
                             </Avatar>
@@ -1551,8 +1551,8 @@ const EmployeesPage: React.FC = () => {
                             }}
                           />
                         )}
-                        renderOption={(props, option) => (
-                          <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)', '&:hover': { bgcolor: 'var(--bg-elevated)' } }}>
+                        renderOption={({ key, ...props }, option) => (
+                          <Box component="li" key={key} {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)', '&:hover': { bgcolor: 'var(--bg-elevated)' } }}>
                             <Avatar sx={{ width: 32, height: 32, bgcolor: getRoleColor(option.role), fontSize: 14 }}>
                               {option.firstName[0]}{option.lastName[0]}
                             </Avatar>
