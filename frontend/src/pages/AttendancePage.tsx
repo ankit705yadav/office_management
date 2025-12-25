@@ -559,8 +559,8 @@ const AttendancePage: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  myAttendance.map((record) => (
-                    <TableRow key={record.id} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
+                  myAttendance.map((record, index) => (
+                    <TableRow key={`${record.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
                       <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(record.date)}</TableCell>
                       <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkInTime)}</TableCell>
                       <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkOutTime)}</TableCell>
@@ -613,8 +613,8 @@ const AttendancePage: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  regularizations.map((reg) => (
-                    <TableRow key={reg.id} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
+                  regularizations.map((reg, index) => (
+                    <TableRow key={`${reg.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
                       <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(reg.date)}</TableCell>
                       <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(reg.requestedCheckIn)}</TableCell>
                       <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(reg.requestedCheckOut)}</TableCell>
@@ -677,8 +677,8 @@ const AttendancePage: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    teamAttendance.map((record) => (
-                      <TableRow key={record.id} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
+                    teamAttendance.map((record, index) => (
+                      <TableRow key={`${record.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
                         <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
                           {record.user?.firstName} {record.user?.lastName}
                         </TableCell>
