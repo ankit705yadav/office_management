@@ -56,6 +56,14 @@ const leaveTypes = [
 
 // Helper function to count days excluding Sundays
 const countDaysExcludingSundays = (startDate: Date, endDate: Date): number => {
+  // Validate dates
+  if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return 0;
+  }
+  // Ensure start is before or equal to end
+  if (startDate > endDate) {
+    return 0;
+  }
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   return days.filter(day => !isSunday(day)).length;
 };
