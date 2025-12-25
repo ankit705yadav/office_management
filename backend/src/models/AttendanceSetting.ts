@@ -148,9 +148,7 @@ AttendanceSetting.init(
       {
         unique: true,
         fields: ['department_id'],
-      },
-      {
-        fields: ['department_id'],
+        name: 'attendance_settings_department_id_unique',
       },
     ],
   }

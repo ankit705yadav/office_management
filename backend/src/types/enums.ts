@@ -17,8 +17,8 @@ export enum LeaveType {
   CASUAL = 'casual_leave',
   EARNED = 'earned_leave',
   COMP_OFF = 'comp_off',
-  PATERNITY = 'paternity_maternity',
-  MATERNITY = 'paternity_maternity',
+  PATERNITY = 'paternity',
+  MATERNITY = 'maternity',
 }
 
 export enum RequestStatus {
