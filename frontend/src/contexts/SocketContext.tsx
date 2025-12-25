@@ -28,7 +28,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     if (isAuthenticated && token) {
       // Connect to socket server
-      const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001';
 
       socketRef.current = io(socketUrl, {
         auth: { token },
