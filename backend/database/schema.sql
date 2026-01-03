@@ -405,17 +405,18 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 -- ============================================
 
 -- Insert departments
-INSERT INTO departments (name, description) VALUES
-('IT', 'Information Technology'),
-('HR', 'Human Resources'),
-('Finance', 'Finance & Accounting'),
-('Operations', 'Operations & Management'),
-('Sales', 'Sales & Marketing');
+INSERT INTO departments (name, description, created_at, updated_at) VALUES
+('IT', 'Information Technology', NOW(), NOW()),
+('HR', 'Human Resources', NOW(), NOW()),
+('Finance', 'Finance & Accounting', NOW(), NOW()),
+('Operations', 'Operations & Management', NOW(), NOW()),
+('Sales', 'Sales & Marketing', NOW(), NOW())
+ON CONFLICT (name) DO NOTHING;
 
 -- Insert admin user (password: Admin@123)
 INSERT INTO users (
     email, password_hash, first_name, last_name,
-    date_of_joining, role, status, department_id
+    date_of_joining, role, status, department_id, created_at, updated_at
 ) VALUES (
     'admin@company.com',
     '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
@@ -424,13 +425,15 @@ INSERT INTO users (
     '2024-01-01',
     'admin',
     'active',
-    1
-);
+    1,
+    NOW(),
+    NOW()
+) ON CONFLICT (email) DO NOTHING;
 
--- Insert manager user (password: Password@123)
+-- Insert manager user (password: Admin@123)
 INSERT INTO users (
     email, password_hash, first_name, last_name,
-    date_of_joining, role, status, department_id, manager_id
+    date_of_joining, role, status, department_id, manager_id, created_at, updated_at
 ) VALUES (
     'john.doe@company.com',
     '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
@@ -440,13 +443,15 @@ INSERT INTO users (
     'manager',
     'active',
     1,
-    1
-);
+    1,
+    NOW(),
+    NOW()
+) ON CONFLICT (email) DO NOTHING;
 
--- Insert employee user (password: Password@123)
+-- Insert employee user (password: Admin@123)
 INSERT INTO users (
     email, password_hash, first_name, last_name,
-    date_of_joining, role, status, department_id, manager_id
+    date_of_joining, role, status, department_id, manager_id, created_at, updated_at
 ) VALUES (
     'jane.smith@company.com',
     '$2b$10$5Czz6Xz3PtamrHEPk.7IbuXBaVYYRQyS3Gkxa2KJRl7THMdciFrRe',
@@ -456,43 +461,54 @@ INSERT INTO users (
     'employee',
     'active',
     1,
-    2
-);
+    2,
+    NOW(),
+    NOW()
+) ON CONFLICT (email) DO NOTHING;
 
 -- Set department head
 UPDATE departments SET head_id = 2 WHERE id = 1;
 
 -- Insert leave balances for current year
-INSERT INTO leave_balances (user_id, year, sick_leave, casual_leave, earned_leave, comp_off, paternity_maternity)
+INSERT INTO leave_balances (user_id, year, sick_leave, casual_leave, earned_leave, comp_off, paternity_maternity, created_at, updated_at)
 VALUES
-(1, 2025, 12, 12, 15, 0, 0),
-(2, 2025, 12, 12, 15, 0, 0),
-(3, 2025, 12, 12, 15, 0, 0);
+(1, 2025, 12, 12, 15, 0, 0, NOW(), NOW()),
+(2, 2025, 12, 12, 15, 0, 0, NOW(), NOW()),
+(3, 2025, 12, 12, 15, 0, 0, NOW(), NOW())
+ON CONFLICT (user_id, year) DO NOTHING;
 
 -- Insert holidays for 2025
-INSERT INTO holidays (date, name, description, is_optional, year) VALUES
-('2025-01-01', 'New Year''s Day', 'New Year celebration', FALSE, 2025),
-('2025-01-26', 'Republic Day', 'National holiday', FALSE, 2025),
-('2025-03-14', 'Holi', 'Festival of colors', FALSE, 2025),
-('2025-04-14', 'Ambedkar Jayanti', 'Dr. B.R. Ambedkar birth anniversary', TRUE, 2025),
-('2025-04-18', 'Good Friday', 'Christian holiday', TRUE, 2025),
-('2025-05-01', 'May Day', 'Labour Day', FALSE, 2025),
-('2025-08-15', 'Independence Day', 'National holiday', FALSE, 2025),
-('2025-10-02', 'Gandhi Jayanti', 'Mahatma Gandhi birth anniversary', FALSE, 2025),
-('2025-10-20', 'Dussehra', 'Victory of good over evil', FALSE, 2025),
-('2025-11-01', 'Diwali', 'Festival of lights', FALSE, 2025),
-('2025-12-25', 'Christmas', 'Christmas Day', FALSE, 2025);
+INSERT INTO holidays (date, name, description, is_optional, year, created_at, updated_at) VALUES
+('2025-01-01', 'New Year''s Day', 'New Year celebration', FALSE, 2025, NOW(), NOW()),
+('2025-01-26', 'Republic Day', 'National holiday', FALSE, 2025, NOW(), NOW()),
+('2025-03-14', 'Holi', 'Festival of colors', FALSE, 2025, NOW(), NOW()),
+('2025-04-14', 'Ambedkar Jayanti', 'Dr. B.R. Ambedkar birth anniversary', TRUE, 2025, NOW(), NOW()),
+('2025-04-18', 'Good Friday', 'Christian holiday', TRUE, 2025, NOW(), NOW()),
+('2025-05-01', 'May Day', 'Labour Day', FALSE, 2025, NOW(), NOW()),
+('2025-08-15', 'Independence Day', 'National holiday', FALSE, 2025, NOW(), NOW()),
+('2025-10-02', 'Gandhi Jayanti', 'Mahatma Gandhi birth anniversary', FALSE, 2025, NOW(), NOW()),
+('2025-10-20', 'Dussehra', 'Victory of good over evil', FALSE, 2025, NOW(), NOW()),
+('2025-11-01', 'Diwali', 'Festival of lights', FALSE, 2025, NOW(), NOW()),
+('2025-12-25', 'Christmas', 'Christmas Day', FALSE, 2025, NOW(), NOW())
+ON CONFLICT DO NOTHING;
+
+-- Insert a sample client
+INSERT INTO clients (name, email, contact_person, created_by, created_at, updated_at)
+VALUES ('Internal', 'internal@company.com', 'System Admin', 1, NOW(), NOW())
+ON CONFLICT DO NOTHING;
 
 -- Insert a sample project
-INSERT INTO projects (name, description, owner_id, created_by, department_id, status, start_date)
-VALUES ('Office Management System', 'Internal HR and operations management platform', 1, 1, 1, 'active', '2025-01-01');
+INSERT INTO projects (name, description, owner_id, created_by, department_id, client_id, status, start_date, created_at, updated_at)
+VALUES ('Office Management System', 'Internal HR and operations management platform', 1, 1, 1, 1, 'active', '2025-01-01', NOW(), NOW())
+ON CONFLICT DO NOTHING;
 
 -- Insert sample tasks
-INSERT INTO tasks (project_id, title, description, assignee_id, created_by, status, priority, due_date)
+INSERT INTO tasks (project_id, title, description, assignee_id, created_by, status, priority, due_date, created_at, updated_at)
 VALUES
-(1, 'Setup development environment', 'Configure local dev environment for all team members', 2, 1, 'done', 'high', '2025-01-15'),
-(1, 'Design database schema', 'Create PostgreSQL schema for all modules', 2, 1, 'done', 'high', '2025-01-20'),
-(1, 'Implement authentication', 'JWT-based authentication system', 3, 2, 'done', 'high', '2025-02-01'),
-(1, 'Build leave management module', 'Complete leave application and approval workflow', 3, 2, 'in_progress', 'medium', '2025-02-15');
+(1, 'Setup development environment', 'Configure local dev environment for all team members', 2, 1, 'done', 'high', '2025-01-15', NOW(), NOW()),
+(1, 'Design database schema', 'Create PostgreSQL schema for all modules', 2, 1, 'done', 'high', '2025-01-20', NOW(), NOW()),
+(1, 'Implement authentication', 'JWT-based authentication system', 3, 2, 'done', 'high', '2025-02-01', NOW(), NOW()),
+(1, 'Build leave management module', 'Complete leave application and approval workflow', 3, 2, 'in_progress', 'medium', '2025-02-15', NOW(), NOW())
+ON CONFLICT DO NOTHING;
 
 COMMENT ON DATABASE office_management IS 'Office Management System - Company Name';
