@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { leaveService } from '../leave.service';
 import api from '../api';
+import { LeaveType, HalfDaySession } from '@/types';
 
 // Mock the api module
 vi.mock('../api', () => ({
@@ -94,10 +95,10 @@ describe('leaveService', () => {
 
       (api.get as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
-      await leaveService.getLeaveRequests({ status: 'pending', userId: 1 });
+      await leaveService.getLeaveRequests({ status: 'pending' });
 
       expect(api.get).toHaveBeenCalledWith('/leaves', {
-        params: { status: 'pending', userId: 1 },
+        params: { status: 'pending' },
       });
     });
   });
@@ -105,7 +106,7 @@ describe('leaveService', () => {
   describe('applyLeave', () => {
     it('should submit leave application', async () => {
       const leaveData = {
-        leaveType: 'casual' as const,
+        leaveType: LeaveType.CASUAL,
         startDate: '2025-01-15',
         endDate: '2025-01-16',
         reason: 'Personal work',
@@ -128,12 +129,12 @@ describe('leaveService', () => {
 
     it('should submit half-day leave application', async () => {
       const leaveData = {
-        leaveType: 'casual' as const,
+        leaveType: LeaveType.CASUAL,
         startDate: '2025-01-15',
         endDate: '2025-01-15',
         reason: 'Doctor appointment',
         isHalfDay: true,
-        halfDaySession: 'morning' as const,
+        halfDaySession: HalfDaySession.FIRST_HALF,
       };
 
       const mockResponse = {

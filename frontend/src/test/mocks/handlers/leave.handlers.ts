@@ -110,9 +110,7 @@ export const leaveHandlers = [
   }),
 
   // Cancel leave
-  http.put(`${API_URL}/leaves/:id/cancel`, ({ params }) => {
-    const { id } = params;
-
+  http.put(`${API_URL}/leaves/:id/cancel`, () => {
     return HttpResponse.json({
       status: 'success',
       message: 'Leave request cancelled successfully',
