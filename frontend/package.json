@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Frontend for Company Name Operation Management Platform",
   "private": true,
+  "type": "module",
   "dependencies": {
+    "express": "^4.18.2",
+    "compression": "^1.7.4",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@hello-pangea/dnd": "^18.0.1",
@@ -55,6 +58,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "start": "node server.js",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",

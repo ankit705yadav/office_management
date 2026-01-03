@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiResponse } from '@/types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Navigation handler - will be set by the app
 let navigationHandler: (() => void) | null = null;

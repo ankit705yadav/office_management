@@ -149,6 +149,10 @@ if (config.nodeEnv === 'production') {
     'JWT_SECRET',
     'JWT_REFRESH_SECRET',
     'DATABASE_URL',
+  ];
+
+  // AWS is optional - only required if using S3 for file uploads
+  const optionalEnvVars = [
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
     'AWS_S3_BUCKET',
@@ -158,6 +162,11 @@ if (config.nodeEnv === 'production') {
 
   if (missingVars.length > 0) {
     throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  }
+
+  const missingOptional = optionalEnvVars.filter((varName) => !process.env[varName]);
+  if (missingOptional.length > 0) {
+    console.warn(`Warning: Optional environment variables not set: ${missingOptional.join(', ')}. Some features may be disabled.`);
   }
 }
 
