@@ -198,6 +198,22 @@ CREATE TABLE attendance_regularizations (
 -- PROJECT MANAGEMENT
 -- ============================================
 
+-- Clients table
+CREATE TABLE clients (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(20),
+    address TEXT,
+    contact_person VARCHAR(200),
+    website VARCHAR(255),
+    notes TEXT,
+    status VARCHAR(20) DEFAULT 'active',
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Projects table
 CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
@@ -206,6 +222,7 @@ CREATE TABLE projects (
     owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
     department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
     parent_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
     status project_status DEFAULT 'planning',
     priority VARCHAR(20) DEFAULT 'medium',
@@ -232,6 +249,7 @@ CREATE TABLE tasks (
     estimated_hours DECIMAL(6, 2),
     tags TEXT[],
     task_code VARCHAR(50),
+    attachment_url TEXT,
     action_required BOOLEAN DEFAULT FALSE,
     actual_hours DECIMAL(8, 2) DEFAULT 0,
     depends_on_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
@@ -315,7 +333,9 @@ CREATE TABLE notifications (
     type VARCHAR(50) NOT NULL,
     title VARCHAR(200) NOT NULL,
     message TEXT NOT NULL,
-    link TEXT,
+    action_url TEXT,
+    related_id INTEGER,
+    related_type VARCHAR(50),
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
