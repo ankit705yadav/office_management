@@ -15,6 +15,7 @@ CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'half_day', 'on_leav
 CREATE TYPE task_status AS ENUM ('todo', 'in_progress', 'done', 'blocked');
 CREATE TYPE task_priority AS ENUM ('low', 'medium', 'high', 'urgent');
 CREATE TYPE project_status AS ENUM ('planning', 'active', 'on_hold', 'completed', 'cancelled');
+CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'cancelled');
 
 -- ============================================
 -- CORE TABLES
@@ -190,6 +191,56 @@ CREATE TABLE attendance_regularizations (
     approver_id INTEGER REFERENCES users(id),
     approved_rejected_at TIMESTAMP,
     comments TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Attendance settings table
+CREATE TABLE attendance_settings (
+    id SERIAL PRIMARY KEY,
+    department_id INTEGER REFERENCES departments(id) ON DELETE CASCADE,
+    work_start_time TIME DEFAULT '09:00:00',
+    work_end_time TIME DEFAULT '18:00:00',
+    grace_period_minutes INTEGER DEFAULT 10,
+    half_day_hours DECIMAL(3, 1) DEFAULT 4.0,
+    full_day_hours DECIMAL(3, 1) DEFAULT 8.0,
+    working_days INTEGER[] DEFAULT '{1,2,3,4,5}',
+    auto_checkout_enabled BOOLEAN DEFAULT FALSE,
+    auto_checkout_time TIME DEFAULT '18:00:00',
+    location_tracking_enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(department_id)
+);
+
+-- ============================================
+-- SALARY & PAYMENTS
+-- ============================================
+
+-- Employee salaries table
+CREATE TABLE employee_salaries (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    basic_salary DECIMAL(12, 2) NOT NULL,
+    effective_from DATE NOT NULL,
+    effective_to DATE,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Payments table
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    salary_id INTEGER NOT NULL REFERENCES employee_salaries(id) ON DELETE CASCADE,
+    payment_month INTEGER NOT NULL,
+    payment_year INTEGER NOT NULL,
+    amount DECIMAL(12, 2) NOT NULL,
+    status payment_status DEFAULT 'pending',
+    paid_at TIMESTAMP,
+    paid_by INTEGER REFERENCES users(id),
+    notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
