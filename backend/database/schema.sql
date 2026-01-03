@@ -282,6 +282,7 @@ CREATE TABLE projects (
     budget DECIMAL(12, 2),
     project_code VARCHAR(50),
     is_folder BOOLEAN DEFAULT FALSE,
+    attachment_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
