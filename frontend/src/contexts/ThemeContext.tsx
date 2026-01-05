@@ -19,10 +19,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (stored === 'light' || stored === 'dark') {
       return stored;
     }
-    // Fall back to system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
+    // Default to light mode
     return 'light';
   });
 
@@ -42,21 +39,6 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
-  // Listen for system preference changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Only auto-switch if user hasn't manually set a preference
-      const stored = localStorage.getItem(THEME_KEY);
-      if (!stored) {
-        setThemeState(e.matches ? 'dark' : 'light');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
 
   const toggleTheme = () => {
     setThemeState(prev => prev === 'light' ? 'dark' : 'light');

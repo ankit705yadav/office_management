@@ -281,6 +281,8 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   try {
     const { id } = req.params;
     const {
+      email,
+      password,
       firstName,
       lastName,
       phone,
@@ -294,6 +296,8 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       emergencyContactName,
       emergencyContactPhone,
       profileImageUrl,
+      panNumber,
+      aadharNumber,
     } = req.body;
 
     const user = await User.findByPk(id);
@@ -306,10 +310,22 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Update user fields
-    await user.update({
+    // Check if email is being changed and if it's already taken
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Email already exists',
+        });
+        return;
+      }
+    }
+
+    // Build update object
+    const updateData: any = {
       firstName: firstName || user.firstName,
-      lastName: lastName || user.lastName,
+      lastName: lastName !== undefined ? lastName : user.lastName,
       phone: phone !== undefined ? phone : user.phone,
       dateOfBirth: dateOfBirth !== undefined ? dateOfBirth : user.dateOfBirth,
       dateOfJoining: dateOfJoining || user.dateOfJoining,
@@ -321,7 +337,22 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       emergencyContactName: emergencyContactName !== undefined ? emergencyContactName : user.emergencyContactName,
       emergencyContactPhone: emergencyContactPhone !== undefined ? emergencyContactPhone : user.emergencyContactPhone,
       profileImageUrl: profileImageUrl !== undefined ? profileImageUrl : user.profileImageUrl,
-    });
+      panNumber: panNumber !== undefined ? panNumber : user.panNumber,
+      aadharNumber: aadharNumber !== undefined ? aadharNumber : user.aadharNumber,
+    };
+
+    // Update email if provided
+    if (email) {
+      updateData.email = email;
+    }
+
+    // Update password if provided (will be hashed by beforeUpdate hook)
+    if (password) {
+      updateData.passwordHash = password;
+    }
+
+    // Update user fields
+    await user.update(updateData);
 
     logger.info(`User updated: ${user.email} by ${req.user?.email}`);
 

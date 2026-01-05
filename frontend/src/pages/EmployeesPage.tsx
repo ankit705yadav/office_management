@@ -65,8 +65,10 @@ const createEmployeeSchema = yup.object().shape({
 });
 
 const updateEmployeeSchema = yup.object().shape({
+  email: yup.string().email('Invalid email').required('Email is required'),
+  password: yup.string().optional(),
   firstName: yup.string().required('First name is required'),
-  lastName: yup.string().required('Last name is required'),
+  lastName: yup.string().optional(),
   phone: yup.string().optional(),
   dateOfBirth: yup.string().optional(),
   dateOfJoining: yup.string().required('Date of joining is required'),
@@ -74,6 +76,9 @@ const updateEmployeeSchema = yup.object().shape({
   status: yup.string().required('Status is required'),
   departmentId: yup.number().transform((value, original) => original === '' ? undefined : value).optional().nullable(),
   managerId: yup.number().transform((value, original) => original === '' ? undefined : value).optional().nullable(),
+  address: yup.string().optional(),
+  panNumber: yup.string().optional(),
+  aadharNumber: yup.string().optional(),
 });
 
 const getStatusColor = (status: string): 'default' | 'success' | 'warning' | 'error' => {
@@ -263,7 +268,12 @@ const EmployeesPage: React.FC = () => {
 
     try {
       setSubmitting(true);
-      await employeeService.updateEmployee(selectedEmployee.id, data);
+      // Remove empty password from data (don't update if blank)
+      const updateData = { ...data };
+      if (!updateData.password) {
+        delete updateData.password;
+      }
+      await employeeService.updateEmployee(selectedEmployee.id, updateData);
       toast.success('Employee updated successfully');
       closeDrawer();
       loadEmployees();
@@ -304,8 +314,10 @@ const EmployeesPage: React.FC = () => {
     if (employee) {
       setSelectedEmployee(employee);
       if (mode === 'edit') {
+        setEditValue('email', employee.email);
+        setEditValue('password', '');
         setEditValue('firstName', employee.firstName);
-        setEditValue('lastName', employee.lastName);
+        setEditValue('lastName', employee.lastName || '');
         setEditValue('phone', employee.phone || '');
         setEditValue('dateOfBirth', employee.dateOfBirth ? format(new Date(employee.dateOfBirth), 'yyyy-MM-dd') : '');
         setEditValue('dateOfJoining', employee.dateOfJoining ? format(new Date(employee.dateOfJoining), 'yyyy-MM-dd') : '');
@@ -313,6 +325,9 @@ const EmployeesPage: React.FC = () => {
         setEditValue('status', employee.status);
         setEditValue('departmentId', employee.departmentId || undefined);
         setEditValue('managerId', employee.managerId || undefined);
+        setEditValue('address', (employee as any).address || '');
+        setEditValue('panNumber', (employee as any).panNumber || '');
+        setEditValue('aadharNumber', (employee as any).aadharNumber || '');
       }
     }
   };
@@ -341,8 +356,10 @@ const EmployeesPage: React.FC = () => {
 
   const switchToEditMode = () => {
     if (selectedEmployee) {
+      setEditValue('email', selectedEmployee.email);
+      setEditValue('password', '');
       setEditValue('firstName', selectedEmployee.firstName);
-      setEditValue('lastName', selectedEmployee.lastName);
+      setEditValue('lastName', selectedEmployee.lastName || '');
       setEditValue('phone', selectedEmployee.phone || '');
       setEditValue('dateOfBirth', selectedEmployee.dateOfBirth ? format(new Date(selectedEmployee.dateOfBirth), 'yyyy-MM-dd') : '');
       setEditValue('dateOfJoining', selectedEmployee.dateOfJoining ? format(new Date(selectedEmployee.dateOfJoining), 'yyyy-MM-dd') : '');
@@ -350,6 +367,9 @@ const EmployeesPage: React.FC = () => {
       setEditValue('status', selectedEmployee.status);
       setEditValue('departmentId', selectedEmployee.departmentId || undefined);
       setEditValue('managerId', selectedEmployee.managerId || undefined);
+      setEditValue('address', (selectedEmployee as any).address || '');
+      setEditValue('panNumber', (selectedEmployee as any).panNumber || '');
+      setEditValue('aadharNumber', (selectedEmployee as any).aadharNumber || '');
       setDrawerMode('edit');
     }
   };
@@ -1316,11 +1336,11 @@ const EmployeesPage: React.FC = () => {
                       src={selectedEmployee.profileImageUrl ? `${import.meta.env.VITE_API_URL?.replace('/api', '')}${selectedEmployee.profileImageUrl}` : undefined}
                       sx={{ width: 64, height: 64, bgcolor: getRoleColor(selectedEmployee.role) }}
                     >
-                      {selectedEmployee.firstName[0]}{selectedEmployee.lastName[0]}
+                      {selectedEmployee.firstName[0]}{selectedEmployee.lastName?.[0] || ''}
                     </Avatar>
                     <Box>
                       <Typography variant="body1" fontWeight={600} sx={{ color: 'var(--text-primary)' }}>
-                        {selectedEmployee.email}
+                        Editing Employee
                       </Typography>
                       <Chip
                         label={selectedEmployee.role.charAt(0).toUpperCase() + selectedEmployee.role.slice(1)}
@@ -1334,6 +1354,51 @@ const EmployeesPage: React.FC = () => {
                       />
                     </Box>
                   </Box>
+
+                  <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
+                    Account Credentials
+                  </Typography>
+                  <Divider sx={{ borderColor: 'var(--border)' }} />
+
+                  <Controller
+                    name="email"
+                    control={editControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        size="small"
+                        label="Email"
+                        type="email"
+                        error={!!editErrors.email}
+                        helperText={editErrors.email?.message}
+                        disabled={submitting}
+                        sx={textFieldSx}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="password"
+                    control={editControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        size="small"
+                        label="New Password"
+                        type="password"
+                        placeholder="Leave blank to keep current password"
+                        error={!!editErrors.password}
+                        helperText={editErrors.password?.message || 'Leave blank to keep current password'}
+                        disabled={submitting}
+                        sx={{
+                          ...textFieldSx,
+                          '& .MuiOutlinedInput-input::placeholder': { color: 'var(--text-muted)', opacity: 1 },
+                        }}
+                      />
+                    )}
+                  />
 
                   <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
                     Personal Information
@@ -1411,6 +1476,25 @@ const EmployeesPage: React.FC = () => {
                         helperText={editErrors.dateOfBirth?.message}
                         disabled={submitting}
                         sx={dateFieldSx}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="address"
+                    control={editControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        size="small"
+                        label="Address"
+                        multiline
+                        rows={2}
+                        error={!!editErrors.address}
+                        helperText={editErrors.address?.message}
+                        disabled={submitting}
+                        sx={textFieldSx}
                       />
                     )}
                   />
@@ -1567,6 +1651,57 @@ const EmployeesPage: React.FC = () => {
                           </Box>
                         )}
                         isOptionEqualToValue={(option, value) => option.id === value.id}
+                      />
+                    )}
+                  />
+
+                  <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
+                    Identity Documents
+                  </Typography>
+                  <Divider sx={{ borderColor: 'var(--border)' }} />
+
+                  <Controller
+                    name="panNumber"
+                    control={editControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        size="small"
+                        label="PAN Number"
+                        placeholder="ABCDE1234F"
+                        inputProps={{ maxLength: 10 }}
+                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                        error={!!editErrors.panNumber}
+                        helperText={editErrors.panNumber?.message}
+                        disabled={submitting}
+                        sx={{
+                          ...textFieldSx,
+                          '& .MuiOutlinedInput-input::placeholder': { color: 'var(--text-muted)', opacity: 1 },
+                        }}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="aadharNumber"
+                    control={editControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        size="small"
+                        label="Aadhar Number"
+                        placeholder="123456789012"
+                        inputProps={{ maxLength: 12 }}
+                        onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                        error={!!editErrors.aadharNumber}
+                        helperText={editErrors.aadharNumber?.message}
+                        disabled={submitting}
+                        sx={{
+                          ...textFieldSx,
+                          '& .MuiOutlinedInput-input::placeholder': { color: 'var(--text-muted)', opacity: 1 },
+                        }}
                       />
                     )}
                   />

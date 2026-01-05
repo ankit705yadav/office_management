@@ -38,6 +38,8 @@ export interface CreateEmployeeRequest {
 }
 
 export interface UpdateEmployeeRequest {
+  email?: string;
+  password?: string;
   firstName?: string;
   lastName?: string;
   phone?: string;
@@ -51,6 +53,8 @@ export interface UpdateEmployeeRequest {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   profileImageUrl?: string;
+  panNumber?: string;
+  aadharNumber?: string;
 }
 
 export const employeeService = {
