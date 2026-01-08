@@ -7,7 +7,7 @@ export const loginValidation: ValidationChain[] = [
   body('email')
     .isEmail()
     .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .normalizeEmail({ gmail_remove_dots: false }),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
@@ -22,7 +22,7 @@ export const createUserValidation: ValidationChain[] = [
   body('email')
     .isEmail()
     .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .normalizeEmail({ gmail_remove_dots: false }),
   body('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters long')

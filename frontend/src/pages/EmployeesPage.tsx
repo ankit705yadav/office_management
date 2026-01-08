@@ -71,7 +71,7 @@ const updateEmployeeSchema = yup.object().shape({
   lastName: yup.string().optional(),
   phone: yup.string().optional(),
   dateOfBirth: yup.string().optional(),
-  dateOfJoining: yup.string().required('Date of joining is required'),
+  dateOfJoining: yup.string().optional(),
   role: yup.string().required('Role is required'),
   status: yup.string().required('Status is required'),
   departmentId: yup.number().transform((value, original) => original === '' ? undefined : value).optional().nullable(),
@@ -268,10 +268,17 @@ const EmployeesPage: React.FC = () => {
 
     try {
       setSubmitting(true);
-      // Remove empty password from data (don't update if blank)
+      // Clean up data before sending
       const updateData = { ...data };
       if (!updateData.password) {
         delete updateData.password;
+      }
+      // Remove empty/invalid date fields
+      if (!updateData.dateOfBirth || updateData.dateOfBirth === 'Invalid date') {
+        delete updateData.dateOfBirth;
+      }
+      if (!updateData.dateOfJoining || updateData.dateOfJoining === 'Invalid date') {
+        delete updateData.dateOfJoining;
       }
       await employeeService.updateEmployee(selectedEmployee.id, updateData);
       toast.success('Employee updated successfully');
@@ -319,8 +326,10 @@ const EmployeesPage: React.FC = () => {
         setEditValue('firstName', employee.firstName);
         setEditValue('lastName', employee.lastName || '');
         setEditValue('phone', employee.phone || '');
-        setEditValue('dateOfBirth', employee.dateOfBirth ? format(new Date(employee.dateOfBirth), 'yyyy-MM-dd') : '');
-        setEditValue('dateOfJoining', employee.dateOfJoining ? format(new Date(employee.dateOfJoining), 'yyyy-MM-dd') : '');
+        const dob = employee.dateOfBirth ? new Date(employee.dateOfBirth) : null;
+        const doj = employee.dateOfJoining ? new Date(employee.dateOfJoining) : null;
+        setEditValue('dateOfBirth', dob && !isNaN(dob.getTime()) ? format(dob, 'yyyy-MM-dd') : '');
+        setEditValue('dateOfJoining', doj && !isNaN(doj.getTime()) ? format(doj, 'yyyy-MM-dd') : '');
         setEditValue('role', employee.role);
         setEditValue('status', employee.status);
         setEditValue('departmentId', employee.departmentId || undefined);
@@ -361,8 +370,10 @@ const EmployeesPage: React.FC = () => {
       setEditValue('firstName', selectedEmployee.firstName);
       setEditValue('lastName', selectedEmployee.lastName || '');
       setEditValue('phone', selectedEmployee.phone || '');
-      setEditValue('dateOfBirth', selectedEmployee.dateOfBirth ? format(new Date(selectedEmployee.dateOfBirth), 'yyyy-MM-dd') : '');
-      setEditValue('dateOfJoining', selectedEmployee.dateOfJoining ? format(new Date(selectedEmployee.dateOfJoining), 'yyyy-MM-dd') : '');
+      const dob = selectedEmployee.dateOfBirth ? new Date(selectedEmployee.dateOfBirth) : null;
+      const doj = selectedEmployee.dateOfJoining ? new Date(selectedEmployee.dateOfJoining) : null;
+      setEditValue('dateOfBirth', dob && !isNaN(dob.getTime()) ? format(dob, 'yyyy-MM-dd') : '');
+      setEditValue('dateOfJoining', doj && !isNaN(doj.getTime()) ? format(doj, 'yyyy-MM-dd') : '');
       setEditValue('role', selectedEmployee.role);
       setEditValue('status', selectedEmployee.status);
       setEditValue('departmentId', selectedEmployee.departmentId || undefined);
