@@ -43,10 +43,10 @@ const App: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Set up navigation handler for API interceptor
+  // Set up navigation handler for API interceptor - redirect to landing page
   useEffect(() => {
     setNavigationHandler(() => {
-      navigate('/login', { replace: true });
+      navigate('/', { replace: true });
     });
   }, [navigate]);
 
