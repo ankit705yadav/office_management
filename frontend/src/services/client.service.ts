@@ -11,6 +11,8 @@ export interface Client {
   name: string;
   email?: string;
   phone?: string;
+  emails?: string[];
+  phones?: string[];
   address?: string;
   website?: string;
   contactPerson?: string;

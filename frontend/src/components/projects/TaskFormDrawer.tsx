@@ -163,7 +163,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
       setAttachments([]);
       setPendingLinks([]);
     }
-  }, [open, task, defaultProjectId]);
+  }, [open, task?.id, defaultProjectId]);
 
   const loadAvailableTasks = async (projectId: number) => {
     try {
@@ -344,7 +344,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
       try {
         setAddingLink(true);
         const newAttachments = await projectService.addTaskAttachments(currentTask.id, [newLink]);
-        setAttachments([...attachments, ...newAttachments]);
+        setAttachments(prev => [...prev, ...newAttachments]);
         setNewLinkUrl('');
         setNewLinkTitle('');
         toast.success('Link added');
@@ -355,14 +355,14 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
       }
     } else {
       // New task - store locally, will be saved after task creation
-      setPendingLinks([...pendingLinks, newLink]);
+      setPendingLinks(prev => [...prev, newLink]);
       setNewLinkUrl('');
       setNewLinkTitle('');
     }
   };
 
   const handleRemovePendingLink = (index: number) => {
-    setPendingLinks(pendingLinks.filter((_, i) => i !== index));
+    setPendingLinks(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDeleteAttachment = async (attachmentId: number) => {
@@ -370,7 +370,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
 
     try {
       await projectService.deleteTaskAttachment(currentTask.id, attachmentId);
-      setAttachments(attachments.filter((a) => a.id !== attachmentId));
+      setAttachments(prev => prev.filter((a) => a.id !== attachmentId));
       toast.success('Link removed');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to remove link');
@@ -653,34 +653,49 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
             </Typography>
 
             {/* Existing attachments (for saved tasks) */}
-            {attachments.length > 0 && (
+            {attachments.length > 0 ? (
               <Box sx={{ mb: 2 }}>
                 {attachments.map((attachment) => (
                   <Paper
                     key={attachment.id}
                     variant="outlined"
                     sx={{
-                      p: 1,
+                      p: 1.5,
                       mb: 1,
                       display: 'flex',
                       alignItems: 'center',
                       gap: 1,
+                      '&:hover': { bgcolor: 'action.hover' },
                     }}
                   >
                     <LinkIcon fontSize="small" color="primary" />
-                    <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                      <Typography variant="body2" noWrap title={attachment.linkTitle}>
-                        {attachment.linkTitle}
-                      </Typography>
+                    <Box
+                      sx={{ flex: 1, overflow: 'hidden', cursor: 'pointer' }}
+                      onClick={() => window.open(attachment.linkUrl, '_blank')}
+                    >
                       <Typography
-                        variant="caption"
-                        color="text.secondary"
+                        variant="body2"
                         noWrap
-                        title={attachment.linkUrl}
-                        sx={{ display: 'block' }}
+                        title={attachment.linkTitle}
+                        sx={{
+                          color: 'primary.main',
+                          textDecoration: 'underline',
+                          '&:hover': { color: 'primary.dark' },
+                        }}
                       >
-                        {attachment.linkUrl}
+                        {attachment.linkTitle || attachment.linkUrl}
                       </Typography>
+                      {attachment.linkTitle && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          noWrap
+                          title={attachment.linkUrl}
+                          sx={{ display: 'block' }}
+                        >
+                          {attachment.linkUrl}
+                        </Typography>
+                      )}
                     </Box>
                     <IconButton
                       size="small"
@@ -693,6 +708,7 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                       size="small"
                       onClick={() => window.open(attachment.linkUrl, '_blank')}
                       title="Open link"
+                      color="primary"
                     >
                       <LinkIcon fontSize="small" />
                     </IconButton>
@@ -709,6 +725,12 @@ const TaskFormDrawer: React.FC<TaskFormDrawerProps> = ({
                   </Paper>
                 ))}
               </Box>
+            ) : (
+              viewOnly && pendingLinks.length === 0 && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+                  No attachment links
+                </Typography>
+              )
             )}
 
             {/* Pending links (for new tasks - not yet saved) */}

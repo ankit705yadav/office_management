@@ -255,7 +255,7 @@ CREATE TABLE clients (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     email VARCHAR(255),
-    phone VARCHAR(20),
+    phone VARCHAR(50),
     address TEXT,
     contact_person VARCHAR(200),
     website VARCHAR(255),

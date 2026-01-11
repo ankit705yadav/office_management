@@ -35,6 +35,7 @@ import {
   Phone,
   Language,
   Person,
+  Close,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/contexts/AuthContext';
@@ -361,7 +362,6 @@ const ClientsPage: React.FC = () => {
             <TextField
               fullWidth
               label="Email"
-              type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="contact@example.com"

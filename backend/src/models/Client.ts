@@ -11,6 +11,8 @@ interface ClientAttributes {
   name: string;
   email?: string;
   phone?: string;
+  emails?: string[];
+  phones?: string[];
   address?: string;
   website?: string;
   contactPerson?: string;
@@ -53,9 +55,6 @@ Client.init(
     email: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      validate: {
-        isEmail: true,
-      },
     },
     phone: {
       type: DataTypes.STRING(50),
