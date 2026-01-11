@@ -7,6 +7,30 @@
 @tailwind utilities;
 
 /* ========================================
+   Landing Page Styles
+   ======================================== */
+
+.container-custom {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.section-padding {
+  @apply py-16 md:py-24;
+}
+
+.heading-1 {
+  @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+}
+
+.heading-2 {
+  @apply text-3xl md:text-4xl font-bold tracking-tight;
+}
+
+.heading-3 {
+  @apply text-xl md:text-2xl font-semibold;
+}
+
+/* ========================================
    CSS Custom Properties (Theme Variables)
    ======================================== */
 

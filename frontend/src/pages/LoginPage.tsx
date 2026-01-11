@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -10,6 +11,7 @@ import {
   Lock,
   DarkMode,
   LightMode,
+  ArrowBack,
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,6 +70,16 @@ const LoginPage: React.FC = () => {
       className="min-h-screen flex items-center justify-center px-4 transition-colors duration-200"
       style={{ backgroundColor: "var(--bg-primary)" }}
     >
+      {/* Back to Home - Top Left */}
+      <Link
+        to="/"
+        className="fixed top-4 left-4 flex items-center gap-2 text-sm font-medium transition-colors no-underline"
+        style={{ color: "var(--text-secondary)" }}
+      >
+        <ArrowBack sx={{ fontSize: 18 }} />
+        Back to Home
+      </Link>
+
       {/* Theme Toggle - Top Right */}
       <div className="fixed top-4 right-4">
         <IconButton
