@@ -92,16 +92,17 @@ CREATE TABLE employee_documents (
 -- LEAVE MANAGEMENT
 -- ============================================
 
--- Leave balances table
+-- Leave balances table (Total: 25 = 12 sick + 12 casual + 1 birthday)
 CREATE TABLE leave_balances (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     year INTEGER NOT NULL,
     sick_leave DECIMAL(4, 1) DEFAULT 12.0,
     casual_leave DECIMAL(4, 1) DEFAULT 12.0,
-    earned_leave DECIMAL(4, 1) DEFAULT 15.0,
+    earned_leave DECIMAL(4, 1) DEFAULT 0.0,
     comp_off DECIMAL(4, 1) DEFAULT 0.0,
     paternity_maternity DECIMAL(4, 1) DEFAULT 0.0,
+    birthday_leave DECIMAL(4, 1) DEFAULT 1.0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, year)

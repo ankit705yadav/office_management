@@ -10,6 +10,7 @@ interface LeaveBalanceAttributes {
   earnedLeave: number;
   compOff: number;
   paternityMaternity: number;
+  birthdayLeave: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,6 +26,7 @@ class LeaveBalance extends Model<LeaveBalanceAttributes, LeaveBalanceCreationAtt
   public earnedLeave!: number;
   public compOff!: number;
   public paternityMaternity!: number;
+  public birthdayLeave!: number;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -58,7 +60,7 @@ LeaveBalance.init(
     },
     earnedLeave: {
       type: DataTypes.DECIMAL(4, 1),
-      defaultValue: 15.0,
+      defaultValue: 0.0,
       field: 'earned_leave',
     },
     compOff: {
@@ -70,6 +72,11 @@ LeaveBalance.init(
       type: DataTypes.DECIMAL(4, 1),
       defaultValue: 0.0,
       field: 'paternity_maternity',
+    },
+    birthdayLeave: {
+      type: DataTypes.DECIMAL(4, 1),
+      defaultValue: 1.0,
+      field: 'birthday_leave',
     },
   },
   {

@@ -19,6 +19,7 @@ export enum LeaveType {
   COMP_OFF = 'comp_off',
   PATERNITY = 'paternity',
   MATERNITY = 'maternity',
+  BIRTHDAY = 'birthday_leave',
 }
 
 export enum RequestStatus {

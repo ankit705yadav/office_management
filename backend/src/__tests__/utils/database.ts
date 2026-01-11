@@ -78,15 +78,16 @@ export const seedTestData = async (): Promise<TestData> => {
     departmentId: department.id,
   });
 
-  // Create leave balance for employee
+  // Create leave balance for employee (Total: 25 = 12 sick + 12 casual + 1 birthday)
   const leaveBalance = await LeaveBalance.create({
     userId: employee.id,
     year: new Date().getFullYear(),
     sickLeave: 12.0,
     casualLeave: 12.0,
-    earnedLeave: 15.0,
+    earnedLeave: 0.0,
     compOff: 2.0,
     paternityMaternity: 0,
+    birthdayLeave: 1.0,
   });
 
   // Create a client

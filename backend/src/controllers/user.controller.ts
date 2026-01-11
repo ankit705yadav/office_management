@@ -233,16 +233,17 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
-    // Create leave balance for current year
+    // Create leave balance for current year (Total: 25 = 12 sick + 12 casual + 1 birthday)
     const currentYear = new Date().getFullYear();
     await LeaveBalance.create({
       userId: user.id,
       year: currentYear,
       sickLeave: 12.0,
       casualLeave: 12.0,
-      earnedLeave: 15.0,
+      earnedLeave: 0.0,
       compOff: 0.0,
       paternityMaternity: 0.0,
+      birthdayLeave: 1.0,
     }, { transaction });
 
     // Commit the transaction

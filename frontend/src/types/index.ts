@@ -88,6 +88,7 @@ export interface LeaveBalance {
   earnedLeave: number;
   compOff: number;
   paternityMaternity: number;
+  birthdayLeave: number;
 }
 
 export enum ApprovalStatus {

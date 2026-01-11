@@ -779,15 +779,16 @@ export const getLeaveBalance = async (req: Request, res: Response): Promise<void
     });
 
     if (!leaveBalance) {
-      // Create leave balance for the year if it doesn't exist
+      // Create leave balance for the year if it doesn't exist (Total: 25 = 12 sick + 12 casual + 1 birthday)
       const newBalance = await LeaveBalance.create({
         userId,
         year,
         sickLeave: 12.0,
         casualLeave: 12.0,
-        earnedLeave: 15.0,
+        earnedLeave: 0.0,
         compOff: 0.0,
         paternityMaternity: 0.0,
+        birthdayLeave: 1.0,
       });
 
       res.status(200).json({
