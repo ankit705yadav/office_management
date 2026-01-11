@@ -240,15 +240,7 @@ export const getTeamReports = async (req: Request, res: Response): Promise<void>
 
     const where: any = {};
 
-    // For managers, only show reports from their direct reports
-    if (userRole === UserRole.MANAGER) {
-      const subordinates = await User.findAll({
-        where: { managerId: userId, status: 'active' },
-        attributes: ['id'],
-      });
-      const subordinateIds = subordinates.map((s) => s.id);
-      where.userId = { [Op.in]: subordinateIds };
-    }
+    // Managers and admins can see all reports (no filtering by managerId)
 
     // Filter by specific employee if provided
     if (employeeId) {
@@ -450,12 +442,9 @@ export const getTeamMembers = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    let where: any = { status: 'active' };
+    const where: any = { status: 'active' };
 
-    // Managers can only see their direct reports
-    if (userRole === UserRole.MANAGER) {
-      where.managerId = userId;
-    }
+    // Managers and admins can see all active employees
 
     const users = await User.findAll({
       where,
