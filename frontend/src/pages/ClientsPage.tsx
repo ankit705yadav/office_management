@@ -35,7 +35,6 @@ import {
   Phone,
   Language,
   Person,
-  Close,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/contexts/AuthContext';
