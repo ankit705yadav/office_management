@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   IconButton,
   TextField,
@@ -167,6 +168,7 @@ const EmployeesPage: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [managers, setManagers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -178,6 +180,11 @@ const EmployeesPage: React.FC = () => {
   const [aadharNumber, setAadharNumber] = useState('');
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [documentLinks, setDocumentLinks] = useState<{ linkTitle: string; linkUrl: string }[]>([]);
+
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const {
     control: createControl,
@@ -211,20 +218,43 @@ const EmployeesPage: React.FC = () => {
   });
 
   useEffect(() => {
-    loadEmployees();
     loadDepartments();
+    loadManagers();
   }, []);
+
+  // Load employees when pagination or filters change
+  useEffect(() => {
+    loadEmployees();
+  }, [page, rowsPerPage, searchTerm, filterStatus, filterDepartment]);
 
   const loadEmployees = async () => {
     try {
-      setLoading(true);
-      const response = await employeeService.getEmployees({ limit: 100 });
+      setEmployeesLoading(true);
+      const response = await employeeService.getEmployees({
+        page: page + 1, // API uses 1-indexed pages
+        limit: rowsPerPage,
+        search: searchTerm || undefined,
+        status: filterStatus || undefined,
+        departmentId: filterDepartment ? parseInt(filterDepartment) : undefined,
+      });
       setEmployees(response.items);
-      setManagers(response.items.filter(e => e.role === 'manager' || e.role === 'admin'));
+      setTotal(response.pagination?.total || 0);
     } catch (error) {
       toast.error('Failed to load employees');
     } finally {
+      setEmployeesLoading(false);
       setLoading(false);
+    }
+  };
+
+  const loadManagers = async () => {
+    try {
+      // Load all managers/admins for the manager dropdown
+      const response = await employeeService.getEmployees({ limit: 100, role: 'manager' });
+      const adminResponse = await employeeService.getEmployees({ limit: 100, role: 'admin' });
+      setManagers([...response.items, ...adminResponse.items]);
+    } catch (error) {
+      console.error('Failed to load managers:', error);
     }
   };
 
@@ -385,21 +415,18 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
-  // Filter employees based on search and filters
-  const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = searchTerm === '' ||
-      emp.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase());
+  // Pagination handlers
+  const handlePageChange = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
 
-    const matchesStatus = filterStatus === '' || emp.status === filterStatus;
-    const matchesDepartment = filterDepartment === '' || emp.departmentId?.toString() === filterDepartment;
-
-    return matchesSearch && matchesStatus && matchesDepartment;
-  });
+  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const stats = {
-    total: employees.length,
+    total: total,
     active: employees.filter(e => e.status === 'active').length,
     managers: employees.filter(e => e.role === 'manager').length,
     admins: employees.filter(e => e.role === 'admin').length,
@@ -508,7 +535,7 @@ const EmployeesPage: React.FC = () => {
                 size="small"
                 placeholder="Search by name or email..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -534,7 +561,7 @@ const EmployeesPage: React.FC = () => {
                 size="small"
                 label="Status"
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}
                 sx={selectFieldSx}
                 SelectProps={{ MenuProps: selectMenuProps }}
               >
@@ -551,7 +578,7 @@ const EmployeesPage: React.FC = () => {
                 size="small"
                 label="Department"
                 value={filterDepartment}
-                onChange={(e) => setFilterDepartment(e.target.value)}
+                onChange={(e) => { setFilterDepartment(e.target.value); setPage(0); }}
                 sx={selectFieldSx}
                 SelectProps={{ MenuProps: selectMenuProps }}
               >
@@ -589,7 +616,13 @@ const EmployeesPage: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredEmployees.length === 0 ? (
+                  {employeesLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ borderColor: 'var(--border)' }}>
+                        <CircularProgress size={24} sx={{ color: 'var(--accent-primary)' }} />
+                      </TableCell>
+                    </TableRow>
+                  ) : employees.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} align="center" sx={{ color: 'var(--text-secondary)', borderColor: 'var(--border)' }}>
                         <Typography sx={{ color: 'var(--text-secondary)' }} py={4}>
@@ -598,7 +631,7 @@ const EmployeesPage: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredEmployees.map((employee) => (
+                    employees.map((employee) => (
                       <TableRow key={employee.id} hover sx={{ '&:hover': { bgcolor: 'var(--bg-elevated)' } }}>
                         <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
                           <Box display="flex" alignItems="center" gap={1.5}>
@@ -695,6 +728,31 @@ const EmployeesPage: React.FC = () => {
                   )}
                 </TableBody>
               </Table>
+              <TablePagination
+                component="div"
+                count={total}
+                page={page}
+                onPageChange={handlePageChange}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleRowsPerPageChange}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                    color: 'var(--text-secondary)',
+                  },
+                  '& .MuiTablePagination-select': {
+                    color: 'var(--text-primary)',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: 'var(--text-secondary)',
+                  },
+                  '& .MuiIconButton-root.Mui-disabled': {
+                    color: 'var(--text-muted)',
+                  },
+                }}
+              />
             </TableContainer>
           )}
         </CardContent>

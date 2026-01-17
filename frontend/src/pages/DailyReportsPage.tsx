@@ -8,6 +8,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   IconButton,
   Dialog,
@@ -87,8 +88,12 @@ const DailyReportsPage: React.FC = () => {
   const isManagerOrAdmin = user?.role === 'manager' || user?.role === 'admin';
 
   const [activeTab, setActiveTab] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Separate loading states per tab
+  const [todayLoading, setTodayLoading] = useState(false);
+  const [myReportsLoading, setMyReportsLoading] = useState(false);
+  const [teamReportsLoading, setTeamReportsLoading] = useState(false);
 
   // Today's Report State
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -98,15 +103,17 @@ const DailyReportsPage: React.FC = () => {
 
   // My Reports State
   const [myReports, setMyReports] = useState<DailyReport[]>([]);
-  const [myReportsPage, setMyReportsPage] = useState(1);
-  const [myReportsTotalPages, setMyReportsTotalPages] = useState(1);
+  const [myReportsPage, setMyReportsPage] = useState(0);
+  const [myReportsRowsPerPage, setMyReportsRowsPerPage] = useState(10);
+  const [myReportsTotal, setMyReportsTotal] = useState(0);
 
   // Team Reports State
   const [teamReports, setTeamReports] = useState<DailyReport[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<number | ''>('');
-  const [teamReportsPage, setTeamReportsPage] = useState(1);
-  const [teamReportsTotalPages, setTeamReportsTotalPages] = useState(1);
+  const [teamReportsPage, setTeamReportsPage] = useState(0);
+  const [teamReportsRowsPerPage, setTeamReportsRowsPerPage] = useState(10);
+  const [teamReportsTotal, setTeamReportsTotal] = useState(0);
 
   // View Report Dialog
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -123,7 +130,7 @@ const DailyReportsPage: React.FC = () => {
 
   const loadReportForDate = useCallback(async (date: string) => {
     try {
-      setLoading(true);
+      setTodayLoading(true);
       const report = await dailyReportService.getReportByDate(date);
       setCurrentReport(report);
       if (report) {
@@ -137,45 +144,45 @@ const DailyReportsPage: React.FC = () => {
       console.error('Error loading report:', error);
       toast.error('Failed to load report');
     } finally {
-      setLoading(false);
+      setTodayLoading(false);
     }
   }, []);
 
   const loadMyReports = useCallback(async () => {
     try {
-      setLoading(true);
+      setMyReportsLoading(true);
       const data = await dailyReportService.getMyReports({
-        page: myReportsPage,
-        limit: 10,
+        page: myReportsPage + 1, // API uses 1-indexed pages
+        limit: myReportsRowsPerPage,
       });
       setMyReports(data.reports);
-      setMyReportsTotalPages(data.pagination.totalPages);
+      setMyReportsTotal(data.pagination?.total || 0);
     } catch (error) {
       console.error('Error loading my reports:', error);
       toast.error('Failed to load reports');
     } finally {
-      setLoading(false);
+      setMyReportsLoading(false);
     }
-  }, [myReportsPage]);
+  }, [myReportsPage, myReportsRowsPerPage]);
 
   const loadTeamReports = useCallback(async () => {
     if (!isManagerOrAdmin) return;
     try {
-      setLoading(true);
+      setTeamReportsLoading(true);
       const data = await dailyReportService.getTeamReports({
-        page: teamReportsPage,
-        limit: 10,
+        page: teamReportsPage + 1, // API uses 1-indexed pages
+        limit: teamReportsRowsPerPage,
         employeeId: selectedEmployee || undefined,
       });
       setTeamReports(data.reports);
-      setTeamReportsTotalPages(data.pagination.totalPages);
+      setTeamReportsTotal(data.pagination?.total || 0);
     } catch (error) {
       console.error('Error loading team reports:', error);
       toast.error('Failed to load team reports');
     } finally {
-      setLoading(false);
+      setTeamReportsLoading(false);
     }
-  }, [isManagerOrAdmin, teamReportsPage, selectedEmployee]);
+  }, [isManagerOrAdmin, teamReportsPage, teamReportsRowsPerPage, selectedEmployee]);
 
   const loadTeamMembers = useCallback(async () => {
     if (!isManagerOrAdmin) return;
@@ -381,38 +388,64 @@ const DailyReportsPage: React.FC = () => {
     </Paper>
   );
 
+  // Pagination handlers for My Reports
+  const handleMyReportsPageChange = (_event: unknown, newPage: number) => {
+    setMyReportsPage(newPage);
+  };
+
+  const handleMyReportsRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setMyReportsRowsPerPage(parseInt(event.target.value, 10));
+    setMyReportsPage(0);
+  };
+
   const renderMyReports = () => (
     <Box>
-      {loading ? (
+      {myReportsLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
         </Box>
       ) : (
         <>
           {renderReportsList(myReports)}
-          {myReportsTotalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, gap: 1 }}>
-              <Button
-                disabled={myReportsPage <= 1}
-                onClick={() => setMyReportsPage((p) => p - 1)}
-              >
-                Previous
-              </Button>
-              <Typography sx={{ alignSelf: 'center', color: 'var(--text-secondary)' }}>
-                Page {myReportsPage} of {myReportsTotalPages}
-              </Typography>
-              <Button
-                disabled={myReportsPage >= myReportsTotalPages}
-                onClick={() => setMyReportsPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </Box>
-          )}
+          <TablePagination
+            component="div"
+            count={myReportsTotal}
+            page={myReportsPage}
+            onPageChange={handleMyReportsPageChange}
+            rowsPerPage={myReportsRowsPerPage}
+            onRowsPerPageChange={handleMyReportsRowsPerPageChange}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{
+              borderTop: '1px solid var(--border)',
+              color: 'var(--text-secondary)',
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                color: 'var(--text-secondary)',
+              },
+              '& .MuiTablePagination-select': {
+                color: 'var(--text-primary)',
+              },
+              '& .MuiIconButton-root': {
+                color: 'var(--text-secondary)',
+              },
+              '& .MuiIconButton-root.Mui-disabled': {
+                color: 'var(--text-muted)',
+              },
+            }}
+          />
         </>
       )}
     </Box>
   );
+
+  // Pagination handlers for Team Reports
+  const handleTeamReportsPageChange = (_event: unknown, newPage: number) => {
+    setTeamReportsPage(newPage);
+  };
+
+  const handleTeamReportsRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTeamReportsRowsPerPage(parseInt(event.target.value, 10));
+    setTeamReportsPage(0);
+  };
 
   const renderTeamReports = () => (
     <Box>
@@ -423,7 +456,7 @@ const DailyReportsPage: React.FC = () => {
           value={selectedEmployee}
           onChange={(e) => {
             setSelectedEmployee(e.target.value as number | '');
-            setTeamReportsPage(1);
+            setTeamReportsPage(0);
           }}
           sx={{ minWidth: 250, ...textFieldSx }}
           size="small"
@@ -437,32 +470,38 @@ const DailyReportsPage: React.FC = () => {
         </TextField>
       </Box>
 
-      {loading ? (
+      {teamReportsLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
         </Box>
       ) : (
         <>
           {renderReportsList(teamReports, true)}
-          {teamReportsTotalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, gap: 1 }}>
-              <Button
-                disabled={teamReportsPage <= 1}
-                onClick={() => setTeamReportsPage((p) => p - 1)}
-              >
-                Previous
-              </Button>
-              <Typography sx={{ alignSelf: 'center', color: 'var(--text-secondary)' }}>
-                Page {teamReportsPage} of {teamReportsTotalPages}
-              </Typography>
-              <Button
-                disabled={teamReportsPage >= teamReportsTotalPages}
-                onClick={() => setTeamReportsPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </Box>
-          )}
+          <TablePagination
+            component="div"
+            count={teamReportsTotal}
+            page={teamReportsPage}
+            onPageChange={handleTeamReportsPageChange}
+            rowsPerPage={teamReportsRowsPerPage}
+            onRowsPerPageChange={handleTeamReportsRowsPerPageChange}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{
+              borderTop: '1px solid var(--border)',
+              color: 'var(--text-secondary)',
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                color: 'var(--text-secondary)',
+              },
+              '& .MuiTablePagination-select': {
+                color: 'var(--text-primary)',
+              },
+              '& .MuiIconButton-root': {
+                color: 'var(--text-secondary)',
+              },
+              '& .MuiIconButton-root.Mui-disabled': {
+                color: 'var(--text-muted)',
+              },
+            }}
+          />
         </>
       )}
     </Box>
@@ -501,10 +540,10 @@ const DailyReportsPage: React.FC = () => {
         )}
       </Tabs>
 
-      {activeTab === 0 && !loading && renderTodayReport()}
-      {activeTab === 0 && loading && (
+      {activeTab === 0 && !todayLoading && renderTodayReport()}
+      {activeTab === 0 && todayLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
         </Box>
       )}
       {activeTab === 1 && renderMyReports()}
