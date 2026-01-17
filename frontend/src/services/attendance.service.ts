@@ -58,7 +58,7 @@ class AttendanceService {
    */
   async getTeamAttendance(
     filters?: AttendanceFilters
-  ): Promise<{ attendance: Attendance[] }> {
+  ): Promise<{ attendance: Attendance[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
     const response = await api.get(`${this.baseUrl}/team`, { params: filters });
     return response.data.data;
   }

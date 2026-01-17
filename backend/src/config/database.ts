@@ -17,8 +17,8 @@ const sequelize = new Sequelize(config.database.url, {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   },
-  // SSL configuration for production (Railway PostgreSQL requires SSL)
-  dialectOptions: config.nodeEnv === 'production' ? {
+  // SSL configuration for Railway PostgreSQL (required for external connections)
+  dialectOptions: config.database.url.includes('railway') ? {
     ssl: {
       require: true,
       rejectUnauthorized: false,

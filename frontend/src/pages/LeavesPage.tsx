@@ -8,6 +8,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   IconButton,
   Dialog,
@@ -194,7 +195,6 @@ const LeavesPage: React.FC = () => {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance | null>(null);
-  const [loading, setLoading] = useState(true);
   const [openApplyDialog, setOpenApplyDialog] = useState(false);
   const [openApproveDialog, setOpenApproveDialog] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState<LeaveRequest | null>(null);
@@ -204,6 +204,18 @@ const LeavesPage: React.FC = () => {
   const [halfDaySession, setHalfDaySession] = useState<HalfDaySession | ''>('');
   const [activeTab, setActiveTab] = useState(0);
   const [documentUrl, setDocumentUrl] = useState<string>('');
+
+  // Current Leaves pagination
+  const [leavesPage, setLeavesPage] = useState(0);
+  const [leavesRowsPerPage, setLeavesRowsPerPage] = useState(10);
+  const [leavesTotal, setLeavesTotal] = useState(0);
+  const [leavesLoading, setLeavesLoading] = useState(false);
+
+  // Leave History pagination
+  const [historyPage, setHistoryPage] = useState(0);
+  const [historyRowsPerPage, setHistoryRowsPerPage] = useState(10);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const {
     control,
@@ -234,10 +246,13 @@ const LeavesPage: React.FC = () => {
   }
 
   useEffect(() => {
-    loadLeaves();
+    loadLeaves(0, leavesRowsPerPage);
     loadLeaveBalance();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 1) {
-      loadHistory();
+      loadHistory(0, historyRowsPerPage);
     }
   }, [activeTab]);
 
@@ -250,28 +265,58 @@ const LeavesPage: React.FC = () => {
     }
   };
 
-  const loadLeaves = async () => {
+  const loadLeaves = async (p = leavesPage, rpp = leavesRowsPerPage) => {
     try {
-      setLoading(true);
-      const response = await leaveService.getLeaveRequests({ limit: 100 });
+      setLeavesLoading(true);
+      const response = await leaveService.getLeaveRequests({ page: p + 1, limit: rpp });
       setLeaves(response.items);
+      setLeavesTotal(response.pagination?.total || response.items.length);
     } catch (error) {
       toast.error('Failed to load leave requests');
+      setLeaves([]);
+      setLeavesTotal(0);
     } finally {
-      setLoading(false);
+      setLeavesLoading(false);
     }
   };
 
-  const loadHistory = async () => {
+  const handleLeavesPageChange = (_event: unknown, newPage: number) => {
+    setLeavesPage(newPage);
+    loadLeaves(newPage, leavesRowsPerPage);
+  };
+
+  const handleLeavesRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setLeavesRowsPerPage(newRowsPerPage);
+    setLeavesPage(0);
+    loadLeaves(0, newRowsPerPage);
+  };
+
+  const loadHistory = async (p = historyPage, rpp = historyRowsPerPage) => {
     try {
-      setLoading(true);
-      const response = await leaveService.getLeaveHistory({ limit: 100 });
+      setHistoryLoading(true);
+      const response = await leaveService.getLeaveHistory({ page: p + 1, limit: rpp });
       setLeaveHistory(response.items);
+      setHistoryTotal(response.pagination?.total || response.items.length);
     } catch (error) {
       toast.error('Failed to load leave history');
+      setLeaveHistory([]);
+      setHistoryTotal(0);
     } finally {
-      setLoading(false);
+      setHistoryLoading(false);
     }
+  };
+
+  const handleHistoryPageChange = (_event: unknown, newPage: number) => {
+    setHistoryPage(newPage);
+    loadHistory(newPage, historyRowsPerPage);
+  };
+
+  const handleHistoryRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setHistoryRowsPerPage(newRowsPerPage);
+    setHistoryPage(0);
+    loadHistory(0, newRowsPerPage);
   };
 
   const handleExport = async () => {
@@ -777,13 +822,13 @@ const LeavesPage: React.FC = () => {
         </Tabs>
       </Box>
 
-      {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
+      {activeTab === 0 && (
         <>
-          {activeTab === 0 && (
+          {leavesLoading ? (
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
+            </Box>
+          ) : (
             <>
               {/* My Leaves Section */}
               {renderLeaveTable(myLeaves, 'My Leaves', false)}
@@ -792,12 +837,66 @@ const LeavesPage: React.FC = () => {
               {user?.role !== 'employee' && teamLeaves.length > 0 && (
                 renderLeaveTable(teamLeaves, 'Team Leave Requests', true)
               )}
+
+              <TablePagination
+                component="div"
+                count={leavesTotal}
+                page={leavesPage}
+                onPageChange={handleLeavesPageChange}
+                rowsPerPage={leavesRowsPerPage}
+                onRowsPerPageChange={handleLeavesRowsPerPageChange}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                    color: 'var(--text-secondary)',
+                  },
+                  '& .MuiTablePagination-select': {
+                    color: 'var(--text-primary)',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: 'var(--text-secondary)',
+                  },
+                }}
+              />
             </>
           )}
+        </>
+      )}
 
-          {activeTab === 1 && (
+      {activeTab === 1 && (
+        <>
+          {historyLoading ? (
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
+            </Box>
+          ) : (
             <>
               {renderLeaveTable(leaveHistory, 'Leave History', false)}
+
+              <TablePagination
+                component="div"
+                count={historyTotal}
+                page={historyPage}
+                onPageChange={handleHistoryPageChange}
+                rowsPerPage={historyRowsPerPage}
+                onRowsPerPageChange={handleHistoryRowsPerPageChange}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                    color: 'var(--text-secondary)',
+                  },
+                  '& .MuiTablePagination-select': {
+                    color: 'var(--text-primary)',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: 'var(--text-secondary)',
+                  },
+                }}
+              />
             </>
           )}
         </>

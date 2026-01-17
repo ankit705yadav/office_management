@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,6 +24,7 @@ import {
   Alert,
   Drawer,
   Divider,
+  CircularProgress,
 } from '@mui/material';
 import {
   AccessTime,
@@ -30,7 +32,6 @@ import {
   Edit,
   Download,
   Refresh,
-  LocationOn,
   Close,
 } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
@@ -83,13 +84,35 @@ const AttendancePage: React.FC = () => {
   });
   const [approvalComments, setApprovalComments] = useState('');
 
+  // Pagination state for My Attendance
+  const [myPage, setMyPage] = useState(0);
+  const [myRowsPerPage, setMyRowsPerPage] = useState(10);
+  const [myTotal, setMyTotal] = useState(0);
+  const [myLoading, setMyLoading] = useState(false);
+
+  // Pagination state for Regularizations
+  const [regPage, setRegPage] = useState(0);
+  const [regRowsPerPage, setRegRowsPerPage] = useState(10);
+  const [regTotal, setRegTotal] = useState(0);
+  const [regLoading, setRegLoading] = useState(false);
+
+  // Pagination state for Team Attendance
+  const [teamPage, setTeamPage] = useState(0);
+  const [teamRowsPerPage, setTeamRowsPerPage] = useState(10);
+  const [teamTotal, setTeamTotal] = useState(0);
+  const [teamLoading, setTeamLoading] = useState(false);
+
   useEffect(() => {
     loadTodayAttendance();
     loadMonthlySummary();
-    loadMyAttendance();
-    loadRegularizations();
+    // Reset pagination when month/year changes
+    setMyPage(0);
+    setRegPage(0);
+    setTeamPage(0);
+    loadMyAttendance(0, myRowsPerPage);
+    loadRegularizations(0, regRowsPerPage);
     if (user?.role === 'admin' || user?.role === 'manager') {
-      loadTeamAttendance();
+      loadTeamAttendance(0, teamRowsPerPage);
     }
   }, [selectedMonth, selectedYear]);
 
@@ -102,42 +125,99 @@ const AttendancePage: React.FC = () => {
     }
   };
 
-  const loadMyAttendance = async () => {
+  const loadMyAttendance = async (page = myPage, rowsPerPage = myRowsPerPage) => {
     try {
-      const { attendance } = await attendanceService.getMyAttendance({
+      setMyLoading(true);
+      const { attendance, pagination } = await attendanceService.getMyAttendance({
         month: selectedMonth,
         year: selectedYear,
+        page: page + 1,
+        limit: rowsPerPage,
       });
       setMyAttendance(attendance || []);
+      setMyTotal(pagination?.total || 0);
     } catch (error: any) {
       console.error('Failed to load attendance:', error);
       setMyAttendance([]);
+      setMyTotal(0);
+    } finally {
+      setMyLoading(false);
     }
   };
 
-  const loadTeamAttendance = async () => {
+  const handleMyPageChange = (_event: unknown, newPage: number) => {
+    setMyPage(newPage);
+    loadMyAttendance(newPage, myRowsPerPage);
+  };
+
+  const handleMyRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setMyRowsPerPage(newRowsPerPage);
+    setMyPage(0);
+    loadMyAttendance(0, newRowsPerPage);
+  };
+
+  const loadTeamAttendance = async (page = teamPage, rowsPerPage = teamRowsPerPage) => {
     try {
-      const { attendance } = await attendanceService.getTeamAttendance({
+      setTeamLoading(true);
+      const { attendance, pagination } = await attendanceService.getTeamAttendance({
         month: selectedMonth,
         year: selectedYear,
+        page: page + 1,
+        limit: rowsPerPage,
       });
       setTeamAttendance(attendance || []);
+      setTeamTotal(pagination?.total || 0);
     } catch (error: any) {
       console.error('Failed to load team attendance:', error);
       setTeamAttendance([]);
+      setTeamTotal(0);
+    } finally {
+      setTeamLoading(false);
     }
   };
 
-  const loadRegularizations = async () => {
+  const handleTeamPageChange = (_event: unknown, newPage: number) => {
+    setTeamPage(newPage);
+    loadTeamAttendance(newPage, teamRowsPerPage);
+  };
+
+  const handleTeamRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setTeamRowsPerPage(newRowsPerPage);
+    setTeamPage(0);
+    loadTeamAttendance(0, newRowsPerPage);
+  };
+
+  const loadRegularizations = async (page = regPage, rowsPerPage = regRowsPerPage) => {
     try {
-      const { regularizations: regs } = await attendanceService.getRegularizations();
-      console.log('Regularizations loaded:', regs.length, 'items');
+      setRegLoading(true);
+      const { regularizations: regs, pagination } = await attendanceService.getRegularizations({
+        page: page + 1,
+        limit: rowsPerPage,
+      });
       setRegularizations(regs || []);
+      setRegTotal(pagination?.total || 0);
     } catch (error: any) {
       console.error('Failed to load regularizations:', error);
       toast.error('Failed to load regularization requests');
       setRegularizations([]);
+      setRegTotal(0);
+    } finally {
+      setRegLoading(false);
     }
+  };
+
+  const handleRegPageChange = (_event: unknown, newPage: number) => {
+    setRegPage(newPage);
+    loadRegularizations(newPage, regRowsPerPage);
+  };
+
+  const handleRegRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setRegRowsPerPage(newRowsPerPage);
+    setRegPage(0);
+    loadRegularizations(0, newRowsPerPage);
   };
 
   const loadMonthlySummary = async () => {
@@ -153,15 +233,7 @@ const AttendancePage: React.FC = () => {
   const handleCheckIn = async () => {
     try {
       setLoading(true);
-      let location = '';
-      try {
-        location = await attendanceService.getCurrentLocation();
-      } catch (error) {
-        console.warn('Failed to get location:', error);
-        location = 'Location not available';
-      }
-
-      await attendanceService.checkIn({ location });
+      await attendanceService.checkIn({});
       toast.success('Checked in successfully!');
       loadTodayAttendance();
       loadMyAttendance();
@@ -176,15 +248,7 @@ const AttendancePage: React.FC = () => {
   const handleCheckOut = async () => {
     try {
       setLoading(true);
-      let location = '';
-      try {
-        location = await attendanceService.getCurrentLocation();
-      } catch (error) {
-        console.warn('Failed to get location:', error);
-        location = 'Location not available';
-      }
-
-      await attendanceService.checkOut({ location });
+      await attendanceService.checkOut({});
       toast.success('Checked out successfully!');
       loadTodayAttendance();
       loadMyAttendance();
@@ -301,7 +365,7 @@ const AttendancePage: React.FC = () => {
 
   const formatTime = (dateTime: string | null) => {
     if (!dateTime) return '-';
-    return format(parseISO(dateTime), 'hh:mm a');
+    return format(new Date(dateTime), 'hh:mm a');
   };
 
   const formatDate = (date: string) => {
@@ -539,166 +603,247 @@ const AttendancePage: React.FC = () => {
 
         {/* My Attendance Tab */}
         <TabPanel value={tabValue} index={0}>
-          <TableContainer sx={{ bgcolor: 'var(--bg-elevated)', borderRadius: 1 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Date</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Check In</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Check Out</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Work Hours</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Status</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Location</strong></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {myAttendance.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ color: 'var(--text-muted)', borderColor: 'var(--border)', bgcolor: 'var(--surface)' }}>
-                      No attendance records found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  myAttendance.map((record, index) => (
-                    <TableRow key={`${record.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
-                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(record.date)}</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkInTime)}</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkOutTime)}</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{record.workHours} hrs</TableCell>
-                      <TableCell sx={{ borderColor: 'var(--border)' }}>
-                        <Chip
-                          label={record.status}
-                          color={getStatusColor(record.status)}
-                          size="small"
-                        />
-                        {record.isLate && (
-                          <Chip label="Late" color="warning" size="small" sx={{ ml: 0.5 }} />
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ borderColor: 'var(--border)' }}>
-                        {record.checkInLocation && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <LocationOn fontSize="small" sx={{ color: 'var(--text-muted)' }} />
-                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>{record.checkInLocation}</Typography>
-                          </Box>
-                        )}
-                      </TableCell>
+          {myLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
+            </Box>
+          ) : (
+            <>
+              <TableContainer sx={{ bgcolor: 'var(--bg-elevated)', borderRadius: 1 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Date</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Check In</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Check Out</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Work Hours</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Status</strong></TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {myAttendance.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center" sx={{ color: 'var(--text-muted)', borderColor: 'var(--border)', bgcolor: 'var(--surface)' }}>
+                          No attendance records found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      myAttendance.map((record, index) => (
+                        <TableRow key={`${record.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(record.date)}</TableCell>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkInTime)}</TableCell>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkOutTime)}</TableCell>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{record.workHours} hrs</TableCell>
+                          <TableCell sx={{ borderColor: 'var(--border)' }}>
+                            <Chip
+                              label={record.status}
+                              color={getStatusColor(record.status)}
+                              size="small"
+                            />
+                            {record.isLate && (
+                              <Chip label="Late" color="warning" size="small" sx={{ ml: 0.5 }} />
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div"
+                count={myTotal}
+                page={myPage}
+                onPageChange={handleMyPageChange}
+                rowsPerPage={myRowsPerPage}
+                onRowsPerPageChange={handleMyRowsPerPageChange}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                    color: 'var(--text-secondary)',
+                  },
+                  '& .MuiTablePagination-select': {
+                    color: 'var(--text-primary)',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: 'var(--text-secondary)',
+                  },
+                }}
+              />
+            </>
+          )}
         </TabPanel>
 
         {/* Regularizations Tab */}
         <TabPanel value={tabValue} index={1}>
-          <TableContainer sx={{ bgcolor: 'var(--bg-elevated)', borderRadius: 1 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Date</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Requested Check In</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Requested Check Out</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Reason</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Status</strong></TableCell>
-                  <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Actions</strong></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {regularizations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ color: 'var(--text-muted)', borderColor: 'var(--border)', bgcolor: 'var(--surface)' }}>
-                      No regularization requests found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  regularizations.map((reg, index) => (
-                    <TableRow key={`${reg.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
-                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(reg.date)}</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(reg.requestedCheckIn)}</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(reg.requestedCheckOut)}</TableCell>
-                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{reg.reason}</TableCell>
-                      <TableCell sx={{ borderColor: 'var(--border)' }}>
-                        <Chip
-                          label={reg.status}
-                          color={
-                            reg.status === RegularizationStatus.APPROVED
-                              ? 'success'
-                              : reg.status === RegularizationStatus.REJECTED
-                              ? 'error'
-                              : 'warning'
-                          }
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell sx={{ borderColor: 'var(--border)' }}>
-                        {reg.status === RegularizationStatus.PENDING &&
-                          (user?.role === 'admin' || user?.role === 'manager') && (
-                            <Button
-                              size="small"
-                              onClick={() => {
-                                setSelectedRegularization(reg);
-                                setApprovalDialogOpen(true);
-                              }}
-                            >
-                              Review
-                            </Button>
-                          )}
-                      </TableCell>
+          {regLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
+            </Box>
+          ) : (
+            <>
+              <TableContainer sx={{ bgcolor: 'var(--bg-elevated)', borderRadius: 1 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Date</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Requested Check In</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Requested Check Out</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Reason</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Status</strong></TableCell>
+                      <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Actions</strong></TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {regularizations.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ color: 'var(--text-muted)', borderColor: 'var(--border)', bgcolor: 'var(--surface)' }}>
+                          No regularization requests found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      regularizations.map((reg, index) => (
+                        <TableRow key={`${reg.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(reg.date)}</TableCell>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(reg.requestedCheckIn)}</TableCell>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(reg.requestedCheckOut)}</TableCell>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{reg.reason}</TableCell>
+                          <TableCell sx={{ borderColor: 'var(--border)' }}>
+                            <Chip
+                              label={reg.status}
+                              color={
+                                reg.status === RegularizationStatus.APPROVED
+                                  ? 'success'
+                                  : reg.status === RegularizationStatus.REJECTED
+                                  ? 'error'
+                                  : 'warning'
+                              }
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell sx={{ borderColor: 'var(--border)' }}>
+                            {reg.status === RegularizationStatus.PENDING &&
+                              (user?.role === 'admin' || user?.role === 'manager') && (
+                                <Button
+                                  size="small"
+                                  onClick={() => {
+                                    setSelectedRegularization(reg);
+                                    setApprovalDialogOpen(true);
+                                  }}
+                                >
+                                  Review
+                                </Button>
+                              )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div"
+                count={regTotal}
+                page={regPage}
+                onPageChange={handleRegPageChange}
+                rowsPerPage={regRowsPerPage}
+                onRowsPerPageChange={handleRegRowsPerPageChange}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                    color: 'var(--text-secondary)',
+                  },
+                  '& .MuiTablePagination-select': {
+                    color: 'var(--text-primary)',
+                  },
+                  '& .MuiIconButton-root': {
+                    color: 'var(--text-secondary)',
+                  },
+                }}
+              />
+            </>
+          )}
         </TabPanel>
 
         {/* Team Attendance Tab */}
         {(user?.role === 'admin' || user?.role === 'manager') && (
           <TabPanel value={tabValue} index={2}>
-            <TableContainer sx={{ bgcolor: 'var(--bg-elevated)', borderRadius: 1 }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Employee</strong></TableCell>
-                    <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Date</strong></TableCell>
-                    <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Check In</strong></TableCell>
-                    <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Check Out</strong></TableCell>
-                    <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Work Hours</strong></TableCell>
-                    <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Status</strong></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {teamAttendance.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ color: 'var(--text-muted)', borderColor: 'var(--border)', bgcolor: 'var(--surface)' }}>
-                        No team attendance records found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    teamAttendance.map((record, index) => (
-                      <TableRow key={`${record.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
-                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
-                          {record.user?.firstName} {record.user?.lastName}
-                        </TableCell>
-                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(record.date)}</TableCell>
-                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkInTime)}</TableCell>
-                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkOutTime)}</TableCell>
-                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{record.workHours} hrs</TableCell>
-                        <TableCell sx={{ borderColor: 'var(--border)' }}>
-                          <Chip
-                            label={record.status}
-                            color={getStatusColor(record.status)}
-                            size="small"
-                          />
-                        </TableCell>
+            {teamLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
+              </Box>
+            ) : (
+              <>
+                <TableContainer sx={{ bgcolor: 'var(--bg-elevated)', borderRadius: 1 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Employee</strong></TableCell>
+                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Date</strong></TableCell>
+                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Check In</strong></TableCell>
+                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Check Out</strong></TableCell>
+                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Work Hours</strong></TableCell>
+                        <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)', bgcolor: 'var(--bg-elevated)' }}><strong>Status</strong></TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {teamAttendance.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center" sx={{ color: 'var(--text-muted)', borderColor: 'var(--border)', bgcolor: 'var(--surface)' }}>
+                            No team attendance records found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        teamAttendance.map((record, index) => (
+                          <TableRow key={`${record.id}-${index}`} sx={{ bgcolor: 'var(--surface)', '&:hover': { bgcolor: 'var(--sidebar-item-hover)' } }}>
+                            <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
+                              {record.user?.firstName} {record.user?.lastName}
+                            </TableCell>
+                            <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(record.date)}</TableCell>
+                            <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkInTime)}</TableCell>
+                            <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(record.checkOutTime)}</TableCell>
+                            <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{record.workHours} hrs</TableCell>
+                            <TableCell sx={{ borderColor: 'var(--border)' }}>
+                              <Chip
+                                label={record.status}
+                                color={getStatusColor(record.status)}
+                                size="small"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <TablePagination
+                  component="div"
+                  count={teamTotal}
+                  page={teamPage}
+                  onPageChange={handleTeamPageChange}
+                  rowsPerPage={teamRowsPerPage}
+                  onRowsPerPageChange={handleTeamRowsPerPageChange}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  sx={{
+                    borderTop: '1px solid var(--border)',
+                    color: 'var(--text-secondary)',
+                    '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                      color: 'var(--text-secondary)',
+                    },
+                    '& .MuiTablePagination-select': {
+                      color: 'var(--text-primary)',
+                    },
+                    '& .MuiIconButton-root': {
+                      color: 'var(--text-secondary)',
+                    },
+                  }}
+                />
+              </>
+            )}
           </TabPanel>
         )}
       </div>

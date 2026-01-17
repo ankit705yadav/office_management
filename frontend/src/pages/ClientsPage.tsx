@@ -8,6 +8,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Paper,
   Button,
   IconButton,
@@ -52,10 +53,15 @@ const ClientsPage: React.FC = () => {
   const canEdit = isAdmin || isManager;
 
   // State
-  const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | ''>('');
+
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [clientsLoading, setClientsLoading] = useState(false);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -78,29 +84,46 @@ const ClientsPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
-  // Load clients on mount
+  // Load clients on mount and when filters change
   useEffect(() => {
-    loadClients();
+    setPage(0);
+    loadClients(0, rowsPerPage);
   }, [statusFilter]);
 
-  const loadClients = async () => {
-    setLoading(true);
+  const loadClients = async (p = page, rpp = rowsPerPage) => {
+    setClientsLoading(true);
     try {
-      const params: any = { limit: 100 };
+      const params: any = { page: p + 1, limit: rpp };
       if (statusFilter) params.status = statusFilter;
       if (searchQuery) params.search = searchQuery;
 
       const data = await clientService.getClients(params);
       setClients(data.clients);
+      setTotal(data.pagination.total);
     } catch (error) {
       toast.error('Failed to load clients');
+      setClients([]);
+      setTotal(0);
     } finally {
-      setLoading(false);
+      setClientsLoading(false);
     }
   };
 
+  const handlePageChange = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+    loadClients(newPage, rowsPerPage);
+  };
+
+  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
+    loadClients(0, newRowsPerPage);
+  };
+
   const handleSearch = () => {
-    loadClients();
+    setPage(0);
+    loadClients(0, rowsPerPage);
   };
 
   const handleOpenDialog = (client?: Client) => {
@@ -184,14 +207,6 @@ const ClientsPage: React.FC = () => {
     return status === ClientStatus.ACTIVE ? 'success' : 'default';
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box>
       {/* Header */}
@@ -245,106 +260,136 @@ const ClientsPage: React.FC = () => {
       </Box>
 
       {/* Clients Table */}
-      <TableContainer component={Paper} sx={{ backgroundColor: 'var(--bg-secondary)' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Phone</TableCell>
-              <TableCell>Contact Person</TableCell>
-              <TableCell>Website</TableCell>
-              <TableCell>Status</TableCell>
-              {canEdit && <TableCell align="right">Actions</TableCell>}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {clients.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={canEdit ? 7 : 6} align="center">
-                  <Box py={4}>
-                    <Business sx={{ fontSize: 48, color: 'var(--text-muted)', mb: 1 }} />
-                    <Typography color="textSecondary">No clients found</Typography>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ) : (
-              clients.map((client) => (
-                <TableRow key={client.id} hover>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Business fontSize="small" color="primary" />
-                      <Typography fontWeight={500}>{client.name}</Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    {client.email && (
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <Email fontSize="small" sx={{ color: 'var(--text-muted)' }} />
-                        {client.email}
-                      </Box>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {client.phone && (
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <Phone fontSize="small" sx={{ color: 'var(--text-muted)' }} />
-                        {client.phone}
-                      </Box>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {client.contactPerson && (
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <Person fontSize="small" sx={{ color: 'var(--text-muted)' }} />
-                        {client.contactPerson}
-                      </Box>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {client.website && (
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <Language fontSize="small" sx={{ color: 'var(--text-muted)' }} />
-                        <a
-                          href={client.website.startsWith('http') ? client.website : `https://${client.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: 'var(--primary)' }}
-                        >
-                          {client.website}
-                        </a>
-                      </Box>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={client.status}
-                      size="small"
-                      color={getStatusColor(client.status)}
-                    />
-                  </TableCell>
-                  {canEdit && (
-                    <TableCell align="right">
-                      <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => handleOpenDialog(client)}>
-                          <Edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      {isAdmin && (
-                        <Tooltip title="Delete">
-                          <IconButton size="small" color="error" onClick={() => handleDeleteClick(client)}>
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                  )}
+      {clientsLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress sx={{ color: 'var(--accent-primary)' }} />
+        </Box>
+      ) : (
+        <>
+          <TableContainer component={Paper} sx={{ backgroundColor: 'var(--bg-secondary)' }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Phone</TableCell>
+                  <TableCell>Contact Person</TableCell>
+                  <TableCell>Website</TableCell>
+                  <TableCell>Status</TableCell>
+                  {canEdit && <TableCell align="right">Actions</TableCell>}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              </TableHead>
+              <TableBody>
+                {clients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={canEdit ? 7 : 6} align="center">
+                      <Box py={4}>
+                        <Business sx={{ fontSize: 48, color: 'var(--text-muted)', mb: 1 }} />
+                        <Typography color="textSecondary">No clients found</Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  clients.map((client) => (
+                    <TableRow key={client.id} hover>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Business fontSize="small" color="primary" />
+                          <Typography fontWeight={500}>{client.name}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        {client.email && (
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <Email fontSize="small" sx={{ color: 'var(--text-muted)' }} />
+                            {client.email}
+                          </Box>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {client.phone && (
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <Phone fontSize="small" sx={{ color: 'var(--text-muted)' }} />
+                            {client.phone}
+                          </Box>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {client.contactPerson && (
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <Person fontSize="small" sx={{ color: 'var(--text-muted)' }} />
+                            {client.contactPerson}
+                          </Box>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {client.website && (
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <Language fontSize="small" sx={{ color: 'var(--text-muted)' }} />
+                            <a
+                              href={client.website.startsWith('http') ? client.website : `https://${client.website}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: 'var(--primary)' }}
+                            >
+                              {client.website}
+                            </a>
+                          </Box>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={client.status}
+                          size="small"
+                          color={getStatusColor(client.status)}
+                        />
+                      </TableCell>
+                      {canEdit && (
+                        <TableCell align="right">
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={() => handleOpenDialog(client)}>
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          {isAdmin && (
+                            <Tooltip title="Delete">
+                              <IconButton size="small" color="error" onClick={() => handleDeleteClick(client)}>
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            onPageChange={handlePageChange}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleRowsPerPageChange}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{
+              borderTop: '1px solid var(--border)',
+              color: 'var(--text-secondary)',
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                color: 'var(--text-secondary)',
+              },
+              '& .MuiTablePagination-select': {
+                color: 'var(--text-primary)',
+              },
+              '& .MuiIconButton-root': {
+                color: 'var(--text-secondary)',
+              },
+            }}
+          />
+        </>
+      )}
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

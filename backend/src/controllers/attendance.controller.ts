@@ -283,10 +283,11 @@ export const getTeamAttendance = async (
   try {
     const userId = req.user!.id;
     const userRole = req.user!.role;
-    const { date } = req.query;
+    const { date, month, year, page = 1, limit = 10 } = req.query;
 
-    const targetDate = date ? new Date(date as string) : new Date();
-    const dateStr = format(targetDate, 'yyyy-MM-dd');
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 10));
+    const offset = (pageNum - 1) * limitNum;
 
     // Get team members - admins see all users, managers see their direct reports
     const whereClause: any = { status: 'active' };
@@ -304,18 +305,43 @@ export const getTeamAttendance = async (
     if (teamIds.length === 0) {
       res.status(200).json({
         status: 'success',
-        data: { attendance: [] },
+        data: {
+          attendance: [],
+          pagination: { page: pageNum, limit: limitNum, total: 0, totalPages: 0 },
+        },
       });
       return;
     }
 
-    // Get attendance for all team members
+    // Build date filter - support both single date and month/year range
+    let dateFilter: any;
+    if (date) {
+      dateFilter = format(new Date(date as string), 'yyyy-MM-dd');
+    } else if (month && year) {
+      const monthNum = parseInt(month as string, 10);
+      const yearNum = parseInt(year as string, 10);
+      const startDate = new Date(yearNum, monthNum - 1, 1);
+      const endDate = new Date(yearNum, monthNum, 0); // Last day of month
+      dateFilter = {
+        [Op.between]: [format(startDate, 'yyyy-MM-dd'), format(endDate, 'yyyy-MM-dd')],
+      };
+    } else {
+      dateFilter = format(new Date(), 'yyyy-MM-dd');
+    }
+
+    // Get total count for pagination
+    const totalCount = await Attendance.count({
+      where: {
+        userId: { [Op.in]: teamIds },
+        date: dateFilter,
+      },
+    });
+
+    // Get attendance for team members with pagination
     const attendance = await Attendance.findAll({
       where: {
-        userId: {
-          [Op.in]: teamIds,
-        },
-        date: dateStr,
+        userId: { [Op.in]: teamIds },
+        date: dateFilter,
       },
       include: [
         {
@@ -324,35 +350,23 @@ export const getTeamAttendance = async (
           attributes: ['id', 'firstName', 'lastName', 'email', 'profileImageUrl'],
         },
       ],
-      order: [['checkInTime', 'ASC']],
+      order: [['date', 'DESC'], ['checkInTime', 'ASC']],
+      limit: limitNum,
+      offset,
     });
 
-    // Add team members without attendance records
-    const attendanceUserIds = attendance.map((a) => a.userId);
-    const missingMembers = teamMembers.filter(
-      (m) => !attendanceUserIds.includes(m.id)
-    );
-
-    const missingAttendance = await Promise.all(
-      missingMembers.map(async (member) => {
-        const status = await getAttendanceStatusForDate(member.id, targetDate);
-        return {
-          user: member,
-          date: dateStr,
-          status,
-          userId: member.id,
-          checkInTime: null,
-          checkOutTime: null,
-          workHours: 0,
-        };
-      })
-    );
+    const totalPages = Math.ceil(totalCount / limitNum);
 
     res.status(200).json({
       status: 'success',
       data: {
-        date: dateStr,
-        attendance: [...attendance, ...missingAttendance],
+        attendance,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: totalCount,
+          totalPages,
+        },
       },
     });
   } catch (error) {
