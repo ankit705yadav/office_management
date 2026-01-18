@@ -12,6 +12,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Modal as RNModal,
+  Linking,
 } from 'react-native';
 import {
   Text,
@@ -29,9 +30,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format, eachDayOfInterval, isSunday } from 'date-fns';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../contexts/AuthContext';
 import { leaveService } from '../../services/leave.service';
-import { LeaveBalance, LeaveRequest } from '../../types';
+import { LeaveBalance, LeaveRequest, LeaveApproval } from '../../types';
 
 // Leave type options for picker
 const LEAVE_TYPES = [
@@ -40,6 +43,7 @@ const LEAVE_TYPES = [
   { value: 'earned_leave', label: 'Earned Leave' },
   { value: 'comp_off', label: 'Comp Off' },
   { value: 'paternity_maternity', label: 'Paternity Leave' },
+  { value: 'paternity_maternity', label: 'Maternity Leave' },
 ];
 
 // Helper function to count days excluding Sundays
@@ -105,6 +109,123 @@ const StatCard = ({
     <Text style={[styles.statValue, { color: theme.colors.onSurface }]}>{value}</Text>
   </View>
 );
+
+// Approval Chain Component
+const ApprovalChain = ({
+  approvals,
+  totalLevels,
+  currentLevel,
+  theme,
+}: {
+  approvals?: LeaveApproval[];
+  totalLevels?: number;
+  currentLevel?: number;
+  theme: any;
+}) => {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!approvals || approvals.length === 0) return null;
+
+  const sortedApprovals = [...approvals].sort((a, b) => a.approvalLevel - b.approvalLevel);
+  const approvedCount = sortedApprovals.filter(a => a.status === 'approved').length;
+  const total = totalLevels || sortedApprovals.length;
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return '✓';
+      case 'rejected':
+        return '✗';
+      default:
+        return '○';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return '#10B981';
+      case 'rejected':
+        return '#EF4444';
+      default:
+        return '#F59E0B';
+    }
+  };
+
+  return (
+    <View style={[styles.approvalChainContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
+      <TouchableOpacity
+        style={styles.approvalChainHeader}
+        onPress={() => setExpanded(!expanded)}
+      >
+        <View style={styles.approvalChainTitleRow}>
+          <Text style={[styles.approvalChainTitle, { color: theme.colors.onSurface }]}>
+            Approval Progress ({approvedCount}/{total})
+          </Text>
+          <IconButton
+            icon={expanded ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            style={{ margin: 0 }}
+          />
+        </View>
+        {/* Mini progress indicator */}
+        <View style={styles.approvalProgressBar}>
+          {sortedApprovals.map((approval, index) => (
+            <View
+              key={approval.id}
+              style={[
+                styles.progressDot,
+                { backgroundColor: getStatusColor(approval.status) },
+              ]}
+            />
+          ))}
+        </View>
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={styles.approvalChainContent}>
+          {sortedApprovals.map((approval, index) => (
+            <View key={approval.id} style={styles.approvalItem}>
+              <View style={styles.approvalItemLeft}>
+                <Text style={[styles.approvalStatusIcon, { color: getStatusColor(approval.status) }]}>
+                  {getStatusIcon(approval.status)}
+                </Text>
+                <View style={styles.approvalItemInfo}>
+                  <Text style={[styles.approvalLevelText, { color: theme.colors.onSurface }]}>
+                    Level {approval.approvalLevel}: {approval.approver?.firstName} {approval.approver?.lastName}
+                    {approval.approver?.role && (
+                      <Text style={{ color: theme.colors.onSurfaceVariant }}> ({approval.approver.role})</Text>
+                    )}
+                  </Text>
+                  {approval.status === 'approved' && approval.actionAt && (
+                    <Text style={[styles.approvalDate, { color: theme.colors.onSurfaceVariant }]}>
+                      Approved on {safeFormatDate(approval.actionAt, 'MMM dd, yyyy')}
+                    </Text>
+                  )}
+                  {approval.status === 'rejected' && approval.actionAt && (
+                    <Text style={[styles.approvalDate, { color: '#EF4444' }]}>
+                      Rejected on {safeFormatDate(approval.actionAt, 'MMM dd, yyyy')}
+                    </Text>
+                  )}
+                  {approval.status === 'pending' && (
+                    <Text style={[styles.approvalDate, { color: '#F59E0B' }]}>
+                      Waiting for approval
+                    </Text>
+                  )}
+                  {approval.comments && (
+                    <Text style={[styles.approvalComments, { color: theme.colors.onSurfaceVariant }]} numberOfLines={2}>
+                      "{approval.comments}"
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
 
 // Leave Card Component
 const LeaveCard = ({
@@ -178,6 +299,16 @@ const LeaveCard = ({
           </Text>
         )}
 
+        {/* Approval Chain Visualization */}
+        {leave.approvals && leave.approvals.length > 0 && (
+          <ApprovalChain
+            approvals={leave.approvals}
+            totalLevels={leave.totalApprovalLevels}
+            currentLevel={leave.currentApprovalLevel}
+            theme={theme}
+          />
+        )}
+
         <View style={styles.leaveCardFooter}>
           <Text style={[styles.leaveAppliedDate, { color: theme.colors.onSurfaceVariant }]}>
             Applied: {safeFormatDate(leave.createdAt, 'MMM dd, yyyy')}
@@ -233,6 +364,7 @@ const ApproveRejectModal = ({
   onReject,
   submitting,
   theme,
+  currentUserId,
 }: {
   visible: boolean;
   leave: LeaveRequest | null;
@@ -241,6 +373,7 @@ const ApproveRejectModal = ({
   onReject: (comments: string) => void;
   submitting: boolean;
   theme: any;
+  currentUserId?: number;
 }) => {
   const [comments, setComments] = useState('');
 
@@ -308,6 +441,49 @@ const ApproveRejectModal = ({
               {leave.reason}
             </Text>
           </View>
+
+          {/* Document Link */}
+          {leave.documentUrl && (
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant }]}>Document:</Text>
+              <Button
+                mode="text"
+                icon="open-in-new"
+                onPress={() => Linking.openURL(leave.documentUrl!)}
+                compact
+                style={{ marginVertical: -8 }}
+              >
+                View Document
+              </Button>
+            </View>
+          )}
+
+          {/* Approval Chain Visualization */}
+          {leave.approvals && leave.approvals.length > 0 && (
+            <>
+              <Divider style={{ marginVertical: 12 }} />
+              <ApprovalChain
+                approvals={leave.approvals}
+                totalLevels={leave.totalApprovalLevels}
+                currentLevel={leave.currentApprovalLevel}
+                theme={theme}
+              />
+              {/* User's approval level info */}
+              {currentUserId && (() => {
+                const userApproval = leave.approvals?.find(a => a.approverId === currentUserId);
+                if (userApproval && userApproval.status === 'pending') {
+                  return (
+                    <View style={[styles.approvalInfoBanner, { backgroundColor: theme.colors.primaryContainer }]}>
+                      <Text style={{ color: theme.colors.onPrimaryContainer, fontSize: 12 }}>
+                        You are reviewing as Level {userApproval.approvalLevel} approver
+                      </Text>
+                    </View>
+                  );
+                }
+                return null;
+              })()}
+            </>
+          )}
 
           <Divider style={{ marginVertical: 16 }} />
 
@@ -758,6 +934,45 @@ export default function LeavesScreen() {
     setRefreshing(false);
   };
 
+  // Export leave report as CSV
+  const handleExport = async () => {
+    try {
+      const data = activeTab === 'current' ? myLeaves : historyLeaves;
+
+      if (data.length === 0) {
+        Alert.alert('No Data', 'There are no leave records to export.');
+        return;
+      }
+
+      // Create CSV content
+      const headers = 'Leave Type,Start Date,End Date,Days,Status,Reason\n';
+      const rows = data.map(leave =>
+        `"${formatLeaveType(leave.leaveType)}","${leave.startDate}","${leave.endDate}",${leave.daysCount},"${leave.status}","${(leave.reason || '').replace(/"/g, '""')}"`
+      ).join('\n');
+
+      const csv = headers + rows;
+      const filename = `leave_report_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+
+      // Use new expo-file-system API
+      const file = new File(Paths.document, filename);
+      await file.write(csv);
+
+      // Check if sharing is available
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'text/csv',
+          dialogTitle: 'Export Leave Report',
+        });
+      } else {
+        Alert.alert('Export Complete', `File saved to: ${filename}`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert('Error', 'Failed to export leave report');
+    }
+  };
+
   // Load more for current leaves
   const loadMoreCurrent = () => {
     if (hasMoreCurrent && !loadingCurrent) {
@@ -868,11 +1083,27 @@ export default function LeavesScreen() {
 
   // Can manage check (for managers/admins)
   const canManageLeave = (leave: LeaveRequest) => {
-    return (
-      isManager &&
-      leave.status === 'pending' &&
-      leave.userId !== user?.id
-    );
+    // Basic checks: leave must be pending, can't approve own leave
+    if (leave.status !== 'pending' || leave.userId === user?.id) {
+      return false;
+    }
+
+    const approvals = leave.approvals || [];
+
+    // Check if user is in the approval chain
+    if (approvals.length > 0) {
+      const userApproval = approvals.find(a => a.approverId === user?.id);
+      if (userApproval) {
+        // Check if it's user's turn (all previous must be approved)
+        const previousApprovals = approvals.filter(a => a.approvalLevel < userApproval.approvalLevel);
+        const allPreviousApproved = previousApprovals.every(a => a.status === 'approved');
+        return userApproval.status === 'pending' && allPreviousApproved;
+      }
+    }
+
+    // Fallback for old requests without approval chain OR when user is not in chain
+    // Allow managers/admins to manage
+    return isManager;
   };
 
   // Separate my leaves and team leaves
@@ -993,14 +1224,22 @@ export default function LeavesScreen() {
         <Text variant="headlineSmall" style={{ fontWeight: '600' }}>
           Leave Management
         </Text>
-        <Button
-          mode="contained"
-          compact
-          icon="plus"
-          onPress={() => setShowApplyModal(true)}
-        >
-          Apply
-        </Button>
+        <View style={styles.headerButtons}>
+          <IconButton
+            icon="download"
+            mode="contained-tonal"
+            size={20}
+            onPress={handleExport}
+          />
+          <Button
+            mode="contained"
+            compact
+            icon="plus"
+            onPress={() => setShowApplyModal(true)}
+          >
+            Apply
+          </Button>
+        </View>
       </View>
 
       <ScrollView
@@ -1109,6 +1348,7 @@ export default function LeavesScreen() {
         onReject={handleRejectLeave}
         submitting={submitting}
         theme={theme}
+        currentUserId={user?.id}
       />
     </SafeAreaView>
   );
@@ -1318,5 +1558,81 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 13,
     flex: 1,
+  },
+  // Header buttons
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  // Approval Chain styles
+  approvalChainContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  approvalChainHeader: {
+    padding: 12,
+  },
+  approvalChainTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  approvalChainTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  approvalProgressBar: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 8,
+  },
+  progressDot: {
+    width: 24,
+    height: 6,
+    borderRadius: 3,
+  },
+  approvalChainContent: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  approvalItem: {
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  approvalItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  approvalStatusIcon: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  approvalItemInfo: {
+    flex: 1,
+  },
+  approvalLevelText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  approvalDate: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  approvalComments: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  approvalInfoBanner: {
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+    alignItems: 'center',
   },
 });
