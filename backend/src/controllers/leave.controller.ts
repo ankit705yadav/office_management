@@ -434,6 +434,9 @@ export const approveLeave = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    // Check if user is admin - admins can approve any leave directly
+    const isAdmin = req.user!.role === 'admin';
+
     // Find the approval record for this approver
     const approval = await LeaveApproval.findOne({
       where: {
@@ -442,7 +445,8 @@ export const approveLeave = async (req: Request, res: Response): Promise<void> =
       },
     });
 
-    if (!approval) {
+    // If not admin and no approval record, deny access
+    if (!approval && !isAdmin) {
       res.status(403).json({
         status: 'error',
         message: 'You are not authorized to approve this leave request',
@@ -450,40 +454,43 @@ export const approveLeave = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    if (approval.status !== ApprovalStatus.PENDING) {
-      res.status(400).json({
-        status: 'error',
-        message: 'You have already processed this leave request',
+    // If there's an approval record, check its status
+    if (approval) {
+      if (approval.status !== ApprovalStatus.PENDING) {
+        res.status(400).json({
+          status: 'error',
+          message: 'You have already processed this leave request',
+        });
+        return;
+      }
+
+      // Check if it's this approver's turn (previous approvers must have approved)
+      const previousApprovals = await LeaveApproval.findAll({
+        where: {
+          leaveRequestId: Number(id),
+          approvalOrder: { [Op.lt]: approval.approvalOrder },
+        },
       });
-      return;
-    }
 
-    // Check if it's this approver's turn (previous approvers must have approved)
-    const previousApprovals = await LeaveApproval.findAll({
-      where: {
-        leaveRequestId: Number(id),
-        approvalOrder: { [Op.lt]: approval.approvalOrder },
-      },
-    });
+      const allPreviousApproved = previousApprovals.every(
+        (prev) => prev.status === ApprovalStatus.APPROVED
+      );
 
-    const allPreviousApproved = previousApprovals.every(
-      (prev) => prev.status === ApprovalStatus.APPROVED
-    );
+      if (!allPreviousApproved && !isAdmin) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Previous approvers must approve first before you can approve',
+        });
+        return;
+      }
 
-    if (!allPreviousApproved) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Previous approvers must approve first before you can approve',
+      // Update this approval record
+      await approval.update({
+        status: ApprovalStatus.APPROVED,
+        comments,
+        actedAt: new Date(),
       });
-      return;
     }
-
-    // Update this approval record
-    await approval.update({
-      status: ApprovalStatus.APPROVED,
-      comments,
-      actedAt: new Date(),
-    });
 
     // Update current approval level
     const newLevel = (leaveRequest.currentApprovalLevel || 0) + 1;
@@ -491,12 +498,12 @@ export const approveLeave = async (req: Request, res: Response): Promise<void> =
       currentApprovalLevel: newLevel,
     });
 
-    // Check if all approvers have approved
+    // Check if all approvers have approved (or if admin approved directly)
     const allApprovals = await LeaveApproval.findAll({
       where: { leaveRequestId: Number(id) },
     });
 
-    const allApproved = allApprovals.every(
+    const allApproved = allApprovals.length === 0 || allApprovals.every(
       (app) => app.status === ApprovalStatus.APPROVED
     );
 
@@ -669,6 +676,9 @@ export const rejectLeave = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    // Check if user is admin - admins can reject any leave directly
+    const isAdmin = req.user!.role === 'admin';
+
     // Find the approval record for this approver
     const approval = await LeaveApproval.findOne({
       where: {
@@ -677,7 +687,8 @@ export const rejectLeave = async (req: Request, res: Response): Promise<void> =>
       },
     });
 
-    if (!approval) {
+    // If not admin and no approval record, deny access
+    if (!approval && !isAdmin) {
       res.status(403).json({
         status: 'error',
         message: 'You are not authorized to reject this leave request',
@@ -685,20 +696,23 @@ export const rejectLeave = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    if (approval.status !== ApprovalStatus.PENDING) {
-      res.status(400).json({
-        status: 'error',
-        message: 'You have already processed this leave request',
-      });
-      return;
-    }
+    // If there's an approval record, check its status and update it
+    if (approval) {
+      if (approval.status !== ApprovalStatus.PENDING) {
+        res.status(400).json({
+          status: 'error',
+          message: 'You have already processed this leave request',
+        });
+        return;
+      }
 
-    // Update this approval record as rejected
-    await approval.update({
-      status: ApprovalStatus.REJECTED,
-      comments,
-      actedAt: new Date(),
-    });
+      // Update this approval record as rejected
+      await approval.update({
+        status: ApprovalStatus.REJECTED,
+        comments,
+        actedAt: new Date(),
+      });
+    }
 
     // Update leave request as rejected (any rejection rejects the whole request)
     await leaveRequest.update({
