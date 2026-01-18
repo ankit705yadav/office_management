@@ -4,6 +4,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -11,6 +12,7 @@ type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 export default function DashboardLayout() {
   const theme = useTheme();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const isAdmin = user?.role === 'admin';
   const isManager = user?.role === 'manager';
@@ -24,8 +26,8 @@ export default function DashboardLayout() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outline,
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
