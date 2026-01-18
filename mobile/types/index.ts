@@ -405,3 +405,84 @@ export interface Pagination {
   limit: number;
   totalPages: number;
 }
+
+// Project Stats
+export interface ProjectStats {
+  projectsByStatus: { active?: number; completed?: number; on_hold?: number; cancelled?: number };
+  tasksByStatus: { todo?: number; in_progress?: number; blocked?: number; done?: number; approved?: number };
+  overdueTasks: number;
+  myTasks: number;
+  myOverdueTasks: number;
+  tasksDueThisWeek: number;
+}
+
+// User Task Report for manager/admin reports
+export interface UserTaskReport {
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    profileImageUrl?: string;
+    role?: string;
+    department?: Department;
+  };
+  stats: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
+    blocked: number;
+    approved: number;
+    overdue: number;
+    completedThisMonth: number;
+  };
+}
+
+// Task Reports Response
+export interface TaskReportsResponse {
+  reports: UserTaskReport[];
+  totals: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
+    blocked: number;
+    approved: number;
+    overdue: number;
+    completedThisMonth: number;
+  };
+  generatedAt: string;
+}
+
+// Create/Update Task Data
+export interface TaskAttachmentInput {
+  linkTitle: string;
+  linkUrl: string;
+}
+
+export interface CreateTaskData {
+  projectId: number;
+  title: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  assigneeId?: number;
+  dueDate?: string;
+  estimatedHours?: number;
+  tags?: string[];
+  attachments?: TaskAttachmentInput[];
+}
+
+export interface UpdateTaskData {
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  assigneeId?: number | null;
+  dueDate?: string | null;
+  estimatedHours?: number | null;
+  blockReason?: string;
+  tags?: string[];
+  attachments?: TaskAttachmentInput[];
+}

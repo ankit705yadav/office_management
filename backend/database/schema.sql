@@ -12,7 +12,7 @@ CREATE TYPE leave_type AS ENUM ('sick_leave', 'casual_leave', 'earned_leave', 'c
 CREATE TYPE request_status AS ENUM ('pending', 'approved', 'rejected', 'cancelled');
 CREATE TYPE approval_status AS ENUM ('pending', 'approved', 'rejected');
 CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'half_day', 'on_leave', 'holiday', 'weekend');
-CREATE TYPE task_status AS ENUM ('todo', 'in_progress', 'done', 'blocked');
+CREATE TYPE task_status AS ENUM ('todo', 'in_progress', 'done', 'blocked', 'approved');
 CREATE TYPE task_priority AS ENUM ('low', 'medium', 'high', 'urgent');
 CREATE TYPE project_status AS ENUM ('planning', 'active', 'on_hold', 'completed', 'cancelled');
 CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'cancelled');

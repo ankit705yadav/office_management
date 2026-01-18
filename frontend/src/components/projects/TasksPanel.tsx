@@ -23,6 +23,10 @@ import {
   Avatar,
   FormControlLabel,
   Switch,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Add,
@@ -59,6 +63,12 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewOnlyMode, setViewOnlyMode] = useState(false);
+
+  // Block reason dialog states
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [blockReason, setBlockReason] = useState('');
+  const [taskToBlock, setTaskToBlock] = useState<Task | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canManage = user?.role === 'admin' || user?.role === 'manager';
 
@@ -139,6 +149,14 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
   };
 
   const handleStatusChange = async (task: Task, newStatus: string) => {
+    // If changing to blocked, show dialog for block reason
+    if (newStatus === 'blocked' && task.status !== 'blocked') {
+      setTaskToBlock(task);
+      setBlockReason('');
+      setBlockDialogOpen(true);
+      return;
+    }
+
     try {
       await projectService.updateTaskStatus(task.id, newStatus);
       toast.success('Task status updated');
@@ -146,7 +164,29 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
       onTaskUpdate?.();
     } catch (error: any) {
       console.error('Error updating task status:', error);
-      toast.error('Failed to update task status');
+      toast.error(error.response?.data?.message || 'Failed to update task status');
+    }
+  };
+
+  const handleBlockSubmit = async () => {
+    if (!taskToBlock || !blockReason.trim()) return;
+
+    try {
+      setIsSubmitting(true);
+      await projectService.updateTaskStatus(taskToBlock.id, 'blocked', {
+        blockReason: blockReason.trim(),
+      });
+      toast.success('Task blocked');
+      setBlockDialogOpen(false);
+      setTaskToBlock(null);
+      setBlockReason('');
+      loadTasks();
+      onTaskUpdate?.();
+    } catch (error: any) {
+      console.error('Error blocking task:', error);
+      toast.error(error.response?.data?.message || 'Failed to block task');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -442,6 +482,58 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
         viewOnly={viewOnlyMode}
         onSaved={handleTaskSaved}
       />
+
+      {/* Block Reason Dialog */}
+      <Dialog
+        open={blockDialogOpen}
+        onClose={() => {
+          if (!isSubmitting) {
+            setBlockDialogOpen(false);
+            setTaskToBlock(null);
+            setBlockReason('');
+          }
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Block Task</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Please provide a reason for blocking this task:
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            multiline
+            rows={3}
+            label="Block Reason"
+            value={blockReason}
+            onChange={(e) => setBlockReason(e.target.value)}
+            placeholder="Enter the reason for blocking this task..."
+            disabled={isSubmitting}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setBlockDialogOpen(false);
+              setTaskToBlock(null);
+              setBlockReason('');
+            }}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleBlockSubmit}
+            disabled={isSubmitting || !blockReason.trim()}
+          >
+            {isSubmitting ? 'Blocking...' : 'Block Task'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
