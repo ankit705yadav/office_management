@@ -372,6 +372,17 @@ export interface WorkAnniversary extends Birthday {
   yearsOfService: number;
 }
 
+export interface EmployeeOnLeave {
+  id: number;
+  employee: User;
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  daysCount: number;
+  reason: string;
+  isCurrentlyOnLeave: boolean;
+}
+
 // API Response Types
 export interface ApiResponse<T = any> {
   status: 'success' | 'error';
