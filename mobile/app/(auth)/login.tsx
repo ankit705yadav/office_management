@@ -84,11 +84,11 @@ export default function LoginScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = async (adminQuickLogin = false) => {
-    const loginEmail = adminQuickLogin ? 'admin@company.com' : email.trim();
-    const loginPassword = adminQuickLogin ? 'Admin@123' : password;
+  const handleLogin = async (quickLoginCredentials?: { email: string; password: string }) => {
+    const loginEmail = quickLoginCredentials?.email || email.trim();
+    const loginPassword = quickLoginCredentials?.password || password;
 
-    if (!adminQuickLogin && !validate()) return;
+    if (!quickLoginCredentials && !validate()) return;
 
     setLoading(true);
     try {
@@ -238,7 +238,7 @@ export default function LoginScreen() {
 
               <Button
                 mode="contained"
-                onPress={() => handleLogin(false)}
+                onPress={() => handleLogin()}
                 loading={loading}
                 disabled={loading}
                 style={styles.loginButton}
@@ -261,13 +261,24 @@ export default function LoginScreen() {
 
               <Button
                 mode="outlined"
-                onPress={() => handleLogin(true)}
+                onPress={() => handleLogin({ email: 'admin@company.com', password: 'Admin@123' })}
                 disabled={loading}
                 style={styles.quickLoginButton}
                 contentStyle={styles.buttonContent}
                 icon="shield-account"
               >
                 Quick Login as Admin
+              </Button>
+
+              <Button
+                mode="outlined"
+                onPress={() => handleLogin({ email: 'diptesh@proriterz.com', password: 'diptesh@proriterz.com' })}
+                disabled={loading}
+                style={[styles.quickLoginButton, { marginTop: 8 }]}
+                contentStyle={styles.buttonContent}
+                icon="account"
+              >
+                Quick Login (Diptesh)
               </Button>
             </Surface>
           </Animated.View>
