@@ -374,14 +374,22 @@ const AttendancePage: React.FC = () => {
   const formatTime = (dateTime: string | null) => {
     if (!dateTime) return '-';
 
-    // Database stores local time, Sequelize returns as UTC with 'Z' suffix
-    // When we parse it, JS converts UTC back to local time automatically
+    // Parse the datetime
     const dateStr = dateTime.replace(' ', 'T');
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return '-';
 
-    // Use local timezone display - JS will convert UTC to local
-    return format(date, 'hh:mm a');
+    // Explicitly convert to IST (UTC+5:30) regardless of browser timezone
+    // This ensures consistent display for all IST users
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(date.getTime() + istOffsetMs);
+
+    const hours = istTime.getUTCHours();
+    const minutes = istTime.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+
+    return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
   };
 
   const formatDate = (date: string) => {
@@ -725,7 +733,21 @@ const AttendancePage: React.FC = () => {
                           <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatDate(reg.date)}</TableCell>
                           <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(reg.requestedCheckIn)}</TableCell>
                           <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{formatTime(reg.requestedCheckOut)}</TableCell>
-                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>{reg.reason}</TableCell>
+                          <TableCell sx={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
+                            <Box>
+                              <Typography variant="body2">{reg.reason}</Typography>
+                              {reg.status === RegularizationStatus.APPROVED && reg.comments && (
+                                <Typography variant="caption" sx={{ color: 'success.main', display: 'block', mt: 0.5 }}>
+                                  <strong>Approval note:</strong> {reg.comments}
+                                </Typography>
+                              )}
+                              {reg.status === RegularizationStatus.REJECTED && reg.comments && (
+                                <Typography variant="caption" sx={{ color: 'error.main', display: 'block', mt: 0.5 }}>
+                                  <strong>Rejection reason:</strong> {reg.comments}
+                                </Typography>
+                              )}
+                            </Box>
+                          </TableCell>
                           <TableCell sx={{ borderColor: 'var(--border)' }}>
                             <Chip
                               label={reg.status}

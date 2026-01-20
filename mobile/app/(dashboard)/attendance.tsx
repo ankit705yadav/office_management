@@ -430,7 +430,20 @@ export default function AttendanceScreen() {
     if (!timeStr) return '--:--';
     try {
       if (timeStr.includes('T')) {
-        return format(parseISO(timeStr), 'hh:mm a');
+        // Parse ISO string and convert to IST explicitly
+        const date = new Date(timeStr);
+        if (isNaN(date.getTime())) return '--:--';
+
+        // Add IST offset (UTC+5:30) to get IST time
+        const istOffsetMs = 5.5 * 60 * 60 * 1000;
+        const istTime = new Date(date.getTime() + istOffsetMs);
+
+        const hours = istTime.getUTCHours();
+        const minutes = istTime.getUTCMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+
+        return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
       }
       const [hours, minutes] = timeStr.split(':');
       const date = new Date();
@@ -848,12 +861,20 @@ export default function AttendanceScreen() {
         >
           {item.reason}
         </Text>
-        {item.approverComments && (
+        {item.status === 'approved' && item.comments && (
           <Text
             variant="bodySmall"
             style={{ color: theme.colors.primary, marginTop: 4, fontStyle: 'italic' }}
           >
-            Remarks: {item.approverComments}
+            Approval note: {item.comments}
+          </Text>
+        )}
+        {item.status === 'rejected' && item.comments && (
+          <Text
+            variant="bodySmall"
+            style={{ color: theme.colors.error, marginTop: 4, fontStyle: 'italic' }}
+          >
+            Rejection reason: {item.comments}
           </Text>
         )}
       </View>
