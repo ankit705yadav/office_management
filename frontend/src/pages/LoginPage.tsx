@@ -30,6 +30,14 @@ const loginSchema = yup.object().shape({
     .required("Password is required"),
 });
 
+// Test credentials for development
+const TEST_CREDENTIALS = [
+  { email: "admin@company.com", password: "Password@123", role: "Admin" },
+  { email: "john.manager@company.com", password: "Password@123", role: "Manager" },
+  { email: "sarah.hr@company.com", password: "Password@123", role: "Manager (HR)" },
+  { email: "alice.dev@company.com", password: "Password@123", role: "Employee" },
+];
+
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -41,6 +49,7 @@ const LoginPage: React.FC = () => {
     control,
     handleSubmit,
     formState: { errors },
+    setValue,
   } = useForm<LoginCredentials>({
     resolver: yupResolver(loginSchema),
     defaultValues: {
@@ -48,6 +57,11 @@ const LoginPage: React.FC = () => {
       password: "",
     },
   });
+
+  const fillCredentials = (email: string, password: string) => {
+    setValue("email", email);
+    setValue("password", password);
+  };
 
   const onSubmit = async (data: LoginCredentials) => {
     setIsLoading(true);
@@ -255,6 +269,48 @@ const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
+
+          {/* Test Credentials for Development */}
+          {import.meta.env.DEV && (
+            <div
+              className="mt-6 p-4 rounded-lg"
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <p
+                className="text-xs font-medium mb-3"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Test Credentials (Dev Only)
+              </p>
+              <div className="space-y-2">
+                {TEST_CREDENTIALS.map((cred) => (
+                  <button
+                    key={cred.email}
+                    type="button"
+                    onClick={() => fillCredentials(cred.email, cred.password)}
+                    className="w-full text-left px-3 py-2 rounded-md text-xs transition-colors"
+                    style={{
+                      backgroundColor: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text-primary)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "var(--sidebar-item-hover)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "var(--surface)";
+                    }}
+                  >
+                    <span className="font-medium">{cred.role}</span>
+                    <span style={{ color: "var(--text-muted)" }}> — {cred.email}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <p

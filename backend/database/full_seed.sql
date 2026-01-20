@@ -69,6 +69,7 @@ CREATE TABLE leave_balances (
     earned_leave DECIMAL(5, 2) DEFAULT 18.0,
     comp_off DECIMAL(5, 2) DEFAULT 0.0,
     paternity_maternity DECIMAL(5, 2) DEFAULT 0.0,
+    birthday_leave DECIMAL(5, 2) DEFAULT 1.0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, year)
@@ -185,6 +186,25 @@ CREATE TABLE daily_reports (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, report_date)
+);
+
+-- Employee custom fields table
+CREATE TABLE IF NOT EXISTS employee_custom_fields (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    field_name VARCHAR(100) NOT NULL,
+    field_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Employee documents table
+CREATE TABLE IF NOT EXISTS employee_documents (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    link_title VARCHAR(255) NOT NULL,
+    link_url TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Employee salary details table
@@ -428,19 +448,38 @@ CREATE TABLE IF NOT EXISTS inventory_movements (
 );
 
 -- ============================================================================
--- INDEXES
+-- CLIENTS & PROJECTS
+-- Clients table
+CREATE TABLE IF NOT EXISTS clients (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    address TEXT,
+    website VARCHAR(255),
+    contact_person VARCHAR(200),
+    notes TEXT,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Projects table
 CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
+    project_code VARCHAR(50),
     description TEXT,
     department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
     owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'on_hold', 'cancelled')),
     priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
     start_date DATE,
     end_date DATE,
     budget DECIMAL(12, 2),
+    attachment_url TEXT,
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -452,12 +491,19 @@ CREATE TABLE IF NOT EXISTS tasks (
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title VARCHAR(300) NOT NULL,
     description TEXT,
-    status VARCHAR(20) DEFAULT 'todo' CHECK (status IN ('todo', 'in_progress', 'done', 'approved')),
+    status VARCHAR(20) DEFAULT 'todo' CHECK (status IN ('todo', 'in_progress', 'blocked', 'done', 'approved')),
     priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
     assignee_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     due_date DATE,
     estimated_hours DECIMAL(6, 2),
     tags TEXT[],
+    attachment_url TEXT,
+    task_code VARCHAR(50),
+    action_required BOOLEAN DEFAULT FALSE,
+    actual_hours DECIMAL(8, 2) DEFAULT 0,
+    depends_on_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+    sort_order INTEGER DEFAULT 0,
+    block_reason TEXT,
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -467,22 +513,42 @@ CREATE TABLE IF NOT EXISTS tasks (
 CREATE TABLE IF NOT EXISTS task_attachments (
     id SERIAL PRIMARY KEY,
     task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-    file_name VARCHAR(255) NOT NULL,
-    file_path TEXT NOT NULL,
-    file_size INTEGER,
-    file_type VARCHAR(100),
+    link_title VARCHAR(255) NOT NULL,
+    link_url TEXT NOT NULL,
     uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Task dependencies table (for blocking tasks)
+CREATE TABLE IF NOT EXISTS task_dependencies (
+    id SERIAL PRIMARY KEY,
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    depends_on_task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(task_id, depends_on_task_id)
+);
+
+-- Task comments table
+CREATE TABLE IF NOT EXISTS task_comments (
+    id SERIAL PRIMARY KEY,
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    parent_id INTEGER REFERENCES task_comments(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    mentions INTEGER[] DEFAULT '{}',
+    is_edited BOOLEAN DEFAULT FALSE,
+    edited_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Project attachments table
 CREATE TABLE IF NOT EXISTS project_attachments (
     id SERIAL PRIMARY KEY,
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    file_name VARCHAR(255) NOT NULL,
-    file_path TEXT NOT NULL,
-    file_size INTEGER,
-    file_type VARCHAR(100),
+    link_title VARCHAR(255) NOT NULL,
+    link_url TEXT NOT NULL,
     uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -502,6 +568,11 @@ CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
 CREATE INDEX IF NOT EXISTS idx_task_attachments_task ON task_attachments(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_dependencies_task ON task_dependencies(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_dependencies_depends_on ON task_dependencies(depends_on_task_id);
+CREATE INDEX IF NOT EXISTS idx_task_comments_task ON task_comments(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_comments_user ON task_comments(user_id);
+CREATE INDEX IF NOT EXISTS idx_task_comments_parent ON task_comments(parent_id);
 CREATE INDEX IF NOT EXISTS idx_project_attachments_project ON project_attachments(project_id);
 
 CREATE INDEX idx_users_email ON users(email);
@@ -520,6 +591,8 @@ CREATE INDEX idx_notifications_read ON notifications(is_read);
 CREATE INDEX idx_daily_reports_user_id ON daily_reports(user_id);
 CREATE INDEX idx_daily_reports_report_date ON daily_reports(report_date);
 CREATE INDEX idx_daily_reports_user_date ON daily_reports(user_id, report_date);
+CREATE INDEX IF NOT EXISTS idx_employee_custom_fields_user ON employee_custom_fields(user_id);
+CREATE INDEX IF NOT EXISTS idx_employee_documents_user ON employee_documents(user_id);
 CREATE INDEX idx_employee_salary_user_id ON employee_salary_details(user_id);
 CREATE INDEX idx_payroll_user_month_year ON payroll(user_id, month, year);
 CREATE INDEX idx_advance_salary_user ON advance_salary_requests(user_id);
@@ -620,8 +693,14 @@ INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_b
 ('henry.sales@company.com', '$2b$10$y2eC/9m.SW9me84SekUlqO2ArOauQOvCk9j1BP4DWkZy87.ASsSAS', 'Henry', 'Harris', '+91-9876543221', '1991-12-16', '2021-11-15', 'employee', 'active', 3, 4, 'Delhi, NCR', 'LMNOP2345Q', '234567890124');
 
 -- Insert leave balances for all active users for 2025
-INSERT INTO leave_balances (user_id, year, sick_leave, casual_leave, earned_leave, comp_off, paternity_maternity)
-SELECT id, 2025, 12.0, 12.0, 18.0, 2.0, 0.0
+INSERT INTO leave_balances (user_id, year, sick_leave, casual_leave, earned_leave, comp_off, paternity_maternity, birthday_leave)
+SELECT id, 2025, 12.0, 12.0, 18.0, 2.0, 0.0, 1.0
+FROM users
+WHERE status = 'active';
+
+-- Insert leave balances for all active users for 2026
+INSERT INTO leave_balances (user_id, year, sick_leave, casual_leave, earned_leave, comp_off, paternity_maternity, birthday_leave)
+SELECT id, 2026, 12.0, 12.0, 18.0, 0.0, 0.0, 1.0
 FROM users
 WHERE status = 'active';
 
@@ -638,6 +717,20 @@ INSERT INTO holidays (date, name, description, is_optional, year) VALUES
 ('2025-11-01', 'Diwali', 'Festival of Lights', FALSE, 2025),
 ('2025-11-02', 'Diwali Holiday', 'Day after Diwali', FALSE, 2025),
 ('2025-12-25', 'Christmas', 'Christmas Day', FALSE, 2025);
+
+-- Insert holidays for 2026
+INSERT INTO holidays (date, name, description, is_optional, year) VALUES
+('2026-01-26', 'Republic Day', 'Republic Day of India', FALSE, 2026),
+('2026-03-03', 'Holi', 'Festival of Colors', FALSE, 2026),
+('2026-04-14', 'Ambedkar Jayanti', 'Dr. B.R. Ambedkar Birthday', TRUE, 2026),
+('2026-04-03', 'Good Friday', 'Good Friday', TRUE, 2026),
+('2026-05-01', 'May Day', 'International Workers Day', FALSE, 2026),
+('2026-08-15', 'Independence Day', 'Independence Day of India', FALSE, 2026),
+('2026-10-02', 'Gandhi Jayanti', 'Mahatma Gandhi Birthday', FALSE, 2026),
+('2026-10-09', 'Dussehra', 'Vijaya Dashami', FALSE, 2026),
+('2026-10-20', 'Diwali', 'Festival of Lights', FALSE, 2026),
+('2026-10-21', 'Diwali Holiday', 'Day after Diwali', FALSE, 2026),
+('2026-12-25', 'Christmas', 'Christmas Day', FALSE, 2026);
 
 -- Insert salary details for employees
 INSERT INTO employee_salary_details (
@@ -671,6 +764,64 @@ INSERT INTO attendance (user_id, date, check_in_time, check_out_time, status, wo
 (5, CURRENT_DATE - 2, CURRENT_DATE - 2 + TIME '09:05:00', CURRENT_DATE - 2 + TIME '18:00:00', 'present', 8.92, FALSE),
 (6, CURRENT_DATE - 1, CURRENT_DATE - 1 + TIME '09:00:00', CURRENT_DATE - 1 + TIME '17:30:00', 'present', 8.5, FALSE),
 (6, CURRENT_DATE - 2, CURRENT_DATE - 2 + TIME '09:10:00', CURRENT_DATE - 2 + TIME '18:00:00', 'present', 8.83, TRUE);
+
+-- Insert sample clients
+INSERT INTO clients (name, email, phone, address, website, contact_person, notes, status, created_by) VALUES
+('Acme Corporation', 'contact@acme.com', '+91-9876543210', '123 Business Park, Bangalore', 'https://acme.com', 'John Smith', 'Long-term client', 'active', 1),
+('TechStart Inc', 'info@techstart.io', '+91-9876543211', '456 Tech Hub, Mumbai', 'https://techstart.io', 'Sarah Johnson', 'Startup client', 'active', 1),
+('Global Services Ltd', 'hello@globalservices.com', '+91-9876543212', '789 Corporate Tower, Delhi', 'https://globalservices.com', 'Mike Wilson', 'Enterprise client', 'active', 1),
+('Digital Solutions', 'contact@digitalsolutions.in', '+91-9876543213', '321 Innovation Center, Hyderabad', 'https://digitalsolutions.in', 'Priya Sharma', 'New client', 'active', 1);
+
+-- Insert sample projects
+INSERT INTO projects (name, project_code, description, department_id, owner_id, client_id, status, priority, start_date, end_date, budget, created_by) VALUES
+('E-Commerce Platform', 'PROJ-001', 'Build a complete e-commerce platform with payment integration', 1, 2, 1, 'active', 'high', '2026-01-01', '2026-06-30', 500000.00, 1),
+('Mobile App Development', 'PROJ-002', 'Develop iOS and Android mobile applications', 1, 2, 2, 'active', 'high', '2026-01-15', '2026-05-15', 300000.00, 1),
+('CRM System', 'PROJ-003', 'Customer relationship management system', 1, 2, 3, 'active', 'medium', '2026-02-01', '2026-08-31', 400000.00, 1),
+('Website Redesign', 'PROJ-004', 'Complete website redesign with modern UI/UX', 1, 2, 4, 'active', 'medium', '2026-01-10', '2026-03-31', 150000.00, 1),
+('HR Portal', 'PROJ-005', 'Internal HR management portal', 2, 3, NULL, 'active', 'low', '2026-01-20', '2026-04-30', 200000.00, 1);
+
+-- Insert sample tasks for E-Commerce Platform (Project 1)
+INSERT INTO tasks (project_id, title, description, status, priority, assignee_id, due_date, estimated_hours, task_code, created_by) VALUES
+(1, 'Setup project repository', 'Initialize Git repository and setup CI/CD', 'done', 'high', 1, '2026-01-05', 8, 'PROJ-001-001', 2),
+(1, 'Design database schema', 'Create ERD and define all tables', 'done', 'high', 5, '2026-01-10', 16, 'PROJ-001-002', 2),
+(1, 'Implement user authentication', 'JWT-based auth with refresh tokens', 'in_progress', 'high', 5, '2026-01-25', 24, 'PROJ-001-003', 2),
+(1, 'Build product catalog API', 'CRUD operations for products', 'todo', 'medium', 6, '2026-02-05', 20, 'PROJ-001-004', 2),
+(1, 'Implement shopping cart', 'Cart management with sessions', 'todo', 'medium', 6, '2026-02-15', 16, 'PROJ-001-005', 2),
+(1, 'Payment gateway integration', 'Integrate Razorpay/Stripe', 'todo', 'high', 5, '2026-03-01', 32, 'PROJ-001-006', 2),
+(1, 'Order management system', 'Order processing and tracking', 'todo', 'medium', 7, '2026-03-15', 24, 'PROJ-001-007', 2);
+
+-- Insert sample tasks for Mobile App (Project 2)
+INSERT INTO tasks (project_id, title, description, status, priority, assignee_id, due_date, estimated_hours, task_code, created_by) VALUES
+(2, 'Setup React Native project', 'Initialize project with TypeScript', 'done', 'high', 1, '2026-01-20', 8, 'PROJ-002-001', 2),
+(2, 'Design app wireframes', 'Create Figma designs for all screens', 'done', 'high', 7, '2026-01-25', 24, 'PROJ-002-002', 2),
+(2, 'Implement navigation', 'Setup React Navigation with deep linking', 'in_progress', 'medium', 6, '2026-02-01', 12, 'PROJ-002-003', 2),
+(2, 'Build login screens', 'Login, signup, forgot password', 'todo', 'high', 6, '2026-02-10', 16, 'PROJ-002-004', 2),
+(2, 'API integration', 'Connect to backend APIs', 'todo', 'high', 7, '2026-02-20', 20, 'PROJ-002-005', 2);
+
+-- Insert sample tasks for CRM System (Project 3)
+INSERT INTO tasks (project_id, title, description, status, priority, assignee_id, due_date, estimated_hours, task_code, created_by) VALUES
+(3, 'Requirements gathering', 'Document all CRM requirements', 'done', 'high', 1, '2026-02-05', 16, 'PROJ-003-001', 3),
+(3, 'Contact management module', 'CRUD for contacts and companies', 'in_progress', 'high', 8, '2026-02-20', 24, 'PROJ-003-002', 3),
+(3, 'Deal pipeline', 'Visual pipeline for sales deals', 'todo', 'medium', 5, '2026-03-10', 32, 'PROJ-003-003', 3),
+(3, 'Email integration', 'Send and track emails from CRM', 'todo', 'medium', 6, '2026-03-25', 20, 'PROJ-003-004', 3);
+
+-- Insert sample tasks for Website Redesign (Project 4)
+INSERT INTO tasks (project_id, title, description, status, priority, assignee_id, due_date, estimated_hours, task_code, created_by) VALUES
+(4, 'Audit current website', 'Document current issues and improvements', 'done', 'medium', 7, '2026-01-15', 8, 'PROJ-004-001', 2),
+(4, 'Create new design mockups', 'Design new homepage and key pages', 'in_progress', 'high', 7, '2026-01-30', 24, 'PROJ-004-002', 2),
+(4, 'Implement responsive layouts', 'Mobile-first responsive design', 'todo', 'high', 8, '2026-02-15', 20, 'PROJ-004-003', 2);
+
+-- Insert sample tasks for HR Portal (Project 5)
+INSERT INTO tasks (project_id, title, description, status, priority, assignee_id, due_date, estimated_hours, task_code, created_by) VALUES
+(5, 'Define HR modules', 'List all required HR features', 'done', 'high', 1, '2026-01-25', 8, 'PROJ-005-001', 3),
+(5, 'Employee directory', 'Build employee listing and profiles', 'in_progress', 'medium', 9, '2026-02-10', 16, 'PROJ-005-002', 3),
+(5, 'Leave management', 'Leave request and approval workflow', 'todo', 'high', 10, '2026-02-28', 24, 'PROJ-005-003', 3);
+
+-- Additional tasks assigned to Admin
+INSERT INTO tasks (project_id, title, description, status, priority, assignee_id, due_date, estimated_hours, task_code, created_by) VALUES
+(1, 'Review code architecture', 'Review and approve the overall code architecture', 'in_progress', 'high', 1, '2026-01-28', 8, 'PROJ-001-008', 2),
+(2, 'Approve app store submission', 'Review and approve the mobile app for store submission', 'todo', 'high', 1, '2026-05-10', 4, 'PROJ-002-006', 2),
+(5, 'Final HR portal review', 'Complete final review of HR portal before launch', 'todo', 'medium', 1, '2026-04-25', 6, 'PROJ-005-004', 3);
 
 -- Insert sample advance salary requests
 INSERT INTO advance_salary_requests (user_id, amount, reason, requested_for_month, requested_for_year, status, created_at) VALUES

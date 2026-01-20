@@ -263,13 +263,21 @@ const AttendancePage: React.FC = () => {
   const handleRegularizationSubmit = async () => {
     try {
       setLoading(true);
+
+      // Send as local datetime string - no UTC conversion
+      // Since all users are in IST, we avoid timezone conversion entirely
+      // Format: "2026-01-20T09:00:00" (no Z suffix = local time)
+      const createLocalDateTime = (dateStr: string, timeStr: string): string => {
+        return `${dateStr}T${timeStr}:00`;
+      };
+
       await attendanceService.requestRegularization({
         date: regularizationForm.date,
         requestedCheckIn: regularizationForm.requestedCheckIn
-          ? `${regularizationForm.date}T${regularizationForm.requestedCheckIn}:00`
+          ? createLocalDateTime(regularizationForm.date, regularizationForm.requestedCheckIn)
           : undefined,
         requestedCheckOut: regularizationForm.requestedCheckOut
-          ? `${regularizationForm.date}T${regularizationForm.requestedCheckOut}:00`
+          ? createLocalDateTime(regularizationForm.date, regularizationForm.requestedCheckOut)
           : undefined,
         reason: regularizationForm.reason,
       });
@@ -365,7 +373,15 @@ const AttendancePage: React.FC = () => {
 
   const formatTime = (dateTime: string | null) => {
     if (!dateTime) return '-';
-    return format(new Date(dateTime), 'hh:mm a');
+
+    // Database stores local time, Sequelize returns as UTC with 'Z' suffix
+    // When we parse it, JS converts UTC back to local time automatically
+    const dateStr = dateTime.replace(' ', 'T');
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '-';
+
+    // Use local timezone display - JS will convert UTC to local
+    return format(date, 'hh:mm a');
   };
 
   const formatDate = (date: string) => {

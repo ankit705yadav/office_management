@@ -27,6 +27,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Autocomplete,
 } from '@mui/material';
 import {
   Add,
@@ -68,16 +69,22 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [blockReason, setBlockReason] = useState('');
   const [taskToBlock, setTaskToBlock] = useState<Task | null>(null);
+  const [selectedBlockingTasks, setSelectedBlockingTasks] = useState<Task[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canManage = user?.role === 'admin' || user?.role === 'manager';
+
+  // Update projectFilter when projectId prop changes
+  useEffect(() => {
+    setProjectFilter(projectId || '');
+  }, [projectId]);
 
   useEffect(() => {
     loadTasks();
     if (!projectId) {
       loadProjects();
     }
-  }, [searchTerm, statusFilter, priorityFilter, projectFilter, showMyTasks, showOverdue]);
+  }, [searchTerm, statusFilter, priorityFilter, projectFilter, showMyTasks, showOverdue, projectId]);
 
   const loadTasks = async () => {
     try {
@@ -153,6 +160,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
     if (newStatus === 'blocked' && task.status !== 'blocked') {
       setTaskToBlock(task);
       setBlockReason('');
+      setSelectedBlockingTasks([]);
       setBlockDialogOpen(true);
       return;
     }
@@ -169,17 +177,28 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
   };
 
   const handleBlockSubmit = async () => {
-    if (!taskToBlock || !blockReason.trim()) return;
+    if (!taskToBlock) return;
+
+    // Must have either a block reason or selected blocking tasks
+    const hasBlockReason = blockReason.trim().length > 0;
+    const hasBlockingTasks = selectedBlockingTasks.length > 0;
+
+    if (!hasBlockReason && !hasBlockingTasks) {
+      toast.error('Please provide a block reason or select blocking tasks');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
       await projectService.updateTaskStatus(taskToBlock.id, 'blocked', {
-        blockReason: blockReason.trim(),
+        blockReason: blockReason.trim() || undefined,
+        dependencyIds: selectedBlockingTasks.map(t => t.id),
       });
       toast.success('Task blocked');
       setBlockDialogOpen(false);
       setTaskToBlock(null);
       setBlockReason('');
+      setSelectedBlockingTasks([]);
       loadTasks();
       onTaskUpdate?.();
     } catch (error: any) {
@@ -188,6 +207,17 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Get available tasks that can block the current task (from same project, not the task itself, not already done)
+  const getAvailableBlockingTasks = () => {
+    if (!taskToBlock) return [];
+    return tasks.filter(t =>
+      t.id !== taskToBlock.id &&
+      t.projectId === taskToBlock.projectId &&
+      t.status !== 'done' &&
+      t.status !== 'approved'
+    );
   };
 
   const getPriorityColor = (priority: string): 'success' | 'warning' | 'info' | 'error' | 'default' => {
@@ -499,17 +529,37 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
         <DialogTitle>Block Task</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Please provide a reason for blocking this task:
+            Select blocking tasks and/or provide a reason for blocking:
           </Typography>
+
+          {/* Blocking Tasks Selector */}
+          <Autocomplete
+            multiple
+            options={getAvailableBlockingTasks()}
+            value={selectedBlockingTasks}
+            onChange={(_, newValue) => setSelectedBlockingTasks(newValue)}
+            getOptionLabel={(option) => `${option.taskCode || ''} - ${option.title}`.trim()}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            disableCloseOnSelect
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Blocked by tasks"
+                placeholder="Select tasks that are blocking this one..."
+              />
+            )}
+            disabled={isSubmitting}
+            sx={{ mb: 2 }}
+          />
+
           <TextField
-            autoFocus
             fullWidth
             multiline
             rows={3}
-            label="Block Reason"
+            label="Block Reason (optional if tasks selected)"
             value={blockReason}
             onChange={(e) => setBlockReason(e.target.value)}
-            placeholder="Enter the reason for blocking this task..."
+            placeholder="Enter additional reason for blocking this task..."
             disabled={isSubmitting}
           />
         </DialogContent>
@@ -519,6 +569,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
               setBlockDialogOpen(false);
               setTaskToBlock(null);
               setBlockReason('');
+              setSelectedBlockingTasks([]);
             }}
             disabled={isSubmitting}
           >
@@ -528,7 +579,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({ projectId, onTaskUpdate }) => {
             variant="contained"
             color="warning"
             onClick={handleBlockSubmit}
-            disabled={isSubmitting || !blockReason.trim()}
+            disabled={isSubmitting || (!blockReason.trim() && selectedBlockingTasks.length === 0)}
           >
             {isSubmitting ? 'Blocking...' : 'Block Task'}
           </Button>

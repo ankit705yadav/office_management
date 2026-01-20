@@ -555,13 +555,30 @@ export const requestRegularization = async (
       where: { userId, date },
     });
 
+    // Parse the datetime strings for IST users
+    // Frontend sends local datetime string without timezone (e.g., "2026-01-20T09:00:00")
+    // We store the local time AS UTC so Sequelize doesn't convert it
+    const parseLocalDateTime = (dateTimeStr: string): Date | undefined => {
+      if (!dateTimeStr) return undefined;
+
+      // Parse components from the string
+      const match = dateTimeStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+      if (!match) return undefined;
+
+      const [, year, month, day, hours, minutes, seconds] = match.map(Number);
+
+      // Create Date using UTC constructor so the UTC value equals the local time
+      // This prevents Sequelize from converting our intended time
+      return new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+    };
+
     // Create regularization request
     const regularization = await AttendanceRegularization.create({
       userId,
       attendanceId: attendance?.id,
       date: targetDate,
-      requestedCheckIn: requestedCheckIn ? new Date(requestedCheckIn) : undefined,
-      requestedCheckOut: requestedCheckOut ? new Date(requestedCheckOut) : undefined,
+      requestedCheckIn: parseLocalDateTime(requestedCheckIn),
+      requestedCheckOut: parseLocalDateTime(requestedCheckOut),
       requestedLocation: location,
       reason,
       status: RegularizationStatus.PENDING,
