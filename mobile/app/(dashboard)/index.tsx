@@ -96,7 +96,7 @@ export default function DashboardScreen() {
         (t) => t.status === 'todo' || t.status === 'in_progress'
       );
       setPendingTasks(pending.slice(0, 5));
-      setHolidays(holidaysData);
+      setHolidays(holidaysData.holidays || []);
       setMyLeaves(myLeavesData);
     } catch (error) {
       console.error('Failed to load dashboard:', error);
@@ -649,32 +649,37 @@ export default function DashboardScreen() {
                 const indicator = getDateIndicator(date);
                 const isSelected = selectedDate && isSameDay(date, selectedDate);
                 const isTodayDate = isToday(date);
+                const hasIndicator = !!indicator;
 
                 return (
-                  <TouchableOpacity
-                    key={date.toISOString()}
-                    style={[
-                      styles.calendarDay,
-                      isSelected && {
-                        backgroundColor: theme.colors.primaryContainer,
-                        borderRadius: 8,
-                      },
-                    ]}
-                    onPress={() => setSelectedDate(date)}
-                  >
-                    <Text
-                      variant="bodyMedium"
+                  <View key={date.toISOString()} style={styles.calendarDay}>
+                    <TouchableOpacity
                       style={[
-                        isTodayDate && { fontWeight: 'bold', color: theme.colors.primary },
-                        isSelected && { color: theme.colors.onPrimaryContainer },
+                        styles.calendarDayInner,
+                        hasIndicator && {
+                          backgroundColor: indicator,
+                        },
+                        isSelected && !hasIndicator && {
+                          backgroundColor: theme.colors.primaryContainer,
+                        },
+                        isTodayDate && !hasIndicator && {
+                          backgroundColor: '#8B5CF6',
+                        },
                       ]}
+                      onPress={() => setSelectedDate(date)}
                     >
-                      {format(date, 'd')}
-                    </Text>
-                    {indicator && (
-                      <View style={[styles.calendarIndicator, { backgroundColor: indicator }]} />
-                    )}
-                  </TouchableOpacity>
+                      <Text
+                        variant="bodyMedium"
+                        style={[
+                          { color: hasIndicator || isTodayDate ? '#fff' : theme.colors.onSurface },
+                          isTodayDate && !hasIndicator && { fontWeight: 'bold', color: '#fff' },
+                          isSelected && !hasIndicator && !isTodayDate && { color: theme.colors.onPrimaryContainer },
+                        ]}
+                      >
+                        {format(date, 'd')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 );
               })}
             </View>
@@ -1190,10 +1195,11 @@ const styles = StyleSheet.create({
   },
   calendarWeekHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 8,
   },
   calendarWeekDay: {
-    flex: 1,
+    width: '14.28%',
     textAlign: 'center',
     fontWeight: '600',
   },
@@ -1204,13 +1210,18 @@ const styles = StyleSheet.create({
   calendarDay: {
     width: '14.28%',
     aspectRatio: 1,
+    padding: 2,
+  },
+  calendarDayInner: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 6,
   },
   calendarIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 2,
     position: 'absolute',
     bottom: 4,
   },
@@ -1229,9 +1240,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 2,
   },
   selectedDateEvents: {
     marginTop: 8,

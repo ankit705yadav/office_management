@@ -96,7 +96,9 @@ export default function DashboardLayout() {
         name="clients"
         options={{
           title: 'Clients',
-          href: null,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="domain" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -110,7 +112,9 @@ export default function DashboardLayout() {
         name="holidays"
         options={{
           title: 'Holidays',
-          href: null,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="calendar-star" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen

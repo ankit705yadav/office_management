@@ -50,6 +50,18 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
       order: [['created_at', 'DESC']],
     });
 
+    // Get aggregate stats (without filters to show overall counts)
+    const [statsResult] = await sequelize.query(`
+      SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status = 'active') as active,
+        COUNT(*) FILTER (WHERE role = 'manager') as managers,
+        COUNT(*) FILTER (WHERE role = 'admin') as admins
+      FROM users
+    `) as [any[], unknown];
+
+    const stats = statsResult[0] || { total: 0, active: 0, managers: 0, admins: 0 };
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -59,6 +71,12 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
           page: Number(page),
           limit: Number(limit),
           totalPages: Math.ceil(count / Number(limit)),
+        },
+        stats: {
+          total: Number(stats.total),
+          active: Number(stats.active),
+          managers: Number(stats.managers),
+          admins: Number(stats.admins),
         },
       },
     });

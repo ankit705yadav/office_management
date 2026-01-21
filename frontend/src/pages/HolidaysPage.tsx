@@ -349,9 +349,9 @@ const HolidaysPage: React.FC = () => {
                 sx={{
                   width: 12,
                   height: 12,
-                  backgroundColor: '#3d9be9',
+                  backgroundColor: '#8B5CF6',
                   border: '2px solid',
-                  borderColor: '#3d9be9',
+                  borderColor: '#8B5CF6',
                   borderRadius: 0.5,
                 }}
               />
@@ -403,15 +403,15 @@ const HolidaysPage: React.FC = () => {
                         backgroundImage: 'none !important',
                         bgcolor: holiday
                           ? holiday.isOptional
-                            ? '#3d9be9 !important'
+                            ? '#8B5CF6 !important'
                             : '#10B981 !important'
                           : isToday
-                          ? '#3d9be9 !important'
+                          ? '#8B5CF6 !important'
                           : 'var(--bg-elevated)',
                         opacity: isCurrentMonth ? 1 : 0.3,
                         border: isToday ? '2px solid' : '1px solid',
                         borderColor: isToday
-                          ? '#3d9be9'
+                          ? '#8B5CF6'
                           : holiday
                           ? holiday.isOptional
                             ? '#3d9be9'

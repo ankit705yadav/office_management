@@ -10,6 +10,8 @@ TRUNCATE TABLE leave_requests CASCADE;
 TRUNCATE TABLE leave_balances CASCADE;
 TRUNCATE TABLE holidays CASCADE;
 TRUNCATE TABLE notifications CASCADE;
+TRUNCATE TABLE projects CASCADE;
+TRUNCATE TABLE clients CASCADE;
 TRUNCATE TABLE users CASCADE;
 TRUNCATE TABLE departments CASCADE;
 
@@ -24,6 +26,8 @@ ALTER SEQUENCE attendance_settings_id_seq RESTART WITH 1;
 ALTER SEQUENCE attendance_id_seq RESTART WITH 1;
 ALTER SEQUENCE attendance_regularizations_id_seq RESTART WITH 1;
 ALTER SEQUENCE daily_reports_id_seq RESTART WITH 1;
+ALTER SEQUENCE clients_id_seq RESTART WITH 1;
+ALTER SEQUENCE projects_id_seq RESTART WITH 1;
 
 -- =====================================================
 -- DEPARTMENTS
@@ -80,31 +84,64 @@ INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_b
 ('nina.finance@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Nina', 'Nelson', '+91-9876543233', '1995-08-07', '2023-04-01', 'employee', 'active', 5, 6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- =====================================================
+-- CLIENTS
+-- =====================================================
+INSERT INTO clients (name, email, phone, address, website, contact_person, notes, status, created_by, created_at, updated_at) VALUES
+-- Technology Clients
+('TechCorp Solutions', 'contact@techcorp.com', '+91-11-4567890', '123 Tech Park, Bangalore 560001', 'www.techcorp.com', 'Rajesh Kumar', 'Enterprise software solutions client. Ongoing support contract.', 'active', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('InnovateTech Pvt Ltd', 'info@innovatetech.in', '+91-22-5678901', '456 Innovation Hub, Mumbai 400001', 'www.innovatetech.in', 'Priya Sharma', 'Startup client focused on AI/ML solutions. Great potential for growth.', 'active', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('CloudNine Services', 'business@cloudnine.io', '+91-80-6789012', '789 Cloud Tower, Hyderabad 500032', 'www.cloudnine.io', 'Amit Patel', 'Cloud migration and infrastructure client.', 'active', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- Retail & E-commerce Clients
+('ShopEasy Retail', 'partnerships@shopeasy.com', '+91-44-7890123', '321 Commerce Street, Chennai 600001', 'www.shopeasy.com', 'Sunita Reddy', 'E-commerce platform development. Phase 2 in progress.', 'active', 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('FreshMart Groceries', 'tech@freshmart.in', '+91-33-8901234', '654 Market Plaza, Kolkata 700001', 'www.freshmart.in', 'Vikram Singh', 'Inventory management system implementation.', 'active', 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- Financial Services Clients
+('FinanceFirst Bank', 'it@financefirst.com', '+91-11-9012345', '100 Banking Tower, New Delhi 110001', 'www.financefirst.com', 'Ananya Gupta', 'Core banking software maintenance. Critical client - priority support.', 'active', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('SecureInvest Capital', 'operations@secureinvest.in', '+91-22-0123456', '200 Investment House, Mumbai 400021', 'www.secureinvest.in', 'Rahul Mehta', 'Trading platform development. Compliance requirements strict.', 'active', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- Healthcare Clients
+('HealthPlus Hospitals', 'it@healthplus.org', '+91-80-1234567', '50 Medical Campus, Bangalore 560010', 'www.healthplus.org', 'Dr. Kavitha Rao', 'Hospital management system. HIPAA compliance required.', 'active', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('MediCare Diagnostics', 'tech@medicare-diag.com', '+91-40-2345678', '75 Diagnostic Center, Hyderabad 500034', 'www.medicare-diag.com', 'Dr. Suresh Nair', 'Lab information management system.', 'active', 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- Manufacturing Clients
+('SteelWorks Industries', 'admin@steelworks.com', '+91-657-3456789', '1 Industrial Area, Jamshedpur 831001', 'www.steelworks.com', 'Manoj Tiwari', 'ERP implementation project. On hold due to budget review.', 'inactive', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('AutoParts Manufacturing', 'info@autoparts-mfg.in', '+91-141-4567890', '25 RIICO Industrial, Jaipur 302022', 'www.autoparts-mfg.in', 'Deepak Joshi', 'Supply chain management system.', 'active', 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- Education Clients
+('LearnSmart Academy', 'tech@learnsmart.edu.in', '+91-20-5678901', '10 Education Park, Pune 411001', 'www.learnsmart.edu.in', 'Prof. Sneha Kulkarni', 'Learning management system development.', 'active', 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+
+-- Inactive/Past Clients
+('OldTech Systems', 'contact@oldtech.com', '+91-11-6789012', '999 Legacy Building, Delhi 110002', NULL, 'Ramesh Agarwal', 'Legacy system - contract ended in 2024.', 'inactive', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- =====================================================
 -- HOLIDAYS (2025 and 2026)
 -- =====================================================
-INSERT INTO holidays (name, date, description, year, created_at, updated_at) VALUES
+INSERT INTO holidays (name, date, description, year, is_optional, created_at, updated_at) VALUES
 -- 2025 Holidays
-('New Year', '2025-01-01', 'New Year Day', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Republic Day', '2025-01-26', 'Republic Day of India', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Holi', '2025-03-14', 'Festival of Colors', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Good Friday', '2025-04-18', 'Good Friday', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Eid ul-Fitr', '2025-04-21', 'End of Ramadan', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Independence Day', '2025-08-15', 'Independence Day of India', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Gandhi Jayanti', '2025-10-02', 'Birth Anniversary of Mahatma Gandhi', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Dussehra', '2025-10-22', 'Victory of Good over Evil', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Diwali', '2025-11-12', 'Festival of Lights', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Christmas', '2025-12-25', 'Christmas Day', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('New Year', '2025-01-01', 'New Year Day', 2025, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Republic Day', '2025-01-26', 'Republic Day of India', 2025, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Holi', '2025-03-14', 'Festival of Colors', 2025, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Eid ul-Fitr', '2025-04-01', 'End of Ramadan', 2025, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Good Friday', '2025-04-18', 'Good Friday', 2025, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Independence Day', '2025-08-15', 'Independence Day of India', 2025, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Janmashtami', '2025-08-16', 'Birth of Lord Krishna', 2025, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Gandhi Jayanti', '2025-10-02', 'Birth Anniversary of Mahatma Gandhi', 2025, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Dussehra', '2025-10-02', 'Victory of Good over Evil', 2025, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Diwali', '2025-10-20', 'Festival of Lights', 2025, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Christmas', '2025-12-25', 'Christmas Day', 2025, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 -- 2026 Holidays
-('New Year', '2026-01-01', 'New Year Day', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Republic Day', '2026-01-26', 'Republic Day of India', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Holi', '2026-03-04', 'Festival of Colors', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Good Friday', '2026-04-03', 'Good Friday', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Eid ul-Fitr', '2026-04-10', 'End of Ramadan', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Independence Day', '2026-08-15', 'Independence Day of India', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Gandhi Jayanti', '2026-10-02', 'Birth Anniversary of Mahatma Gandhi', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Dussehra', '2026-10-11', 'Victory of Good over Evil', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Diwali', '2026-11-01', 'Festival of Lights', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Christmas', '2026-12-25', 'Christmas Day', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+('New Year', '2026-01-01', 'New Year Day', 2026, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Republic Day', '2026-01-26', 'Republic Day of India', 2026, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Holi', '2026-03-04', 'Festival of Colors', 2026, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Eid ul-Fitr', '2026-03-21', 'End of Ramadan', 2026, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Good Friday', '2026-04-03', 'Good Friday', 2026, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Independence Day', '2026-08-15', 'Independence Day of India', 2026, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Janmashtami', '2026-08-25', 'Birth of Lord Krishna', 2026, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Gandhi Jayanti', '2026-10-02', 'Birth Anniversary of Mahatma Gandhi', 2026, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Dussehra', '2026-10-19', 'Victory of Good over Evil', 2026, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Diwali', '2026-11-08', 'Festival of Lights', 2026, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Christmas', '2026-12-25', 'Christmas Day', 2026, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- =====================================================
 -- LEAVE BALANCES (All users - 2025 and 2026)
@@ -242,6 +279,7 @@ Key tasks:
 SELECT 'SEED DATA SUMMARY' as info;
 SELECT 'Departments: ' || COUNT(*) as count FROM departments;
 SELECT 'Users: ' || COUNT(*) as count FROM users;
+SELECT 'Clients: ' || COUNT(*) as count FROM clients;
 SELECT 'Holidays: ' || COUNT(*) as count FROM holidays;
 SELECT 'Leave Balances: ' || COUNT(*) as count FROM leave_balances;
 SELECT 'Leave Requests: ' || COUNT(*) as count FROM leave_requests;
@@ -261,3 +299,12 @@ SELECT
 FROM users
 ORDER BY id
 LIMIT 10;
+
+-- Show clients
+SELECT
+    id,
+    name,
+    contact_person,
+    status
+FROM clients
+ORDER BY id;

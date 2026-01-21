@@ -57,6 +57,13 @@ export interface UpdateEmployeeRequest {
   aadharNumber?: string;
 }
 
+export interface EmployeeStats {
+  total: number;
+  active: number;
+  managers: number;
+  admins: number;
+}
+
 export const employeeService = {
   /**
    * Get all employees with pagination and filters
@@ -68,14 +75,15 @@ export const employeeService = {
     role?: string;
     status?: string;
     departmentId?: number;
-  }): Promise<PaginatedResponse<User>> => {
+  }): Promise<PaginatedResponse<User> & { stats: EmployeeStats }> => {
     const response = await api.get<
-      ApiResponse<{ users: User[]; pagination: any }>
+      ApiResponse<{ users: User[]; pagination: any; stats: EmployeeStats }>
     >('/users', { params });
 
     return {
       items: response.data.data!.users,
       pagination: response.data.data!.pagination,
+      stats: response.data.data!.stats || { total: 0, active: 0, managers: 0, admins: 0 },
     };
   },
 
