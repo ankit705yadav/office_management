@@ -189,82 +189,82 @@ INSERT INTO leave_requests (user_id, leave_type, start_date, end_date, days_coun
 -- ==================== APPROVED LEAVES ====================
 
 -- Alice (User 7) - Engineering - Multiple approved leaves
-(7, 'casual', '2025-01-20', '2025-01-21', 2, 'Family wedding ceremony in hometown. Need to travel early.', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '85 days', 'Approved. Ensure handover is done.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '90 days', CURRENT_TIMESTAMP - INTERVAL '85 days'),
-(7, 'sick', '2025-03-10', '2025-03-11', 2, 'Fever and cold. Doctor advised rest.', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '40 days', 'Get well soon. Take rest.', false, NULL, 'https://docs.company.com/medical/alice-march-2025.pdf', 1, 1, CURRENT_TIMESTAMP - INTERVAL '42 days', CURRENT_TIMESTAMP - INTERVAL '40 days'),
-(7, 'casual', '2025-04-18', '2025-04-18', 0.5, 'Bank work - need to visit branch for loan documentation', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '25 days', 'Approved for morning half', true, 'morning', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '28 days', CURRENT_TIMESTAMP - INTERVAL '25 days'),
-(7, 'birthday', '2025-01-25', '2025-01-25', 1, 'Birthday leave', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '92 days', 'Happy Birthday! Enjoy your day.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '95 days', CURRENT_TIMESTAMP - INTERVAL '92 days'),
+(7, 'casual_leave', '2025-01-20', '2025-01-21', 2, 'Family wedding ceremony in hometown. Need to travel early.', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '85 days', 'Approved. Ensure handover is done.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '90 days', CURRENT_TIMESTAMP - INTERVAL '85 days'),
+(7, 'sick_leave', '2025-03-10', '2025-03-11', 2, 'Fever and cold. Doctor advised rest.', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '40 days', 'Get well soon. Take rest.', false, NULL, 'https://docs.company.com/medical/alice-march-2025.pdf', 1, 1, CURRENT_TIMESTAMP - INTERVAL '42 days', CURRENT_TIMESTAMP - INTERVAL '40 days'),
+(7, 'casual_leave', '2025-04-18', '2025-04-18', 0.5, 'Bank work - need to visit branch for loan documentation', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '25 days', 'Approved for morning half', true, 'first_half', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '28 days', CURRENT_TIMESTAMP - INTERVAL '25 days'),
+(7, 'birthday_leave', '2025-01-25', '2025-01-25', 1, 'Birthday leave', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '92 days', 'Happy Birthday! Enjoy your day.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '95 days', CURRENT_TIMESTAMP - INTERVAL '92 days'),
 
 -- Bob (User 8) - Engineering - Approved leaves
-(8, 'sick', '2025-02-05', '2025-02-07', 3, 'Viral infection. Doctor prescribed 3 days rest.', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '60 days', 'Approved. Provide medical certificate when you return.', false, NULL, 'https://docs.company.com/medical/bob-feb-2025.pdf', 1, 1, CURRENT_TIMESTAMP - INTERVAL '65 days', CURRENT_TIMESTAMP - INTERVAL '60 days'),
-(8, 'casual', '2025-03-28', '2025-03-28', 1, 'Personal work - passport renewal', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '30 days', 'Approved', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '35 days', CURRENT_TIMESTAMP - INTERVAL '30 days'),
-(8, 'birthday', '2025-01-30', '2025-01-30', 1, 'Birthday leave', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '88 days', 'Happy Birthday!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '90 days', CURRENT_TIMESTAMP - INTERVAL '88 days'),
+(8, 'sick_leave', '2025-02-05', '2025-02-07', 3, 'Viral infection. Doctor prescribed 3 days rest.', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '60 days', 'Approved. Provide medical certificate when you return.', false, NULL, 'https://docs.company.com/medical/bob-feb-2025.pdf', 1, 1, CURRENT_TIMESTAMP - INTERVAL '65 days', CURRENT_TIMESTAMP - INTERVAL '60 days'),
+(8, 'casual_leave', '2025-03-28', '2025-03-28', 1, 'Personal work - passport renewal', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '30 days', 'Approved', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '35 days', CURRENT_TIMESTAMP - INTERVAL '30 days'),
+(8, 'birthday_leave', '2025-01-30', '2025-01-30', 1, 'Birthday leave', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '88 days', 'Happy Birthday!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '90 days', CURRENT_TIMESTAMP - INTERVAL '88 days'),
 
 -- Carol (User 9) - Engineering - Approved leaves
-(9, 'casual', '2025-02-14', '2025-02-14', 1, 'Valentine day celebration with family', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '55 days', 'Enjoy!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '60 days', CURRENT_TIMESTAMP - INTERVAL '55 days'),
-(9, 'earned', '2025-04-01', '2025-04-04', 4, 'Family vacation to Goa. Planned trip.', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '20 days', 'Approved. Have a great vacation!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '20 days'),
+(9, 'casual_leave', '2025-02-14', '2025-02-14', 1, 'Valentine day celebration with family', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '55 days', 'Enjoy!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '60 days', CURRENT_TIMESTAMP - INTERVAL '55 days'),
+(9, 'earned_leave', '2025-04-01', '2025-04-04', 4, 'Family vacation to Goa. Planned trip.', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '20 days', 'Approved. Have a great vacation!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '20 days'),
 
 -- Dan (User 10) - Engineering
-(10, 'sick', '2025-01-15', '2025-01-15', 1, 'Migraine - need rest', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '95 days', 'Take care', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '97 days', CURRENT_TIMESTAMP - INTERVAL '95 days'),
-(10, 'casual', '2025-03-05', '2025-03-05', 0.5, 'Dentist appointment', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '45 days', 'Approved for afternoon', true, 'afternoon', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '50 days', CURRENT_TIMESTAMP - INTERVAL '45 days'),
+(10, 'sick_leave', '2025-01-15', '2025-01-15', 1, 'Migraine - need rest', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '95 days', 'Take care', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '97 days', CURRENT_TIMESTAMP - INTERVAL '95 days'),
+(10, 'casual_leave', '2025-03-05', '2025-03-05', 0.5, 'Dentist appointment', 'approved', 2, CURRENT_TIMESTAMP - INTERVAL '45 days', 'Approved for afternoon', true, 'second_half', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '50 days', CURRENT_TIMESTAMP - INTERVAL '45 days'),
 
 -- Emma (User 11) - HR
-(11, 'earned', '2025-02-20', '2025-02-24', 3, 'Family trip to Kerala - visiting relatives', 'approved', 3, CURRENT_TIMESTAMP - INTERVAL '50 days', 'Approved. Enjoy your trip!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '55 days', CURRENT_TIMESTAMP - INTERVAL '50 days'),
-(11, 'casual', '2025-04-10', '2025-04-11', 2, 'House shifting to new apartment', 'approved', 3, CURRENT_TIMESTAMP - INTERVAL '15 days', 'Approved. Good luck with the move!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '20 days', CURRENT_TIMESTAMP - INTERVAL '15 days'),
+(11, 'earned_leave', '2025-02-20', '2025-02-24', 3, 'Family trip to Kerala - visiting relatives', 'approved', 3, CURRENT_TIMESTAMP - INTERVAL '50 days', 'Approved. Enjoy your trip!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '55 days', CURRENT_TIMESTAMP - INTERVAL '50 days'),
+(11, 'casual_leave', '2025-04-10', '2025-04-11', 2, 'House shifting to new apartment', 'approved', 3, CURRENT_TIMESTAMP - INTERVAL '15 days', 'Approved. Good luck with the move!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '20 days', CURRENT_TIMESTAMP - INTERVAL '15 days'),
 
 -- Frank (User 12) - HR
-(12, 'sick', '2025-03-15', '2025-03-17', 3, 'Food poisoning - hospitalized', 'approved', 3, CURRENT_TIMESTAMP - INTERVAL '35 days', 'Get well soon. Rest properly.', false, NULL, 'https://docs.company.com/medical/frank-march-2025.pdf', 1, 1, CURRENT_TIMESTAMP - INTERVAL '38 days', CURRENT_TIMESTAMP - INTERVAL '35 days'),
+(12, 'sick_leave', '2025-03-15', '2025-03-17', 3, 'Food poisoning - hospitalized', 'approved', 3, CURRENT_TIMESTAMP - INTERVAL '35 days', 'Get well soon. Rest properly.', false, NULL, 'https://docs.company.com/medical/frank-march-2025.pdf', 1, 1, CURRENT_TIMESTAMP - INTERVAL '38 days', CURRENT_TIMESTAMP - INTERVAL '35 days'),
 
 -- Grace (User 13) - Sales
-(13, 'casual', '2025-01-10', '2025-01-10', 1, 'Attending a family function', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '100 days', 'Approved', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '105 days', CURRENT_TIMESTAMP - INTERVAL '100 days'),
-(13, 'earned', '2025-03-20', '2025-03-21', 2, 'Short trip to Jaipur', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '32 days', 'Approved. Have fun!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '40 days', CURRENT_TIMESTAMP - INTERVAL '32 days'),
+(13, 'casual_leave', '2025-01-10', '2025-01-10', 1, 'Attending a family function', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '100 days', 'Approved', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '105 days', CURRENT_TIMESTAMP - INTERVAL '100 days'),
+(13, 'earned_leave', '2025-03-20', '2025-03-21', 2, 'Short trip to Jaipur', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '32 days', 'Approved. Have fun!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '40 days', CURRENT_TIMESTAMP - INTERVAL '32 days'),
 
 -- Henry (User 14) - Sales
-(14, 'casual', '2025-02-28', '2025-02-28', 0.5, 'Vehicle service appointment', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '48 days', 'Approved for morning', true, 'morning', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '52 days', CURRENT_TIMESTAMP - INTERVAL '48 days'),
-(14, 'sick', '2025-04-05', '2025-04-05', 1, 'Not feeling well - stomach upset', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '18 days', 'Take rest', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '20 days', CURRENT_TIMESTAMP - INTERVAL '18 days'),
+(14, 'casual_leave', '2025-02-28', '2025-02-28', 0.5, 'Vehicle service appointment', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '48 days', 'Approved for morning', true, 'first_half', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '52 days', CURRENT_TIMESTAMP - INTERVAL '48 days'),
+(14, 'sick_leave', '2025-04-05', '2025-04-05', 1, 'Not feeling well - stomach upset', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '18 days', 'Take rest', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '20 days', CURRENT_TIMESTAMP - INTERVAL '18 days'),
 
 -- Iris (User 15) - Sales
-(15, 'birthday', '2025-01-30', '2025-01-30', 1, 'Birthday leave', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '88 days', 'Happy Birthday! Enjoy!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '90 days', CURRENT_TIMESTAMP - INTERVAL '88 days'),
+(15, 'birthday_leave', '2025-01-30', '2025-01-30', 1, 'Birthday leave', 'approved', 4, CURRENT_TIMESTAMP - INTERVAL '88 days', 'Happy Birthday! Enjoy!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '90 days', CURRENT_TIMESTAMP - INTERVAL '88 days'),
 
 -- Jack (User 16) - Marketing
-(16, 'casual', '2025-03-12', '2025-03-12', 1, 'Personal work', 'approved', 5, CURRENT_TIMESTAMP - INTERVAL '38 days', 'Approved', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '42 days', CURRENT_TIMESTAMP - INTERVAL '38 days'),
+(16, 'casual_leave', '2025-03-12', '2025-03-12', 1, 'Personal work', 'approved', 5, CURRENT_TIMESTAMP - INTERVAL '38 days', 'Approved', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '42 days', CURRENT_TIMESTAMP - INTERVAL '38 days'),
 
 -- Kate (User 17) - Marketing
-(17, 'sick', '2025-02-10', '2025-02-11', 2, 'Flu symptoms - need rest', 'approved', 5, CURRENT_TIMESTAMP - INTERVAL '58 days', 'Get well soon', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '62 days', CURRENT_TIMESTAMP - INTERVAL '58 days'),
+(17, 'sick_leave', '2025-02-10', '2025-02-11', 2, 'Flu symptoms - need rest', 'approved', 5, CURRENT_TIMESTAMP - INTERVAL '58 days', 'Get well soon', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '62 days', CURRENT_TIMESTAMP - INTERVAL '58 days'),
 
 -- Liam (User 18) - Finance
-(18, 'casual', '2025-01-31', '2025-01-31', 1, 'Family emergency', 'approved', 6, CURRENT_TIMESTAMP - INTERVAL '86 days', 'Approved. Take care.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '87 days', CURRENT_TIMESTAMP - INTERVAL '86 days'),
-(18, 'earned', '2025-03-25', '2025-03-28', 4, 'Planned vacation to Shimla', 'approved', 6, CURRENT_TIMESTAMP - INTERVAL '28 days', 'Enjoy your vacation!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '35 days', CURRENT_TIMESTAMP - INTERVAL '28 days'),
+(18, 'casual_leave', '2025-01-31', '2025-01-31', 1, 'Family emergency', 'approved', 6, CURRENT_TIMESTAMP - INTERVAL '86 days', 'Approved. Take care.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '87 days', CURRENT_TIMESTAMP - INTERVAL '86 days'),
+(18, 'earned_leave', '2025-03-25', '2025-03-28', 4, 'Planned vacation to Shimla', 'approved', 6, CURRENT_TIMESTAMP - INTERVAL '28 days', 'Enjoy your vacation!', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '35 days', CURRENT_TIMESTAMP - INTERVAL '28 days'),
 
 -- Maria (User 19) - Finance
-(19, 'sick', '2025-04-02', '2025-04-02', 1, 'Headache and body pain', 'approved', 6, CURRENT_TIMESTAMP - INTERVAL '20 days', 'Take rest', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '22 days', CURRENT_TIMESTAMP - INTERVAL '20 days'),
+(19, 'sick_leave', '2025-04-02', '2025-04-02', 1, 'Headache and body pain', 'approved', 6, CURRENT_TIMESTAMP - INTERVAL '20 days', 'Take rest', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '22 days', CURRENT_TIMESTAMP - INTERVAL '20 days'),
 
 -- Nina (User 20) - Finance
-(20, 'casual', '2025-02-17', '2025-02-17', 0.5, 'Bank work', 'approved', 6, CURRENT_TIMESTAMP - INTERVAL '52 days', 'Approved for afternoon half', true, 'afternoon', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '55 days', CURRENT_TIMESTAMP - INTERVAL '52 days'),
+(20, 'casual_leave', '2025-02-17', '2025-02-17', 0.5, 'Bank work', 'approved', 6, CURRENT_TIMESTAMP - INTERVAL '52 days', 'Approved for afternoon half', true, 'second_half', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '55 days', CURRENT_TIMESTAMP - INTERVAL '52 days'),
 
 -- ==================== PENDING LEAVES ====================
 
 -- Pending leaves for current/upcoming dates
-(7, 'casual', CURRENT_DATE + INTERVAL '3 days', CURRENT_DATE + INTERVAL '3 days', 0.5, 'Doctor follow-up appointment in the morning', 'pending', NULL, NULL, NULL, true, 'morning', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
-(8, 'earned', CURRENT_DATE + INTERVAL '15 days', CURRENT_DATE + INTERVAL '19 days', 5, 'Family vacation - annual trip to native place', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days'),
-(9, 'casual', CURRENT_DATE + INTERVAL '7 days', CURRENT_DATE + INTERVAL '8 days', 2, 'Sister''s engagement ceremony', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days'),
-(13, 'casual', CURRENT_DATE + INTERVAL '10 days', CURRENT_DATE + INTERVAL '10 days', 1, 'Personal work - house registration', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day'),
-(16, 'earned', CURRENT_DATE + INTERVAL '20 days', CURRENT_DATE + INTERVAL '24 days', 5, 'Planned trip to Manali with family', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days'),
-(18, 'casual', CURRENT_DATE + INTERVAL '5 days', CURRENT_DATE + INTERVAL '5 days', 1, 'Child''s school annual day function', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
+(7, 'casual_leave', CURRENT_DATE + INTERVAL '3 days', CURRENT_DATE + INTERVAL '3 days', 0.5, 'Doctor follow-up appointment in the morning', 'pending', NULL, NULL, NULL, true, 'first_half', NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
+(8, 'earned_leave', CURRENT_DATE + INTERVAL '15 days', CURRENT_DATE + INTERVAL '19 days', 5, 'Family vacation - annual trip to native place', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days'),
+(9, 'casual_leave', CURRENT_DATE + INTERVAL '7 days', CURRENT_DATE + INTERVAL '8 days', 2, 'Sister''s engagement ceremony', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days'),
+(13, 'casual_leave', CURRENT_DATE + INTERVAL '10 days', CURRENT_DATE + INTERVAL '10 days', 1, 'Personal work - house registration', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day'),
+(16, 'earned_leave', CURRENT_DATE + INTERVAL '20 days', CURRENT_DATE + INTERVAL '24 days', 5, 'Planned trip to Manali with family', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '4 days', CURRENT_TIMESTAMP - INTERVAL '4 days'),
+(18, 'casual_leave', CURRENT_DATE + INTERVAL '5 days', CURRENT_DATE + INTERVAL '5 days', 1, 'Child''s school annual day function', 'pending', NULL, NULL, NULL, false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '2 days'),
 
 -- ==================== REJECTED LEAVES ====================
 
 -- Rejected leaves with reasons
-(10, 'casual', '2025-01-26', '2025-01-27', 2, 'Personal trip', 'rejected', 2, CURRENT_TIMESTAMP - INTERVAL '92 days', 'Rejected - Republic Day is a critical deployment day. Please reschedule.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '95 days', CURRENT_TIMESTAMP - INTERVAL '92 days'),
-(12, 'earned', '2025-03-31', '2025-04-04', 5, 'Long vacation planned', 'rejected', 3, CURRENT_TIMESTAMP - INTERVAL '22 days', 'Rejected - Quarter end is a busy period for HR. Please apply for different dates.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '22 days'),
-(14, 'casual', '2025-02-14', '2025-02-14', 1, 'Valentine day', 'rejected', 4, CURRENT_TIMESTAMP - INTERVAL '55 days', 'Rejected - Important client meeting scheduled. Please plan accordingly.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '60 days', CURRENT_TIMESTAMP - INTERVAL '55 days'),
-(19, 'earned', '2025-03-15', '2025-03-20', 4, 'Family vacation', 'rejected', 6, CURRENT_TIMESTAMP - INTERVAL '40 days', 'Rejected - Month-end closing. Finance team needed. Try next month.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '45 days', CURRENT_TIMESTAMP - INTERVAL '40 days'),
+(10, 'casual_leave', '2025-01-26', '2025-01-27', 2, 'Personal trip', 'rejected', 2, CURRENT_TIMESTAMP - INTERVAL '92 days', 'Rejected - Republic Day is a critical deployment day. Please reschedule.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '95 days', CURRENT_TIMESTAMP - INTERVAL '92 days'),
+(12, 'earned_leave', '2025-03-31', '2025-04-04', 5, 'Long vacation planned', 'rejected', 3, CURRENT_TIMESTAMP - INTERVAL '22 days', 'Rejected - Quarter end is a busy period for HR. Please apply for different dates.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '22 days'),
+(14, 'casual_leave', '2025-02-14', '2025-02-14', 1, 'Valentine day', 'rejected', 4, CURRENT_TIMESTAMP - INTERVAL '55 days', 'Rejected - Important client meeting scheduled. Please plan accordingly.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '60 days', CURRENT_TIMESTAMP - INTERVAL '55 days'),
+(19, 'earned_leave', '2025-03-15', '2025-03-20', 4, 'Family vacation', 'rejected', 6, CURRENT_TIMESTAMP - INTERVAL '40 days', 'Rejected - Month-end closing. Finance team needed. Try next month.', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '45 days', CURRENT_TIMESTAMP - INTERVAL '40 days'),
 
 -- ==================== CANCELLED LEAVES ====================
 
 -- Cancelled leaves by employees
-(7, 'casual', '2025-04-25', '2025-04-25', 1, 'Personal work', 'cancelled', NULL, NULL, 'Cancelled by employee - plans changed', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP - INTERVAL '8 days'),
-(11, 'earned', '2025-05-01', '2025-05-05', 3, 'Trip to Mumbai', 'cancelled', NULL, NULL, 'Cancelled by employee - postponing trip', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '12 days', CURRENT_TIMESTAMP - INTERVAL '7 days'),
-(15, 'casual', '2025-04-15', '2025-04-15', 1, 'Personal work', 'cancelled', NULL, NULL, 'Cancelled - work done remotely', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '18 days', CURRENT_TIMESTAMP - INTERVAL '16 days');
+(7, 'casual_leave', '2025-04-25', '2025-04-25', 1, 'Personal work', 'cancelled', NULL, NULL, 'Cancelled by employee - plans changed', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP - INTERVAL '8 days'),
+(11, 'earned_leave', '2025-05-01', '2025-05-05', 3, 'Trip to Mumbai', 'cancelled', NULL, NULL, 'Cancelled by employee - postponing trip', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '12 days', CURRENT_TIMESTAMP - INTERVAL '7 days'),
+(15, 'casual_leave', '2025-04-15', '2025-04-15', 1, 'Personal work', 'cancelled', NULL, NULL, 'Cancelled - work done remotely', false, NULL, NULL, 1, 1, CURRENT_TIMESTAMP - INTERVAL '18 days', CURRENT_TIMESTAMP - INTERVAL '16 days');
 
 -- =====================================================
 -- LEAVE APPROVALS (For multi-level approval tracking)
