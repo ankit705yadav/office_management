@@ -33,9 +33,9 @@ import {
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { format, isAfter, isBefore } from 'date-fns';
+import { format, isAfter, isBefore, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
-import { projectService } from '../../services/project.service';
+import { projectService, CreateProjectRequest, UpdateProjectRequest } from '../../services/project.service';
 import {
   Task,
   Project,
@@ -46,6 +46,10 @@ import {
   TaskStatus,
   TaskPriority,
   TaskAttachmentInput,
+  Department,
+  Client,
+  ProjectStatus,
+  TaskComment,
 } from '../../types';
 
 // Constants
@@ -65,6 +69,36 @@ const TASK_PRIORITIES = [
   { value: 'high', label: 'High' },
   { value: 'urgent', label: 'Urgent' },
 ];
+
+const PROJECT_STATUSES = [
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'on_hold', label: 'On Hold' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
+const PROJECT_PRIORITIES = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
+];
+
+// Project status color mapping
+const getProjectStatusColor = (status: string): string => {
+  switch (status) {
+    case 'active':
+      return '#10B981';
+    case 'completed':
+      return '#8B5CF6';
+    case 'on_hold':
+      return '#F59E0B';
+    case 'cancelled':
+      return '#EF4444';
+    default:
+      return '#6B7280';
+  }
+};
 
 // Status color mapping
 const getStatusColor = (status: string): string => {
@@ -149,6 +183,11 @@ const ProjectPickerModal = ({
   selectedProjectId,
   loading,
   theme,
+  canManageProjects,
+  canDeleteProjects,
+  onCreateProject,
+  onEditProject,
+  onDeleteProject,
 }: {
   visible: boolean;
   onDismiss: () => void;
@@ -157,6 +196,11 @@ const ProjectPickerModal = ({
   selectedProjectId: number | null;
   loading: boolean;
   theme: any;
+  canManageProjects?: boolean;
+  canDeleteProjects?: boolean;
+  onCreateProject?: () => void;
+  onEditProject?: (project: Project) => void;
+  onDeleteProject?: (project: Project) => void;
 }) => {
   const [search, setSearch] = useState('');
 
@@ -179,6 +223,21 @@ const ProjectPickerModal = ({
             </Text>
             <IconButton icon="close" onPress={onDismiss} />
           </View>
+
+          {/* New Project Button */}
+          {canManageProjects && onCreateProject && (
+            <Button
+              mode="contained"
+              icon="plus"
+              onPress={() => {
+                onDismiss();
+                onCreateProject();
+              }}
+              style={{ marginBottom: 12, marginHorizontal: 16 }}
+            >
+              New Project
+            </Button>
+          )}
 
           <Searchbar
             placeholder="Search projects..."
@@ -218,26 +277,28 @@ const ProjectPickerModal = ({
               <ActivityIndicator style={{ padding: 20 }} />
             ) : (
               filteredProjects.map((project) => (
-                <TouchableOpacity
+                <View
                   key={project.id}
                   style={[
                     styles.projectPickerItem,
                     selectedProjectId === project.id && { backgroundColor: theme.colors.primaryContainer },
                   ]}
-                  onPress={() => {
-                    onSelect(project);
-                    onDismiss();
-                  }}
                 >
-                  <View style={styles.projectPickerItemContent}>
+                  <TouchableOpacity
+                    style={styles.projectPickerItemContent}
+                    onPress={() => {
+                      onSelect(project);
+                      onDismiss();
+                    }}
+                  >
                     <View style={styles.projectPickerNameRow}>
-                      <Text style={[styles.projectPickerName, { color: theme.colors.onSurface }]}>
+                      <Text style={[styles.projectPickerName, { color: theme.colors.onSurface }]} numberOfLines={1}>
                         {project.name}
                       </Text>
                       <Chip
                         mode="flat"
                         textStyle={{ fontSize: 10 }}
-                        style={{ backgroundColor: getStatusColor(project.status), height: 22 }}
+                        style={{ backgroundColor: getProjectStatusColor(project.status), height: 22 }}
                       >
                         <Text style={{ color: '#fff', fontSize: 10 }}>{formatStatus(project.status)}</Text>
                       </Chip>
@@ -247,11 +308,37 @@ const ProjectPickerModal = ({
                         {project.taskCounts.todo + project.taskCounts.in_progress + project.taskCounts.blocked} active tasks
                       </Text>
                     )}
+                  </TouchableOpacity>
+                  <View style={styles.projectPickerActions}>
+                    {selectedProjectId === project.id && (
+                      <IconButton icon="check" size={20} iconColor={theme.colors.primary} style={{ margin: 0 }} />
+                    )}
+                    {canManageProjects && onEditProject && (
+                      <IconButton
+                        icon="pencil-outline"
+                        size={18}
+                        iconColor={theme.colors.primary}
+                        style={{ margin: 0 }}
+                        onPress={() => {
+                          onDismiss();
+                          onEditProject(project);
+                        }}
+                      />
+                    )}
+                    {canDeleteProjects && onDeleteProject && (
+                      <IconButton
+                        icon="delete-outline"
+                        size={18}
+                        iconColor="#EF4444"
+                        style={{ margin: 0 }}
+                        onPress={() => {
+                          onDismiss();
+                          onDeleteProject(project);
+                        }}
+                      />
+                    )}
                   </View>
-                  {selectedProjectId === project.id && (
-                    <IconButton icon="check" size={20} iconColor={theme.colors.primary} />
-                  )}
-                </TouchableOpacity>
+                </View>
               ))
             )}
           </ScrollView>
@@ -571,6 +658,8 @@ const TaskDetailModal = ({
   canManage,
   submitting,
   theme,
+  currentUserId,
+  userRole,
 }: {
   visible: boolean;
   task: Task | null;
@@ -582,6 +671,8 @@ const TaskDetailModal = ({
   canManage: boolean;
   submitting: boolean;
   theme: any;
+  currentUserId: number;
+  userRole: string;
 }) => {
   const [showStatusPicker, setShowStatusPicker] = useState(false);
   const [showBlockReasonModal, setShowBlockReasonModal] = useState(false);
@@ -758,6 +849,27 @@ const TaskDetailModal = ({
               </View>
             )}
 
+            {/* Tags Section */}
+            {task.tags && task.tags.length > 0 && (
+              <View style={styles.tagsSection}>
+                <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant, marginBottom: 8 }]}>
+                  Tags:
+                </Text>
+                <View style={styles.tagsContainer}>
+                  {task.tags.map((tag, index) => (
+                    <Chip
+                      key={`${tag}-${index}`}
+                      mode="outlined"
+                      style={styles.tagChip}
+                      textStyle={{ fontSize: 12 }}
+                    >
+                      {tag}
+                    </Chip>
+                  ))}
+                </View>
+              </View>
+            )}
+
             {/* Attachments Section */}
             {task.attachments && task.attachments.length > 0 && (
               <View style={styles.attachmentsSection}>
@@ -809,17 +921,13 @@ const TaskDetailModal = ({
               </View>
             )}
 
-            {/* Comments Count */}
-            {task.commentCount !== undefined && task.commentCount > 0 && (
-              <View style={styles.metaRow}>
-                <View style={styles.metaItem}>
-                  <IconButton icon="comment-outline" size={16} style={{ margin: 0 }} />
-                  <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-                    {task.commentCount} comment{task.commentCount !== 1 ? 's' : ''}
-                  </Text>
-                </View>
-              </View>
-            )}
+            {/* Comments Section */}
+            <TaskCommentsSection
+              taskId={task.id}
+              currentUserId={currentUserId}
+              userRole={userRole}
+              theme={theme}
+            />
           </ScrollView>
           )}
 
@@ -876,6 +984,387 @@ const TaskDetailModal = ({
         theme={theme}
       />
     </RNModal>
+  );
+};
+
+// Format relative time helper
+const formatRelativeTime = (dateStr: string): string => {
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch {
+    return '';
+  }
+};
+
+// Task Comments Section Component
+const TaskCommentsSection = ({
+  taskId,
+  currentUserId,
+  userRole,
+  theme,
+}: {
+  taskId: number;
+  currentUserId: number;
+  userRole: string;
+  theme: any;
+}) => {
+  const [comments, setComments] = useState<TaskComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newComment, setNewComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<TaskComment | null>(null);
+  const [editingComment, setEditingComment] = useState<TaskComment | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [expanded, setExpanded] = useState(true);
+  const isDark = theme.dark;
+
+  const isAdmin = userRole === 'admin';
+  const isManager = userRole === 'manager';
+
+  // Load comments
+  const loadComments = async () => {
+    try {
+      setLoading(true);
+      const data = await projectService.getTaskComments(taskId);
+      setComments(data);
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadComments();
+  }, [taskId]);
+
+  // Add new comment
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+
+    try {
+      setSubmitting(true);
+      const comment = await projectService.createTaskComment(
+        taskId,
+        newComment.trim(),
+        replyingTo?.id
+      );
+
+      if (replyingTo) {
+        // Add reply to parent comment
+        setComments(prev => prev.map(c => {
+          if (c.id === replyingTo.id) {
+            return { ...c, replies: [...(c.replies || []), comment] };
+          }
+          return c;
+        }));
+      } else {
+        // Add as top-level comment
+        setComments(prev => [...prev, comment]);
+      }
+
+      setNewComment('');
+      setReplyingTo(null);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to add comment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Edit comment
+  const handleEditComment = async () => {
+    if (!editingComment || !editContent.trim()) return;
+
+    try {
+      setSubmitting(true);
+      const updated = await projectService.updateTaskComment(
+        taskId,
+        editingComment.id,
+        editContent.trim()
+      );
+
+      setComments(prev => prev.map(c => {
+        if (c.id === editingComment.id) {
+          return { ...c, content: updated.content, isEdited: true };
+        }
+        // Check replies
+        if (c.replies) {
+          return {
+            ...c,
+            replies: c.replies.map(r =>
+              r.id === editingComment.id
+                ? { ...r, content: updated.content, isEdited: true }
+                : r
+            ),
+          };
+        }
+        return c;
+      }));
+
+      setEditingComment(null);
+      setEditContent('');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update comment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Delete comment
+  const handleDeleteComment = (comment: TaskComment) => {
+    Alert.alert(
+      'Delete Comment',
+      'Are you sure you want to delete this comment?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await projectService.deleteTaskComment(taskId, comment.id);
+              setComments(prev => {
+                // Remove from top level
+                const filtered = prev.filter(c => c.id !== comment.id);
+                // Also remove from replies
+                return filtered.map(c => ({
+                  ...c,
+                  replies: c.replies?.filter(r => r.id !== comment.id),
+                }));
+              });
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete comment');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Check if user can edit/delete comment
+  const canModifyComment = (comment: TaskComment): boolean => {
+    return comment.userId === currentUserId || isAdmin;
+  };
+
+  const canDeleteComment = (comment: TaskComment): boolean => {
+    return comment.userId === currentUserId || isAdmin || isManager;
+  };
+
+  // Render single comment
+  const renderComment = (comment: TaskComment, isReply = false) => {
+    const author = comment.author;
+    const canEdit = canModifyComment(comment);
+    const canDelete = canDeleteComment(comment);
+    const isEditing = editingComment?.id === comment.id;
+
+    return (
+      <View
+        key={comment.id}
+        style={[
+          styles.commentItem,
+          isReply && styles.commentReply,
+          { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB' },
+        ]}
+      >
+        <View style={styles.commentHeader}>
+          <View style={styles.commentAuthorRow}>
+            {author?.profileImageUrl ? (
+              <Avatar.Image size={28} source={{ uri: author.profileImageUrl }} />
+            ) : (
+              <Avatar.Text
+                size={28}
+                label={`${author?.firstName?.charAt(0) || ''}${author?.lastName?.charAt(0) || ''}`}
+              />
+            )}
+            <View style={styles.commentAuthorInfo}>
+              <Text style={[styles.commentAuthorName, { color: theme.colors.onSurface }]}>
+                {author?.firstName} {author?.lastName}
+              </Text>
+              <Text style={[styles.commentTime, { color: theme.colors.onSurfaceVariant }]}>
+                {formatRelativeTime(comment.createdAt)}
+                {comment.isEdited && ' (edited)'}
+              </Text>
+            </View>
+          </View>
+          {(canEdit || canDelete) && !isEditing && (
+            <View style={styles.commentActions}>
+              {canEdit && (
+                <IconButton
+                  icon="pencil-outline"
+                  size={16}
+                  iconColor={theme.colors.onSurfaceVariant}
+                  style={{ margin: 0 }}
+                  onPress={() => {
+                    setEditingComment(comment);
+                    setEditContent(comment.content);
+                  }}
+                />
+              )}
+              {canDelete && (
+                <IconButton
+                  icon="delete-outline"
+                  size={16}
+                  iconColor="#EF4444"
+                  style={{ margin: 0 }}
+                  onPress={() => handleDeleteComment(comment)}
+                />
+              )}
+            </View>
+          )}
+        </View>
+
+        {isEditing ? (
+          <View style={styles.editCommentContainer}>
+            <TextInput
+              mode="outlined"
+              value={editContent}
+              onChangeText={setEditContent}
+              multiline
+              style={{ marginBottom: 8 }}
+              disabled={submitting}
+            />
+            <View style={styles.editCommentActions}>
+              <Button
+                mode="outlined"
+                compact
+                onPress={() => {
+                  setEditingComment(null);
+                  setEditContent('');
+                }}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                compact
+                onPress={handleEditComment}
+                disabled={submitting || !editContent.trim()}
+                loading={submitting}
+              >
+                Save
+              </Button>
+            </View>
+          </View>
+        ) : (
+          <>
+            <Text style={[styles.commentContent, { color: theme.colors.onSurface }]}>
+              {comment.content}
+            </Text>
+            {!isReply && (
+              <TouchableOpacity
+                style={styles.replyButton}
+                onPress={() => {
+                  setReplyingTo(comment);
+                  setNewComment('');
+                }}
+              >
+                <IconButton
+                  icon="reply"
+                  size={14}
+                  iconColor={theme.colors.primary}
+                  style={{ margin: 0 }}
+                />
+                <Text style={{ color: theme.colors.primary, fontSize: 12 }}>Reply</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+
+        {/* Render replies */}
+        {!isReply && comment.replies && comment.replies.length > 0 && (
+          <View style={styles.repliesContainer}>
+            {comment.replies.map(reply => renderComment(reply, true))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const totalComments = comments.reduce(
+    (acc, c) => acc + 1 + (c.replies?.length || 0),
+    0
+  );
+
+  return (
+    <View style={styles.commentsSection}>
+      <TouchableOpacity
+        style={styles.commentsSectionHeader}
+        onPress={() => setExpanded(!expanded)}
+      >
+        <View style={styles.commentsSectionTitle}>
+          <IconButton icon="comment-outline" size={18} style={{ margin: 0 }} />
+          <Text style={[styles.detailLabel, { color: theme.colors.onSurfaceVariant, marginLeft: 4 }]}>
+            Comments ({totalComments})
+          </Text>
+        </View>
+        <IconButton
+          icon={expanded ? 'chevron-up' : 'chevron-down'}
+          size={20}
+          style={{ margin: 0 }}
+        />
+      </TouchableOpacity>
+
+      {expanded && (
+        <>
+          {loading ? (
+            <ActivityIndicator style={{ padding: 16 }} />
+          ) : (
+            <>
+              {/* Comments list */}
+              {comments.length > 0 ? (
+                <View style={styles.commentsList}>
+                  {comments.map(comment => renderComment(comment))}
+                </View>
+              ) : (
+                <Text style={[styles.noCommentsText, { color: theme.colors.onSurfaceVariant }]}>
+                  No comments yet. Be the first to comment!
+                </Text>
+              )}
+
+              {/* Reply indicator */}
+              {replyingTo && (
+                <View style={[styles.replyIndicator, { backgroundColor: theme.colors.primaryContainer }]}>
+                  <Text style={{ color: theme.colors.onPrimaryContainer, flex: 1 }} numberOfLines={1}>
+                    Replying to {replyingTo.author?.firstName}'s comment
+                  </Text>
+                  <IconButton
+                    icon="close"
+                    size={16}
+                    onPress={() => setReplyingTo(null)}
+                    style={{ margin: 0 }}
+                  />
+                </View>
+              )}
+
+              {/* New comment input */}
+              <View style={styles.newCommentContainer}>
+                <TextInput
+                  mode="outlined"
+                  value={newComment}
+                  onChangeText={setNewComment}
+                  placeholder={replyingTo ? 'Write a reply...' : 'Write a comment...'}
+                  multiline
+                  style={styles.newCommentInput}
+                  disabled={submitting}
+                />
+                <IconButton
+                  icon="send"
+                  mode="contained"
+                  size={20}
+                  onPress={handleAddComment}
+                  disabled={submitting || !newComment.trim()}
+                  style={{ marginLeft: 8 }}
+                />
+              </View>
+            </>
+          )}
+        </>
+      )}
+    </View>
   );
 };
 
@@ -1598,6 +2087,638 @@ const EmployeeReportItem = ({
   );
 };
 
+// Project Form Modal
+const ProjectFormModal = ({
+  visible,
+  project,
+  onDismiss,
+  onSubmit,
+  submitting,
+  theme,
+}: {
+  visible: boolean;
+  project: Project | null;
+  onDismiss: () => void;
+  onSubmit: (data: CreateProjectRequest | UpdateProjectRequest) => void;
+  submitting: boolean;
+  theme: any;
+}) => {
+  const [name, setName] = useState(project?.name || '');
+  const [description, setDescription] = useState(project?.description || '');
+  const [status, setStatus] = useState(project?.status || 'active');
+  const [priority, setPriority] = useState(project?.priority || 'medium');
+  const [departmentId, setDepartmentId] = useState<number | null>(project?.departmentId || null);
+  const [ownerId, setOwnerId] = useState<number | null>(project?.ownerId || null);
+  const [clientId, setClientId] = useState<number | null>(project?.clientId || null);
+  const [startDate, setStartDate] = useState<Date | null>(project?.startDate ? new Date(project.startDate) : null);
+  const [endDate, setEndDate] = useState<Date | null>(project?.endDate ? new Date(project.endDate) : null);
+  const [budget, setBudget] = useState(project?.budget?.toString() || '');
+  const [attachmentUrl, setAttachmentUrl] = useState(project?.attachmentUrl || '');
+
+  // Picker states
+  const [showStatusPicker, setShowStatusPicker] = useState(false);
+  const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+  const [showDepartmentPicker, setShowDepartmentPicker] = useState(false);
+  const [showOwnerPicker, setShowOwnerPicker] = useState(false);
+  const [showClientPicker, setShowClientPicker] = useState(false);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
+  // Data states
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+
+  const isEditing = !!project;
+
+  useEffect(() => {
+    if (visible) {
+      setName(project?.name || '');
+      setDescription(project?.description || '');
+      setStatus(project?.status || 'active');
+      setPriority(project?.priority || 'medium');
+      setDepartmentId(project?.departmentId || null);
+      setOwnerId(project?.ownerId || null);
+      setClientId(project?.clientId || null);
+      setStartDate(project?.startDate ? new Date(project.startDate) : null);
+      setEndDate(project?.endDate ? new Date(project.endDate) : null);
+      setBudget(project?.budget?.toString() || '');
+      setAttachmentUrl(project?.attachmentUrl || '');
+      loadFormData();
+    }
+  }, [visible, project]);
+
+  const loadFormData = async () => {
+    try {
+      setLoadingData(true);
+      const [depts, clientsList, usersList] = await Promise.all([
+        projectService.getDepartments(),
+        projectService.getClients(),
+        projectService.getUsers({ limit: 100 }),
+      ]);
+      setDepartments(depts);
+      setClients(clientsList);
+      setUsers(usersList);
+    } catch (error) {
+      console.error('Failed to load form data:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter a project name');
+      return;
+    }
+
+    const data: CreateProjectRequest | UpdateProjectRequest = {
+      name: name.trim(),
+      description: description.trim() || undefined,
+      priority: priority as 'low' | 'medium' | 'high' | 'critical',
+      departmentId: departmentId || undefined,
+      ownerId: ownerId || undefined,
+      clientId: clientId || undefined,
+      startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
+      endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
+      budget: budget ? parseFloat(budget) : undefined,
+      attachmentUrl: attachmentUrl.trim() || undefined,
+    };
+
+    if (isEditing) {
+      (data as UpdateProjectRequest).status = status as 'active' | 'completed' | 'on_hold' | 'cancelled';
+    }
+
+    onSubmit(data);
+  };
+
+  const selectedDepartment = departments.find((d) => d.id === departmentId);
+  const selectedOwner = users.find((u) => u.id === ownerId) || project?.owner;
+  const selectedClient = clients.find((c) => c.id === clientId) || project?.client;
+
+  return (
+    <RNModal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onDismiss}
+    >
+      <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalKeyboardView}
+        >
+          <View style={[styles.formModalContainer, { backgroundColor: theme.colors.surface }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.modalHeader}>
+                <Text variant="titleLarge" style={{ fontWeight: '600', color: theme.colors.onSurface }}>
+                  {isEditing ? 'Edit Project' : 'Create Project'}
+                </Text>
+                <IconButton icon="close" onPress={onDismiss} disabled={submitting} />
+              </View>
+
+              <Divider style={{ marginBottom: 16 }} />
+
+              {loadingData && (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <ActivityIndicator />
+                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>Loading...</Text>
+                </View>
+              )}
+
+              {/* Project Name */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant }]}>
+                Project Name *
+              </Text>
+              <TextInput
+                mode="outlined"
+                value={name}
+                onChangeText={setName}
+                placeholder="Enter project name"
+                disabled={submitting}
+              />
+
+              {/* Description */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                Description
+              </Text>
+              <TextInput
+                mode="outlined"
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Project description"
+                multiline
+                numberOfLines={3}
+                disabled={submitting}
+              />
+
+              {/* Status (Edit mode only) */}
+              {isEditing && (
+                <>
+                  <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                    Status
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.pickerButton, { borderColor: theme.colors.outline }]}
+                    onPress={() => setShowStatusPicker(true)}
+                    disabled={submitting}
+                  >
+                    <Chip
+                      mode="flat"
+                      textStyle={{ color: '#fff', fontSize: 12 }}
+                      style={{ backgroundColor: getProjectStatusColor(status) }}
+                    >
+                      {formatStatus(status)}
+                    </Chip>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* Priority */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                Priority
+              </Text>
+              <TouchableOpacity
+                style={[styles.pickerButton, { borderColor: theme.colors.outline }]}
+                onPress={() => setShowPriorityPicker(true)}
+                disabled={submitting}
+              >
+                <Chip
+                  mode="outlined"
+                  textStyle={{ color: getPriorityColor(priority) }}
+                  style={{ borderColor: getPriorityColor(priority) }}
+                >
+                  {formatPriority(priority)}
+                </Chip>
+              </TouchableOpacity>
+
+              {/* Department */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                Department
+              </Text>
+              <TouchableOpacity
+                style={[styles.pickerButton, { borderColor: theme.colors.outline }]}
+                onPress={() => setShowDepartmentPicker(true)}
+                disabled={submitting}
+              >
+                <Text style={{ color: selectedDepartment ? theme.colors.onSurface : theme.colors.onSurfaceVariant }}>
+                  {selectedDepartment?.name || 'Select department'}
+                </Text>
+                {departmentId && (
+                  <IconButton
+                    icon="close"
+                    size={16}
+                    onPress={() => setDepartmentId(null)}
+                    style={{ margin: 0 }}
+                  />
+                )}
+              </TouchableOpacity>
+
+              {/* Owner */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                Owner
+              </Text>
+              <TouchableOpacity
+                style={[styles.pickerButton, { borderColor: theme.colors.outline }]}
+                onPress={() => setShowOwnerPicker(true)}
+                disabled={submitting}
+              >
+                {selectedOwner ? (
+                  <View style={styles.assigneeRow}>
+                    <Avatar.Text
+                      size={24}
+                      label={`${selectedOwner.firstName?.charAt(0) || ''}${selectedOwner.lastName?.charAt(0) || ''}`}
+                    />
+                    <Text style={{ color: theme.colors.onSurface, marginLeft: 8 }}>
+                      {selectedOwner.firstName} {selectedOwner.lastName}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={{ color: theme.colors.onSurfaceVariant }}>Select owner</Text>
+                )}
+                {ownerId && (
+                  <IconButton
+                    icon="close"
+                    size={16}
+                    onPress={() => setOwnerId(null)}
+                    style={{ margin: 0 }}
+                  />
+                )}
+              </TouchableOpacity>
+
+              {/* Client */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                Client
+              </Text>
+              <TouchableOpacity
+                style={[styles.pickerButton, { borderColor: theme.colors.outline }]}
+                onPress={() => setShowClientPicker(true)}
+                disabled={submitting}
+              >
+                <Text style={{ color: selectedClient ? theme.colors.onSurface : theme.colors.onSurfaceVariant }}>
+                  {selectedClient?.name || 'Select client'}
+                </Text>
+                {clientId && (
+                  <IconButton
+                    icon="close"
+                    size={16}
+                    onPress={() => setClientId(null)}
+                    style={{ margin: 0 }}
+                  />
+                )}
+              </TouchableOpacity>
+
+              {/* Start Date */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                Start Date
+              </Text>
+              <TouchableOpacity
+                style={[styles.pickerButton, { borderColor: theme.colors.outline }]}
+                onPress={() => setShowStartDatePicker(true)}
+                disabled={submitting}
+              >
+                <Text style={{ color: startDate ? theme.colors.onSurface : theme.colors.onSurfaceVariant }}>
+                  {startDate ? format(startDate, 'MMMM dd, yyyy') : 'Select start date'}
+                </Text>
+                {startDate && (
+                  <IconButton
+                    icon="close"
+                    size={16}
+                    onPress={() => setStartDate(null)}
+                    style={{ margin: 0 }}
+                  />
+                )}
+              </TouchableOpacity>
+              {showStartDatePicker && (
+                <DateTimePicker
+                  value={startDate || new Date()}
+                  mode="date"
+                  onChange={(event, date) => {
+                    setShowStartDatePicker(Platform.OS === 'ios');
+                    if (date) setStartDate(date);
+                  }}
+                />
+              )}
+
+              {/* End Date */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                End Date
+              </Text>
+              <TouchableOpacity
+                style={[styles.pickerButton, { borderColor: theme.colors.outline }]}
+                onPress={() => setShowEndDatePicker(true)}
+                disabled={submitting}
+              >
+                <Text style={{ color: endDate ? theme.colors.onSurface : theme.colors.onSurfaceVariant }}>
+                  {endDate ? format(endDate, 'MMMM dd, yyyy') : 'Select end date'}
+                </Text>
+                {endDate && (
+                  <IconButton
+                    icon="close"
+                    size={16}
+                    onPress={() => setEndDate(null)}
+                    style={{ margin: 0 }}
+                  />
+                )}
+              </TouchableOpacity>
+              {showEndDatePicker && (
+                <DateTimePicker
+                  value={endDate || new Date()}
+                  mode="date"
+                  onChange={(event, date) => {
+                    setShowEndDatePicker(Platform.OS === 'ios');
+                    if (date) setEndDate(date);
+                  }}
+                />
+              )}
+
+              {/* Budget */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                Budget
+              </Text>
+              <TextInput
+                mode="outlined"
+                value={budget}
+                onChangeText={setBudget}
+                placeholder="e.g., 10000"
+                keyboardType="decimal-pad"
+                disabled={submitting}
+              />
+
+              {/* Attachment URL */}
+              <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant, marginTop: 16 }]}>
+                Attachment URL
+              </Text>
+              <TextInput
+                mode="outlined"
+                value={attachmentUrl}
+                onChangeText={setAttachmentUrl}
+                placeholder="https://..."
+                keyboardType="url"
+                autoCapitalize="none"
+                disabled={submitting}
+              />
+
+              {/* Task Summary (Edit mode only) */}
+              {isEditing && project?.taskCounts && (
+                <View style={[styles.taskSummarySection, { backgroundColor: theme.colors.surfaceVariant, marginTop: 16 }]}>
+                  <Text style={[styles.inputLabel, { color: theme.colors.onSurface, marginBottom: 8 }]}>
+                    Task Summary
+                  </Text>
+                  <View style={styles.taskSummaryGrid}>
+                    <View style={styles.taskSummaryItem}>
+                      <Text style={[styles.taskSummaryValue, { color: '#6B7280' }]}>{project.taskCounts.todo}</Text>
+                      <Text style={[styles.taskSummaryLabel, { color: theme.colors.onSurfaceVariant }]}>To Do</Text>
+                    </View>
+                    <View style={styles.taskSummaryItem}>
+                      <Text style={[styles.taskSummaryValue, { color: '#3B82F6' }]}>{project.taskCounts.in_progress}</Text>
+                      <Text style={[styles.taskSummaryLabel, { color: theme.colors.onSurfaceVariant }]}>In Progress</Text>
+                    </View>
+                    <View style={styles.taskSummaryItem}>
+                      <Text style={[styles.taskSummaryValue, { color: '#F59E0B' }]}>{project.taskCounts.blocked}</Text>
+                      <Text style={[styles.taskSummaryLabel, { color: theme.colors.onSurfaceVariant }]}>Blocked</Text>
+                    </View>
+                    <View style={styles.taskSummaryItem}>
+                      <Text style={[styles.taskSummaryValue, { color: '#10B981' }]}>{project.taskCounts.done + (project.taskCounts.approved || 0)}</Text>
+                      <Text style={[styles.taskSummaryLabel, { color: theme.colors.onSurfaceVariant }]}>Done</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Actions */}
+              <View style={styles.modalActions}>
+                <Button
+                  mode="outlined"
+                  onPress={onDismiss}
+                  disabled={submitting}
+                  style={{ flex: 1, marginRight: 8 }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleSubmit}
+                  loading={submitting}
+                  disabled={submitting || !name.trim()}
+                  style={{ flex: 1 }}
+                >
+                  {isEditing ? 'Update' : 'Create'}
+                </Button>
+              </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+
+      {/* Status Picker */}
+      <FilterPickerModal
+        visible={showStatusPicker}
+        onDismiss={() => setShowStatusPicker(false)}
+        onSelect={(val) => setStatus(val as ProjectStatus)}
+        title="Select Status"
+        options={PROJECT_STATUSES}
+        selectedValue={status}
+        theme={theme}
+      />
+
+      {/* Priority Picker */}
+      <FilterPickerModal
+        visible={showPriorityPicker}
+        onDismiss={() => setShowPriorityPicker(false)}
+        onSelect={(val) => setPriority(val)}
+        title="Select Priority"
+        options={PROJECT_PRIORITIES}
+        selectedValue={priority}
+        theme={theme}
+      />
+
+      {/* Department Picker */}
+      <RNModal
+        visible={showDepartmentPicker}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowDepartmentPicker(false)}
+      >
+        <TouchableOpacity
+          style={styles.pickerOverlay}
+          activeOpacity={1}
+          onPress={() => setShowDepartmentPicker(false)}
+        >
+          <View style={[styles.pickerModal, { backgroundColor: theme.colors.surface }]}>
+            <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: '600', color: theme.colors.onSurface }}>
+              Select Department
+            </Text>
+            <ScrollView style={{ maxHeight: 300 }}>
+              <TouchableOpacity
+                style={[styles.pickerItem, !departmentId && { backgroundColor: theme.colors.primaryContainer }]}
+                onPress={() => {
+                  setDepartmentId(null);
+                  setShowDepartmentPicker(false);
+                }}
+              >
+                <Text style={{ color: theme.colors.onSurface }}>None</Text>
+                {!departmentId && (
+                  <IconButton icon="check" size={16} iconColor={theme.colors.primary} style={{ margin: 0 }} />
+                )}
+              </TouchableOpacity>
+              {departments.map((dept) => (
+                <TouchableOpacity
+                  key={dept.id}
+                  style={[styles.pickerItem, departmentId === dept.id && { backgroundColor: theme.colors.primaryContainer }]}
+                  onPress={() => {
+                    setDepartmentId(dept.id);
+                    setShowDepartmentPicker(false);
+                  }}
+                >
+                  <Text style={{ color: theme.colors.onSurface }}>{dept.name}</Text>
+                  {departmentId === dept.id && (
+                    <IconButton icon="check" size={16} iconColor={theme.colors.primary} style={{ margin: 0 }} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </RNModal>
+
+      {/* Owner Picker */}
+      <RNModal
+        visible={showOwnerPicker}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowOwnerPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.pickerModalContainer, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.modalHeader}>
+              <Text variant="titleLarge" style={{ fontWeight: '600', color: theme.colors.onSurface }}>
+                Select Owner
+              </Text>
+              <IconButton icon="close" onPress={() => setShowOwnerPicker(false)} />
+            </View>
+
+            <Searchbar
+              placeholder="Search users..."
+              value={userSearch}
+              onChangeText={setUserSearch}
+              style={styles.searchInput}
+            />
+
+            <ScrollView style={{ maxHeight: 400 }}>
+              <TouchableOpacity
+                style={[styles.projectPickerItem, !ownerId && { backgroundColor: theme.colors.primaryContainer }]}
+                onPress={() => {
+                  setOwnerId(null);
+                  setShowOwnerPicker(false);
+                }}
+              >
+                <Text style={{ color: theme.colors.onSurface }}>None</Text>
+                {!ownerId && (
+                  <IconButton icon="check" size={20} iconColor={theme.colors.primary} />
+                )}
+              </TouchableOpacity>
+
+              <Divider />
+
+              {users
+                .filter((u) =>
+                  userSearch
+                    ? `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(userSearch.toLowerCase())
+                    : true
+                )
+                .map((user) => (
+                  <TouchableOpacity
+                    key={user.id}
+                    style={[styles.projectPickerItem, ownerId === user.id && { backgroundColor: theme.colors.primaryContainer }]}
+                    onPress={() => {
+                      setOwnerId(user.id);
+                      setShowOwnerPicker(false);
+                    }}
+                  >
+                    <View style={styles.assigneeRow}>
+                      <Avatar.Text
+                        size={32}
+                        label={`${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`}
+                      />
+                      <View style={{ marginLeft: 12 }}>
+                        <Text style={{ color: theme.colors.onSurface }}>
+                          {user.firstName} {user.lastName}
+                        </Text>
+                        <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
+                          {user.email}
+                        </Text>
+                      </View>
+                    </View>
+                    {ownerId === user.id && (
+                      <IconButton icon="check" size={20} iconColor={theme.colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
+          </View>
+        </View>
+      </RNModal>
+
+      {/* Client Picker */}
+      <RNModal
+        visible={showClientPicker}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowClientPicker(false)}
+      >
+        <TouchableOpacity
+          style={styles.pickerOverlay}
+          activeOpacity={1}
+          onPress={() => setShowClientPicker(false)}
+        >
+          <View style={[styles.pickerModal, { backgroundColor: theme.colors.surface }]}>
+            <Text variant="titleMedium" style={{ marginBottom: 16, fontWeight: '600', color: theme.colors.onSurface }}>
+              Select Client
+            </Text>
+            <ScrollView style={{ maxHeight: 300 }}>
+              <TouchableOpacity
+                style={[styles.pickerItem, !clientId && { backgroundColor: theme.colors.primaryContainer }]}
+                onPress={() => {
+                  setClientId(null);
+                  setShowClientPicker(false);
+                }}
+              >
+                <Text style={{ color: theme.colors.onSurface }}>None</Text>
+                {!clientId && (
+                  <IconButton icon="check" size={16} iconColor={theme.colors.primary} style={{ margin: 0 }} />
+                )}
+              </TouchableOpacity>
+              {clients.map((client) => (
+                <TouchableOpacity
+                  key={client.id}
+                  style={[styles.pickerItem, clientId === client.id && { backgroundColor: theme.colors.primaryContainer }]}
+                  onPress={() => {
+                    setClientId(client.id);
+                    setShowClientPicker(false);
+                  }}
+                >
+                  <View>
+                    <Text style={{ color: theme.colors.onSurface }}>{client.name}</Text>
+                    {client.contactPerson && (
+                      <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }}>{client.contactPerson}</Text>
+                    )}
+                  </View>
+                  {clientId === client.id && (
+                    <IconButton icon="check" size={16} iconColor={theme.colors.primary} style={{ margin: 0 }} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </RNModal>
+    </RNModal>
+  );
+};
+
 // Main Screen Component
 export default function ProjectsScreen() {
   const theme = useTheme();
@@ -1636,6 +2757,11 @@ export default function ProjectsScreen() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Project management modals
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [projectSubmitting, setProjectSubmitting] = useState(false);
+
   // Reports state
   const [reports, setReports] = useState<TaskReportsResponse | null>(null);
   const [loadingReports, setLoadingReports] = useState(false);
@@ -1645,6 +2771,8 @@ export default function ProjectsScreen() {
 
   const LIMIT = 20;
   const isManager = user?.role === 'manager' || user?.role === 'admin';
+  const canManageProjects = user?.role === 'admin' || user?.role === 'manager';
+  const canDeleteProjects = user?.role === 'admin';
 
   // Load stats
   const loadStats = async () => {
@@ -1688,7 +2816,12 @@ export default function ProjectsScreen() {
         });
 
         if (append) {
-          setTasks((prev) => [...prev, ...response.items]);
+          // Deduplicate tasks by id when appending
+          setTasks((prev) => {
+            const existingIds = new Set(prev.map((t) => t.id));
+            const newTasks = response.items.filter((t) => !existingIds.has(t.id));
+            return [...prev, ...newTasks];
+          });
         } else {
           setTasks(response.items);
         }
@@ -1776,7 +2909,7 @@ export default function ProjectsScreen() {
     try {
       setSubmitting(true);
       await projectService.updateTaskStatus(selectedTask.id, status, blockReason);
-      setSelectedTask({ ...selectedTask, status: status as TaskStatus, blockReason: blockReason || null });
+      setSelectedTask({ ...selectedTask, status: status as TaskStatus, blockReason: blockReason || undefined });
       loadTasks(1);
       loadStats();
       Alert.alert('Success', 'Task status updated');
@@ -1792,13 +2925,30 @@ export default function ProjectsScreen() {
   const handleTaskSubmit = async (data: any) => {
     try {
       setSubmitting(true);
+      // Extract attachments - these need to be saved separately via API
+      const { attachments, ...taskData } = data;
+
+      let savedTask: any;
       if (editingTask) {
-        await projectService.updateTask(editingTask.id, data);
-        Alert.alert('Success', 'Task updated');
+        savedTask = await projectService.updateTask(editingTask.id, taskData);
       } else {
-        await projectService.createTask(data);
-        Alert.alert('Success', 'Task created');
+        savedTask = await projectService.createTask(taskData);
       }
+
+      // Get the task ID from the response - handle different response formats
+      const taskId = savedTask?.data?.task?.id || savedTask?.data?.id || savedTask?.id || editingTask?.id;
+
+      // Add attachments separately if any were provided
+      if (attachments && attachments.length > 0 && taskId) {
+        try {
+          await projectService.addTaskAttachments(taskId, attachments);
+        } catch (attachError) {
+          console.error('Failed to save attachments:', attachError);
+          // Don't fail the whole operation - task was created/updated successfully
+        }
+      }
+
+      Alert.alert('Success', editingTask ? 'Task updated' : 'Task created');
       setShowTaskForm(false);
       setEditingTask(null);
       loadTasks(1);
@@ -1862,6 +3012,87 @@ export default function ProjectsScreen() {
     setEditingTask(selectedTask);
     setShowTaskDetail(false);
     setShowTaskForm(true);
+  };
+
+  // ============================================
+  // PROJECT MANAGEMENT
+  // ============================================
+
+  // Open project form for creating
+  const handleCreateProject = () => {
+    setEditingProject(null);
+    setShowProjectForm(true);
+  };
+
+  // Open project form for editing
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setShowProjectForm(true);
+  };
+
+  // Submit project create/update
+  const handleProjectSubmit = async (data: CreateProjectRequest | UpdateProjectRequest) => {
+    try {
+      setProjectSubmitting(true);
+      if (editingProject) {
+        await projectService.updateProject(editingProject.id, data as UpdateProjectRequest);
+        Alert.alert('Success', 'Project updated');
+      } else {
+        await projectService.createProject(data as CreateProjectRequest);
+        Alert.alert('Success', 'Project created');
+      }
+      setShowProjectForm(false);
+      setEditingProject(null);
+      loadProjects();
+      loadStats();
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Failed to save project';
+      Alert.alert('Error', message);
+    } finally {
+      setProjectSubmitting(false);
+    }
+  };
+
+  // Delete project
+  const handleDeleteProject = (project: Project) => {
+    const totalTasks = project.taskCounts
+      ? project.taskCounts.todo +
+        project.taskCounts.in_progress +
+        project.taskCounts.blocked +
+        project.taskCounts.done +
+        (project.taskCounts.approved || 0)
+      : 0;
+
+    Alert.alert(
+      'Delete Project',
+      `Are you sure you want to delete "${project.name}"?${totalTasks > 0 ? ` This will also delete ${totalTasks} task(s).` : ''}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setProjectSubmitting(true);
+              await projectService.deleteProject(project.id);
+              Alert.alert('Success', 'Project deleted');
+              // If the deleted project was selected, reset selection
+              if (selectedProjectId === project.id) {
+                setSelectedProjectId(null);
+              }
+              loadProjects();
+              loadStats();
+              loadTasks(1);
+            } catch (error: any) {
+              const message = error?.response?.data?.message || 'Failed to delete project';
+              Alert.alert('Error', message);
+            } finally {
+              setProjectSubmitting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Get selected project name
@@ -2116,6 +3347,11 @@ export default function ProjectsScreen() {
         selectedProjectId={selectedProjectId}
         loading={loadingProjects}
         theme={theme}
+        canManageProjects={canManageProjects}
+        canDeleteProjects={canDeleteProjects}
+        onCreateProject={handleCreateProject}
+        onEditProject={handleEditProject}
+        onDeleteProject={handleDeleteProject}
       />
 
       <FilterPickerModal
@@ -2152,6 +3388,8 @@ export default function ProjectsScreen() {
         canManage={isManager}
         submitting={submitting}
         theme={theme}
+        currentUserId={user?.id || 0}
+        userRole={user?.role || 'employee'}
       />
 
       <TaskFormModal
@@ -2164,6 +3402,18 @@ export default function ProjectsScreen() {
         }}
         onSubmit={handleTaskSubmit}
         submitting={submitting}
+        theme={theme}
+      />
+
+      <ProjectFormModal
+        visible={showProjectForm}
+        project={editingProject}
+        onDismiss={() => {
+          setShowProjectForm(false);
+          setEditingProject(null);
+        }}
+        onSubmit={handleProjectSubmit}
+        submitting={projectSubmitting}
         theme={theme}
       />
     </SafeAreaView>
@@ -2491,6 +3741,10 @@ const styles = StyleSheet.create({
   projectPickerSubtext: {
     fontSize: 12,
   },
+  projectPickerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   inputLabel: {
     fontSize: 13,
     fontWeight: '500',
@@ -2654,6 +3908,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   // Tags styles
+  tagsSection: {
+    marginBottom: 16,
+  },
   tagInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2709,5 +3966,122 @@ const styles = StyleSheet.create({
   attachmentItemActions: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  // Task summary section in project form
+  taskSummarySection: {
+    padding: 12,
+    borderRadius: 8,
+  },
+  taskSummaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  taskSummaryItem: {
+    alignItems: 'center',
+  },
+  taskSummaryValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  taskSummaryLabel: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  // Comments section styles
+  commentsSection: {
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+    paddingTop: 12,
+  },
+  commentsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  commentsSectionTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentsList: {
+    marginTop: 8,
+  },
+  commentItem: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  commentReply: {
+    marginLeft: 24,
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(0,0,0,0.1)',
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  commentAuthorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  commentAuthorInfo: {
+    marginLeft: 8,
+    flex: 1,
+  },
+  commentAuthorName: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  commentTime: {
+    fontSize: 11,
+  },
+  commentActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentContent: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  replyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  repliesContainer: {
+    marginTop: 12,
+  },
+  editCommentContainer: {
+    marginTop: 4,
+  },
+  editCommentActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  noCommentsText: {
+    textAlign: 'center',
+    padding: 16,
+    fontSize: 13,
+  },
+  replyIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  newCommentContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginTop: 8,
+  },
+  newCommentInput: {
+    flex: 1,
+    maxHeight: 100,
   },
 });

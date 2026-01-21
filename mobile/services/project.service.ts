@@ -10,6 +10,11 @@ import {
   CreateTaskData,
   UpdateTaskData,
   User,
+  Department,
+  Client,
+  TaskAttachment,
+  TaskAttachmentInput,
+  TaskComment,
 } from '../types';
 
 export interface TaskFilters {
@@ -29,6 +34,24 @@ export interface ProjectFilters {
   limit?: number;
   status?: string;
   search?: string;
+}
+
+// Project CRUD types
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+  departmentId?: number;
+  ownerId?: number;
+  clientId?: number;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  attachmentUrl?: string;
+}
+
+export interface UpdateProjectRequest extends Partial<CreateProjectRequest> {
+  status?: 'active' | 'completed' | 'on_hold' | 'cancelled';
 }
 
 export const projectService = {
@@ -58,6 +81,45 @@ export const projectService = {
   getProjectStats: async (): Promise<ProjectStats> => {
     const response = await api.get('/projects/stats');
     return response.data;
+  },
+
+  /**
+   * Create a new project
+   */
+  createProject: async (data: CreateProjectRequest): Promise<Project> => {
+    const response = await api.post('/projects', data);
+    return response.data?.data?.project || response.data?.data || response.data;
+  },
+
+  /**
+   * Update an existing project
+   */
+  updateProject: async (id: number, data: UpdateProjectRequest): Promise<Project> => {
+    const response = await api.put(`/projects/${id}`, data);
+    return response.data?.data?.project || response.data?.data || response.data;
+  },
+
+  /**
+   * Delete a project
+   */
+  deleteProject: async (id: number): Promise<void> => {
+    await api.delete(`/projects/${id}`);
+  },
+
+  /**
+   * Get departments for project form
+   */
+  getDepartments: async (): Promise<Department[]> => {
+    const response = await api.get('/users/departments');
+    return response.data?.data?.departments || [];
+  },
+
+  /**
+   * Get clients for project form
+   */
+  getClients: async (): Promise<Client[]> => {
+    const response = await api.get('/clients', { params: { limit: 100, status: 'active' } });
+    return response.data?.data?.clients || [];
   },
 
   // ============================================
@@ -155,6 +217,53 @@ export const projectService = {
     const response = await api.get('/users', { params: { ...params, limit: params?.limit || 50 } });
     // Backend returns { status: 'success', data: { users: [...], pagination: {...} } }
     return response.data?.data?.users || response.data?.users || response.data?.items || [];
+  },
+
+  // ============================================
+  // TASK ATTACHMENTS
+  // ============================================
+
+  /**
+   * Add attachments to a task (must be called after task creation)
+   */
+  addTaskAttachments: async (taskId: number, links: TaskAttachmentInput[]): Promise<TaskAttachment[]> => {
+    const response = await api.post(`/projects/tasks/${taskId}/attachments`, { links });
+    return response.data?.data?.attachments || response.data?.attachments || response.data || [];
+  },
+
+  // ============================================
+  // TASK COMMENTS
+  // ============================================
+
+  /**
+   * Get comments for a task
+   */
+  getTaskComments: async (taskId: number): Promise<TaskComment[]> => {
+    const response = await api.get(`/projects/tasks/${taskId}/comments`);
+    return response.data?.data?.comments || response.data?.comments || response.data || [];
+  },
+
+  /**
+   * Create a comment on a task
+   */
+  createTaskComment: async (taskId: number, content: string, parentId?: number): Promise<TaskComment> => {
+    const response = await api.post(`/projects/tasks/${taskId}/comments`, { content, parentId });
+    return response.data?.data?.comment || response.data?.comment || response.data;
+  },
+
+  /**
+   * Update a task comment
+   */
+  updateTaskComment: async (taskId: number, commentId: number, content: string): Promise<TaskComment> => {
+    const response = await api.put(`/projects/tasks/${taskId}/comments/${commentId}`, { content });
+    return response.data?.data?.comment || response.data?.comment || response.data;
+  },
+
+  /**
+   * Delete a task comment
+   */
+  deleteTaskComment: async (taskId: number, commentId: number): Promise<void> => {
+    await api.delete(`/projects/tasks/${taskId}/comments/${commentId}`);
   },
 };
 
