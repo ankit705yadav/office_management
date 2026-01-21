@@ -1,7 +1,7 @@
 // App configuration
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001/api';
-export const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:5001';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.197.220.16:5003/api';
+export const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://10.197.220.16:5003';
 
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'accessToken',

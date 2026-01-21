@@ -126,8 +126,8 @@ export const getUpcomingBirthdays = async (req: Request, res: Response): Promise
     const currentMonth = new Date().getMonth() + 1;
     const currentDate = new Date().getDate();
 
-    // Get users with birthdays this month
-    const birthdays = await User.findAll({
+    // Get all active users with birthdays (filter in JS for flexibility)
+    const allUsers = await User.findAll({
       where: {
         status: 'active',
         dateOfBirth: {
@@ -138,22 +138,22 @@ export const getUpcomingBirthdays = async (req: Request, res: Response): Promise
       include: [
         { association: 'department', attributes: ['id', 'name'] },
       ],
-      limit: Number(limit),
     });
 
-    // Filter and sort by upcoming birthdays
-    const upcomingBirthdays = birthdays
+    // Filter and sort by upcoming birthdays (this month, today or future)
+    const upcomingBirthdays = allUsers
       .filter((user) => {
         if (!user.dateOfBirth) return false;
-        const birthMonth = new Date(user.dateOfBirth).getMonth() + 1;
-        const birthDate = new Date(user.dateOfBirth).getDate();
+        const birthDate = new Date(user.dateOfBirth);
+        const birthMonth = birthDate.getUTCMonth() + 1;
+        const birthDay = birthDate.getUTCDate();
 
         // Same month and date is today or in future
-        return birthMonth === currentMonth && birthDate >= currentDate;
+        return birthMonth === currentMonth && birthDay >= currentDate;
       })
       .sort((a, b) => {
-        const dateA = new Date(a.dateOfBirth!).getDate();
-        const dateB = new Date(b.dateOfBirth!).getDate();
+        const dateA = new Date(a.dateOfBirth!).getUTCDate();
+        const dateB = new Date(b.dateOfBirth!).getUTCDate();
         return dateA - dateB;
       })
       .slice(0, Number(limit));

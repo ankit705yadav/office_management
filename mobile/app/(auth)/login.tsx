@@ -29,6 +29,14 @@ import { useTheme as useAppTheme } from '../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
+// Test credentials for development
+const TEST_CREDENTIALS = [
+  { email: 'admin@company.com', password: 'Password@123', role: 'Admin' },
+  { email: 'john.manager@company.com', password: 'Password@123', role: 'Manager' },
+  { email: 'sarah.hr@company.com', password: 'Password@123', role: 'Manager (HR)' },
+  { email: 'alice.dev@company.com', password: 'Password@123', role: 'Employee' },
+];
+
 export default function LoginScreen() {
   const theme = useTheme();
   const { toggleTheme, isDark } = useAppTheme();
@@ -248,39 +256,42 @@ export default function LoginScreen() {
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>
 
-              <View style={styles.dividerContainer}>
-                <Divider style={styles.divider} />
-                <Text
-                  variant="bodySmall"
-                  style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}
-                >
-                  OR
-                </Text>
-                <Divider style={styles.divider} />
-              </View>
-
-              <Button
-                mode="outlined"
-                onPress={() => handleLogin({ email: 'admin@company.com', password: 'Admin@123' })}
-                disabled={loading}
-                style={styles.quickLoginButton}
-                contentStyle={styles.buttonContent}
-                icon="shield-account"
-              >
-                Quick Login as Admin
-              </Button>
-
-              <Button
-                mode="outlined"
-                onPress={() => handleLogin({ email: 'diptesh@proriterz.com', password: 'diptesh@proriterz.com' })}
-                disabled={loading}
-                style={[styles.quickLoginButton, { marginTop: 8 }]}
-                contentStyle={styles.buttonContent}
-                icon="account"
-              >
-                Quick Login (Diptesh)
-              </Button>
             </Surface>
+
+            {/* Test Credentials (Dev Only) */}
+            {__DEV__ && (
+              <Surface
+                style={[
+                  styles.testCredentialsCard,
+                  { backgroundColor: theme.colors.surfaceVariant }
+                ]}
+                elevation={1}
+              >
+                <Text
+                  variant="labelMedium"
+                  style={[styles.testCredentialsTitle, { color: theme.colors.onSurfaceVariant }]}
+                >
+                  Test Credentials (Dev Only)
+                </Text>
+                {TEST_CREDENTIALS.map((cred, index) => (
+                  <Button
+                    key={cred.email}
+                    mode="outlined"
+                    onPress={() => handleLogin({ email: cred.email, password: cred.password })}
+                    disabled={loading}
+                    style={[
+                      styles.testCredentialButton,
+                      index > 0 && { marginTop: 8 }
+                    ]}
+                    contentStyle={styles.testCredentialContent}
+                    labelStyle={styles.testCredentialLabel}
+                    icon={cred.role === 'Admin' ? 'shield-account' : cred.role.includes('Manager') ? 'account-tie' : 'account'}
+                  >
+                    {cred.role} — {cred.email.split('@')[0]}
+                  </Button>
+                ))}
+              </Surface>
+            )}
           </Animated.View>
 
           {/* Footer */}
@@ -359,9 +370,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderRadius: 12,
   },
-  quickLoginButton: {
-    borderRadius: 12,
-  },
   buttonContent: {
     paddingVertical: 8,
   },
@@ -369,16 +377,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
+  testCredentialsCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
   },
-  divider: {
-    flex: 1,
+  testCredentialsTitle: {
+    marginBottom: 12,
+    fontWeight: '600',
   },
-  dividerText: {
-    marginHorizontal: 16,
+  testCredentialButton: {
+    borderRadius: 8,
+  },
+  testCredentialContent: {
+    paddingVertical: 4,
+    justifyContent: 'flex-start',
+  },
+  testCredentialLabel: {
+    fontSize: 12,
   },
   footer: {
     flex: 1,

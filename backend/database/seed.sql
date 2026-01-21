@@ -41,23 +41,23 @@ INSERT INTO departments (name, description, created_at, updated_at) VALUES
 -- Hash: $2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.
 -- =====================================================
 
--- Admin (ID: 1)
+-- Admin (ID: 1) - Birthday in January
 INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, date_of_joining, role, status, department_id, manager_id, created_at, updated_at) VALUES
 ('admin@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'System', 'Administrator', '+91-9876543210', '1985-01-15', '2020-01-01', 'admin', 'active', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Managers (IDs: 2-6)
+-- Managers (IDs: 2-6) - Some with January birthdays
 INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, date_of_joining, role, status, department_id, manager_id, created_at, updated_at) VALUES
-('john.manager@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'John', 'Smith', '+91-9876543211', '1988-03-20', '2020-06-01', 'manager', 'active', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('sarah.hr@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Sarah', 'Johnson', '+91-9876543212', '1987-07-10', '2020-03-15', 'manager', 'active', 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('john.manager@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'John', 'Smith', '+91-9876543211', '1988-01-22', '2020-06-01', 'manager', 'active', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('sarah.hr@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Sarah', 'Johnson', '+91-9876543212', '1987-01-28', '2020-03-15', 'manager', 'active', 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('mike.sales@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Mike', 'Wilson', '+91-9876543213', '1989-11-25', '2021-01-10', 'manager', 'active', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('lisa.marketing@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Lisa', 'Brown', '+91-9876543214', '1990-05-18', '2021-04-01', 'manager', 'active', 4, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('david.finance@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'David', 'Lee', '+91-9876543215', '1986-09-30', '2020-08-01', 'manager', 'active', 5, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Employees (IDs: 7-20)
+-- Employees (IDs: 7-20) - Some with January birthdays
 INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_birth, date_of_joining, role, status, department_id, manager_id, created_at, updated_at) VALUES
 -- Engineering Team
-('alice.dev@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Alice', 'Anderson', '+91-9876543220', '1995-02-14', '2022-01-15', 'employee', 'active', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('bob.dev@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Bob', 'Baker', '+91-9876543221', '1994-06-22', '2022-03-01', 'employee', 'active', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('alice.dev@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Alice', 'Anderson', '+91-9876543220', '1995-01-25', '2022-01-15', 'employee', 'active', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('bob.dev@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Bob', 'Baker', '+91-9876543221', '1994-01-30', '2022-03-01', 'employee', 'active', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('carol.dev@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Carol', 'Chen', '+91-9876543222', '1996-08-05', '2023-01-10', 'employee', 'active', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('dan.dev@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Dan', 'Davis', '+91-9876543223', '1993-12-18', '2021-09-01', 'employee', 'active', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
@@ -80,9 +80,10 @@ INSERT INTO users (email, password_hash, first_name, last_name, phone, date_of_b
 ('nina.finance@company.com', '$2b$10$rpxT0F6Xd6G6Mrn0kI143e.IvNHvdLWk/wE8Mb7JTstLOFuZrJV8.', 'Nina', 'Nelson', '+91-9876543233', '1995-08-07', '2023-04-01', 'employee', 'active', 5, 6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- =====================================================
--- HOLIDAYS (2025)
+-- HOLIDAYS (2025 and 2026)
 -- =====================================================
 INSERT INTO holidays (name, date, description, year, created_at, updated_at) VALUES
+-- 2025 Holidays
 ('New Year', '2025-01-01', 'New Year Day', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Republic Day', '2025-01-26', 'Republic Day of India', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Holi', '2025-03-14', 'Festival of Colors', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -92,15 +93,39 @@ INSERT INTO holidays (name, date, description, year, created_at, updated_at) VAL
 ('Gandhi Jayanti', '2025-10-02', 'Birth Anniversary of Mahatma Gandhi', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Dussehra', '2025-10-22', 'Victory of Good over Evil', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Diwali', '2025-11-12', 'Festival of Lights', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Christmas', '2025-12-25', 'Christmas Day', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+('Christmas', '2025-12-25', 'Christmas Day', 2025, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- 2026 Holidays
+('New Year', '2026-01-01', 'New Year Day', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Republic Day', '2026-01-26', 'Republic Day of India', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Holi', '2026-03-04', 'Festival of Colors', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Good Friday', '2026-04-03', 'Good Friday', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Eid ul-Fitr', '2026-04-10', 'End of Ramadan', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Independence Day', '2026-08-15', 'Independence Day of India', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Gandhi Jayanti', '2026-10-02', 'Birth Anniversary of Mahatma Gandhi', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Dussehra', '2026-10-11', 'Victory of Good over Evil', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Diwali', '2026-11-01', 'Festival of Lights', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Christmas', '2026-12-25', 'Christmas Day', 2026, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- =====================================================
--- LEAVE BALANCES (All users - Current year)
+-- LEAVE BALANCES (All users - 2025 and 2026)
 -- =====================================================
+-- 2025 Leave Balances
 INSERT INTO leave_balances (user_id, year, casual_leave, sick_leave, earned_leave, created_at, updated_at)
 SELECT
     id as user_id,
     2025 as year,
+    12 as casual_leave,
+    12 as sick_leave,
+    15 as earned_leave,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+FROM users WHERE status = 'active';
+
+-- 2026 Leave Balances
+INSERT INTO leave_balances (user_id, year, casual_leave, sick_leave, earned_leave, created_at, updated_at)
+SELECT
+    id as user_id,
+    2026 as year,
     12 as casual_leave,
     12 as sick_leave,
     15 as earned_leave,
