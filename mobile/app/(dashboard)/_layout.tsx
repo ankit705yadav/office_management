@@ -81,12 +81,15 @@ export default function DashboardLayout() {
           ),
         }}
       />
-      {/* Hidden tabs - accessible via navigation but not shown in tab bar */}
+      {/* Employees tab - visible only to managers and admins */}
       <Tabs.Screen
         name="employees"
         options={{
           title: 'Employees',
-          href: null,
+          href: (isAdmin || isManager) ? '/employees' : null,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account-group" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -114,7 +117,9 @@ export default function DashboardLayout() {
         name="daily-reports"
         options={{
           title: 'Reports',
-          href: null,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="file-document-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
