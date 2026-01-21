@@ -39,6 +39,10 @@ import {
   CalendarMonth,
   Close,
   Link as LinkIcon,
+  LocationOn,
+  Cake,
+  ContactPhone,
+  Person,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -63,6 +67,9 @@ const createEmployeeSchema = yup.object().shape({
   role: yup.string().required('Role is required'),
   departmentId: yup.number().transform((value, original) => original === '' ? undefined : value).optional().nullable(),
   managerId: yup.number().transform((value, original) => original === '' ? undefined : value).optional().nullable(),
+  address: yup.string().optional(),
+  emergencyContactName: yup.string().optional(),
+  emergencyContactPhone: yup.string().optional(),
 });
 
 const updateEmployeeSchema = yup.object().shape({
@@ -80,6 +87,8 @@ const updateEmployeeSchema = yup.object().shape({
   address: yup.string().optional(),
   panNumber: yup.string().optional(),
   aadharNumber: yup.string().optional(),
+  emergencyContactName: yup.string().optional(),
+  emergencyContactPhone: yup.string().optional(),
 });
 
 const getStatusColor = (status: string): 'default' | 'success' | 'warning' | 'error' => {
@@ -178,13 +187,26 @@ const EmployeesPage: React.FC = () => {
   const [profileImageUrl, setProfileImageUrl] = useState('');
   const [panNumber, setPanNumber] = useState('');
   const [aadharNumber, setAadharNumber] = useState('');
+  const [address, setAddress] = useState('');
+  const [emergencyContactName, setEmergencyContactName] = useState('');
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState('');
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [documentLinks, setDocumentLinks] = useState<{ linkTitle: string; linkUrl: string }[]>([]);
+
+  // Edit mode state variables
+  const [editProfileImageUrl, setEditProfileImageUrl] = useState('');
+  const [editEmergencyContactName, setEditEmergencyContactName] = useState('');
+  const [editEmergencyContactPhone, setEditEmergencyContactPhone] = useState('');
+  const [editCustomFields, setEditCustomFields] = useState<CustomField[]>([]);
+  const [editDocumentLinks, setEditDocumentLinks] = useState<{ linkTitle: string; linkUrl: string }[]>([]);
 
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
+
+  // Stats from API
+  const [stats, setStats] = useState({ total: 0, active: 0, managers: 0, admins: 0 });
 
   const {
     control: createControl,
@@ -239,6 +261,7 @@ const EmployeesPage: React.FC = () => {
       });
       setEmployees(response.items);
       setTotal(response.pagination?.total || 0);
+      setStats(response.stats);
     } catch (error) {
       toast.error('Failed to load employees');
     } finally {
@@ -274,6 +297,9 @@ const EmployeesPage: React.FC = () => {
         ...data,
         panNumber: panNumber || undefined,
         aadharNumber: aadharNumber || undefined,
+        address: address || undefined,
+        emergencyContactName: emergencyContactName || undefined,
+        emergencyContactPhone: emergencyContactPhone || undefined,
         profileImageUrl: profileImageUrl || undefined,
         documentLinks: documentLinks.filter(d => d.linkUrl && d.linkTitle).length > 0
           ? documentLinks.filter(d => d.linkUrl && d.linkTitle)
@@ -299,7 +325,7 @@ const EmployeesPage: React.FC = () => {
     try {
       setSubmitting(true);
       // Clean up data before sending
-      const updateData = { ...data };
+      const updateData: any = { ...data };
       if (!updateData.password) {
         delete updateData.password;
       }
@@ -310,6 +336,16 @@ const EmployeesPage: React.FC = () => {
       if (!updateData.dateOfJoining || updateData.dateOfJoining === 'Invalid date') {
         delete updateData.dateOfJoining;
       }
+      // Add edit form state fields
+      updateData.profileImageUrl = editProfileImageUrl || undefined;
+      updateData.emergencyContactName = editEmergencyContactName || undefined;
+      updateData.emergencyContactPhone = editEmergencyContactPhone || undefined;
+      updateData.customFields = editCustomFields.filter(f => f.fieldName && f.fieldValue).length > 0
+        ? editCustomFields.filter(f => f.fieldName && f.fieldValue)
+        : undefined;
+      updateData.documentLinks = editDocumentLinks.filter(d => d.linkUrl && d.linkTitle).length > 0
+        ? editDocumentLinks.filter(d => d.linkUrl && d.linkTitle)
+        : undefined;
       await employeeService.updateEmployee(selectedEmployee.id, updateData);
       toast.success('Employee updated successfully');
       closeDrawer();
@@ -367,6 +403,12 @@ const EmployeesPage: React.FC = () => {
         setEditValue('address', (employee as any).address || '');
         setEditValue('panNumber', (employee as any).panNumber || '');
         setEditValue('aadharNumber', (employee as any).aadharNumber || '');
+        // Set edit mode state variables
+        setEditProfileImageUrl((employee as any).profileImageUrl || '');
+        setEditEmergencyContactName((employee as any).emergencyContactName || '');
+        setEditEmergencyContactPhone((employee as any).emergencyContactPhone || '');
+        setEditCustomFields((employee as any).customFields || []);
+        setEditDocumentLinks((employee as any).documents || []);
       }
     }
   };
@@ -377,11 +419,21 @@ const EmployeesPage: React.FC = () => {
     setSelectedEmployee(null);
     resetCreate();
     resetEdit();
+    // Reset create form state
     setProfileImageUrl('');
     setPanNumber('');
     setAadharNumber('');
+    setAddress('');
+    setEmergencyContactName('');
+    setEmergencyContactPhone('');
     setCustomFields([]);
     setDocumentLinks([]);
+    // Reset edit form state
+    setEditProfileImageUrl('');
+    setEditEmergencyContactName('');
+    setEditEmergencyContactPhone('');
+    setEditCustomFields([]);
+    setEditDocumentLinks([]);
   };
 
   const handleViewEmployee = async (employee: User) => {
@@ -411,6 +463,12 @@ const EmployeesPage: React.FC = () => {
       setEditValue('address', (selectedEmployee as any).address || '');
       setEditValue('panNumber', (selectedEmployee as any).panNumber || '');
       setEditValue('aadharNumber', (selectedEmployee as any).aadharNumber || '');
+      // Set edit mode state variables
+      setEditProfileImageUrl((selectedEmployee as any).profileImageUrl || '');
+      setEditEmergencyContactName((selectedEmployee as any).emergencyContactName || '');
+      setEditEmergencyContactPhone((selectedEmployee as any).emergencyContactPhone || '');
+      setEditCustomFields((selectedEmployee as any).customFields || []);
+      setEditDocumentLinks((selectedEmployee as any).documents || []);
       setDrawerMode('edit');
     }
   };
@@ -423,13 +481,6 @@ const EmployeesPage: React.FC = () => {
   const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
-  const stats = {
-    total: total,
-    active: employees.filter(e => e.status === 'active').length,
-    managers: employees.filter(e => e.role === 'manager').length,
-    admins: employees.filter(e => e.role === 'admin').length,
   };
 
   // Get drawer title based on mode
@@ -841,7 +892,31 @@ const EmployeesPage: React.FC = () => {
                       <Typography variant="body2" sx={{ color: 'var(--text-primary)' }}>{selectedEmployee.phone}</Typography>
                     </Box>
                   )}
+                  {(selectedEmployee as any).address && (
+                    <Box display="flex" alignItems="flex-start" gap={1.5}>
+                      <LocationOn sx={{ color: 'var(--text-secondary)', fontSize: 20, mt: 0.25 }} />
+                      <Typography variant="body2" sx={{ color: 'var(--text-primary)' }}>{(selectedEmployee as any).address}</Typography>
+                    </Box>
+                  )}
                 </Box>
+
+                {/* Personal Information */}
+                {(selectedEmployee as any).dateOfBirth && (
+                  <>
+                    <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mb: 1 }}>
+                      Personal Information
+                    </Typography>
+                    <Divider sx={{ borderColor: 'var(--border)', mb: 2 }} />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
+                      <Box display="flex" alignItems="center" gap={1.5}>
+                        <Cake sx={{ color: 'var(--text-secondary)', fontSize: 20 }} />
+                        <Typography variant="body2" sx={{ color: 'var(--text-primary)' }}>
+                          {format(new Date((selectedEmployee as any).dateOfBirth), 'MMMM dd, yyyy')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </>
+                )}
 
                 {/* Employment Details */}
                 <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mb: 1 }}>
@@ -881,6 +956,106 @@ const EmployeesPage: React.FC = () => {
                     </Typography>
                   )}
                 </Box>
+
+                {/* Emergency Contact */}
+                {((selectedEmployee as any).emergencyContactName || (selectedEmployee as any).emergencyContactPhone) && (
+                  <>
+                    <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mb: 1 }}>
+                      Emergency Contact
+                    </Typography>
+                    <Divider sx={{ borderColor: 'var(--border)', mb: 2 }} />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
+                      {(selectedEmployee as any).emergencyContactName && (
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                          <Person sx={{ color: 'var(--text-secondary)', fontSize: 20 }} />
+                          <Typography variant="body2" sx={{ color: 'var(--text-primary)' }}>
+                            {(selectedEmployee as any).emergencyContactName}
+                          </Typography>
+                        </Box>
+                      )}
+                      {(selectedEmployee as any).emergencyContactPhone && (
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                          <ContactPhone sx={{ color: 'var(--text-secondary)', fontSize: 20 }} />
+                          <Typography variant="body2" sx={{ color: 'var(--text-primary)' }}>
+                            {(selectedEmployee as any).emergencyContactPhone}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </>
+                )}
+
+                {/* Leave Balance */}
+                {(selectedEmployee as any).leaveBalances && (selectedEmployee as any).leaveBalances.length > 0 && (
+                  <>
+                    <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mb: 1 }}>
+                      Leave Balance ({new Date().getFullYear()})
+                    </Typography>
+                    <Divider sx={{ borderColor: 'var(--border)', mb: 2 }} />
+                    <Grid container spacing={1} sx={{ mb: 3 }}>
+                      {(selectedEmployee as any).leaveBalances[0].sickLeave !== undefined && (
+                        <Grid item xs={4}>
+                          <Box sx={{ p: 1, bgcolor: 'var(--bg-elevated)', borderRadius: 1, textAlign: 'center' }}>
+                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block' }}>Sick</Typography>
+                            <Typography variant="body2" fontWeight={600} sx={{ color: '#EF4444' }}>
+                              {(selectedEmployee as any).leaveBalances[0].sickLeave}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                      {(selectedEmployee as any).leaveBalances[0].casualLeave !== undefined && (
+                        <Grid item xs={4}>
+                          <Box sx={{ p: 1, bgcolor: 'var(--bg-elevated)', borderRadius: 1, textAlign: 'center' }}>
+                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block' }}>Casual</Typography>
+                            <Typography variant="body2" fontWeight={600} sx={{ color: '#3B82F6' }}>
+                              {(selectedEmployee as any).leaveBalances[0].casualLeave}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                      {(selectedEmployee as any).leaveBalances[0].earnedLeave !== undefined && (
+                        <Grid item xs={4}>
+                          <Box sx={{ p: 1, bgcolor: 'var(--bg-elevated)', borderRadius: 1, textAlign: 'center' }}>
+                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block' }}>Earned</Typography>
+                            <Typography variant="body2" fontWeight={600} sx={{ color: '#10B981' }}>
+                              {(selectedEmployee as any).leaveBalances[0].earnedLeave}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                      {(selectedEmployee as any).leaveBalances[0].compOff !== undefined && (
+                        <Grid item xs={4}>
+                          <Box sx={{ p: 1, bgcolor: 'var(--bg-elevated)', borderRadius: 1, textAlign: 'center' }}>
+                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block' }}>Comp Off</Typography>
+                            <Typography variant="body2" fontWeight={600} sx={{ color: '#8B5CF6' }}>
+                              {(selectedEmployee as any).leaveBalances[0].compOff}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                      {(selectedEmployee as any).leaveBalances[0].paternityMaternity !== undefined && (
+                        <Grid item xs={4}>
+                          <Box sx={{ p: 1, bgcolor: 'var(--bg-elevated)', borderRadius: 1, textAlign: 'center' }}>
+                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block' }}>Paternity</Typography>
+                            <Typography variant="body2" fontWeight={600} sx={{ color: '#F59E0B' }}>
+                              {(selectedEmployee as any).leaveBalances[0].paternityMaternity}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                      {(selectedEmployee as any).leaveBalances[0].birthdayLeave !== undefined && (
+                        <Grid item xs={4}>
+                          <Box sx={{ p: 1, bgcolor: 'var(--bg-elevated)', borderRadius: 1, textAlign: 'center' }}>
+                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block' }}>Birthday</Typography>
+                            <Typography variant="body2" fontWeight={600} sx={{ color: '#EC4899' }}>
+                              {(selectedEmployee as any).leaveBalances[0].birthdayLeave}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                    </Grid>
+                  </>
+                )}
 
                 {/* Identity Documents */}
                 {((selectedEmployee as any).panNumber || (selectedEmployee as any).aadharNumber) && (
@@ -1102,6 +1277,43 @@ const EmployeesPage: React.FC = () => {
                         sx={dateFieldSx}
                       />
                     )}
+                  />
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    multiline
+                    rows={2}
+                    disabled={submitting}
+                    sx={textFieldSx}
+                  />
+
+                  <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
+                    Emergency Contact
+                  </Typography>
+                  <Divider sx={{ borderColor: 'var(--border)' }} />
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Emergency Contact Name"
+                    value={emergencyContactName}
+                    onChange={(e) => setEmergencyContactName(e.target.value)}
+                    disabled={submitting}
+                    sx={textFieldSx}
+                  />
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Emergency Contact Phone"
+                    value={emergencyContactPhone}
+                    onChange={(e) => setEmergencyContactPhone(e.target.value)}
+                    disabled={submitting}
+                    sx={textFieldSx}
                   />
 
                   <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
@@ -1425,6 +1637,39 @@ const EmployeesPage: React.FC = () => {
                   </Box>
 
                   <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
+                    Profile Photo
+                  </Typography>
+                  <Divider sx={{ borderColor: 'var(--border)' }} />
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Profile Image URL"
+                    value={editProfileImageUrl}
+                    onChange={(e) => setEditProfileImageUrl(e.target.value)}
+                    placeholder="https://example.com/profile-image.jpg"
+                    disabled={submitting}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: 'var(--bg-elevated)',
+                        '& fieldset': { borderColor: 'var(--border)' },
+                        '&:hover fieldset': { borderColor: 'var(--accent-primary)' },
+                        '&.Mui-focused fieldset': { borderColor: 'var(--accent-primary)' },
+                      },
+                      '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
+                      '& .MuiInputBase-input': { color: 'var(--text-primary)' },
+                    }}
+                  />
+                  {editProfileImageUrl && (
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Avatar src={editProfileImageUrl} sx={{ width: 40, height: 40 }} />
+                      <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>
+                        Preview
+                      </Typography>
+                    </Box>
+                  )}
+
+                  <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
                     Account Credentials
                   </Typography>
                   <Divider sx={{ borderColor: 'var(--border)' }} />
@@ -1566,6 +1811,31 @@ const EmployeesPage: React.FC = () => {
                         sx={textFieldSx}
                       />
                     )}
+                  />
+
+                  <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
+                    Emergency Contact
+                  </Typography>
+                  <Divider sx={{ borderColor: 'var(--border)' }} />
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Emergency Contact Name"
+                    value={editEmergencyContactName}
+                    onChange={(e) => setEditEmergencyContactName(e.target.value)}
+                    disabled={submitting}
+                    sx={textFieldSx}
+                  />
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Emergency Contact Phone"
+                    value={editEmergencyContactPhone}
+                    onChange={(e) => setEditEmergencyContactPhone(e.target.value)}
+                    disabled={submitting}
+                    sx={textFieldSx}
                   />
 
                   <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
@@ -1774,6 +2044,131 @@ const EmployeesPage: React.FC = () => {
                       />
                     )}
                   />
+
+                  <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
+                    Custom Fields
+                  </Typography>
+                  <Divider sx={{ borderColor: 'var(--border)' }} />
+
+                  {editCustomFields.map((field, index) => (
+                    <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                      <TextField
+                        size="small"
+                        label="Field Name"
+                        value={field.fieldName}
+                        onChange={(e) => {
+                          const updated = [...editCustomFields];
+                          updated[index].fieldName = e.target.value;
+                          setEditCustomFields(updated);
+                        }}
+                        disabled={submitting}
+                        sx={{ flex: 1, ...textFieldSx }}
+                      />
+                      <TextField
+                        size="small"
+                        label="Field Value"
+                        value={field.fieldValue}
+                        onChange={(e) => {
+                          const updated = [...editCustomFields];
+                          updated[index].fieldValue = e.target.value;
+                          setEditCustomFields(updated);
+                        }}
+                        disabled={submitting}
+                        sx={{ flex: 1, ...textFieldSx }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setEditCustomFields(editCustomFields.filter((_, i) => i !== index));
+                        }}
+                        disabled={submitting}
+                        sx={{ color: '#EF4444', mt: 0.5 }}
+                      >
+                        <Close fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Add />}
+                    onClick={() => setEditCustomFields([...editCustomFields, { fieldName: '', fieldValue: '' }])}
+                    disabled={submitting}
+                    sx={{ alignSelf: 'flex-start', color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}
+                  >
+                    Add Custom Field
+                  </Button>
+
+                  <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mt: 1, mb: -0.5 }}>
+                    Document Links
+                  </Typography>
+                  <Divider sx={{ borderColor: 'var(--border)' }} />
+
+                  {editDocumentLinks.map((doc, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 1,
+                        p: 1.5,
+                        bgcolor: 'var(--bg-elevated)',
+                        borderRadius: 1,
+                        border: '1px solid var(--border)',
+                      }}
+                    >
+                      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Document Title"
+                          value={doc.linkTitle}
+                          onChange={(e) => {
+                            const updated = [...editDocumentLinks];
+                            updated[index].linkTitle = e.target.value;
+                            setEditDocumentLinks(updated);
+                          }}
+                          placeholder="e.g., Passport, Aadhar Card"
+                          disabled={submitting}
+                          sx={textFieldSx}
+                        />
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Document URL"
+                          value={doc.linkUrl}
+                          onChange={(e) => {
+                            const updated = [...editDocumentLinks];
+                            updated[index].linkUrl = e.target.value;
+                            setEditDocumentLinks(updated);
+                          }}
+                          placeholder="https://drive.google.com/..."
+                          disabled={submitting}
+                          sx={textFieldSx}
+                        />
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => setEditDocumentLinks(editDocumentLinks.filter((_, i) => i !== index))}
+                        disabled={submitting}
+                        sx={{ color: '#EF4444', mt: 0.5 }}
+                      >
+                        <Close fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Add />}
+                    onClick={() => setEditDocumentLinks([...editDocumentLinks, { linkTitle: '', linkUrl: '' }])}
+                    disabled={submitting}
+                    sx={{ alignSelf: 'flex-start', color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}
+                  >
+                    Add Document Link
+                  </Button>
                 </Box>
               </form>
             )}
