@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -25,6 +26,8 @@ import {
   Business,
   Person,
   LocationOn,
+  People,
+  ChevronRight,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -52,9 +55,13 @@ const changePasswordSchema = yup.object().shape({
 });
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
 
   const {
     control,
@@ -289,6 +296,168 @@ const ProfilePage: React.FC = () => {
             </Card>
           )}
         </Grid>
+
+        {/* Management Section */}
+        {(isAdmin || isManager) && (
+          <Grid item xs={12}>
+            <Card sx={{ mt: 3 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Management
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <Grid container spacing={2}>
+                  {isAdmin && (
+                    <Grid item xs={12} sm={4}>
+                      <Card
+                        variant="outlined"
+                        sx={{
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            bgcolor: 'action.hover',
+                          },
+                        }}
+                        onClick={() => navigate('/employees')}
+                      >
+                        <CardContent>
+                          <Box display="flex" alignItems="center" justifyContent="space-between">
+                            <Box display="flex" alignItems="center" gap={2}>
+                              <People color="primary" />
+                              <Box>
+                                <Typography variant="subtitle1" fontWeight="medium">
+                                  Employees
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Manage team members
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <ChevronRight color="action" />
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+
+                  <Grid item xs={12} sm={4}>
+                    <Card
+                      variant="outlined"
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                      onClick={() => navigate('/holidays')}
+                    >
+                      <CardContent>
+                        <Box display="flex" alignItems="center" justifyContent="space-between">
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <CalendarMonth color="primary" />
+                            <Box>
+                              <Typography variant="subtitle1" fontWeight="medium">
+                                Holidays
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                View holiday calendar
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <ChevronRight color="action" />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <Card
+                      variant="outlined"
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                      onClick={() => navigate('/clients')}
+                    >
+                      <CardContent>
+                        <Box display="flex" alignItems="center" justifyContent="space-between">
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Business color="primary" />
+                            <Box>
+                              <Typography variant="subtitle1" fontWeight="medium">
+                                Clients
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Manage clients
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <ChevronRight color="action" />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Holidays Card - visible to all employees */}
+        {!isAdmin && !isManager && (
+          <Grid item xs={12}>
+            <Card sx={{ mt: 3 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Quick Links
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <Card
+                      variant="outlined"
+                      sx={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                      onClick={() => navigate('/holidays')}
+                    >
+                      <CardContent>
+                        <Box display="flex" alignItems="center" justifyContent="space-between">
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <CalendarMonth color="primary" />
+                            <Box>
+                              <Typography variant="subtitle1" fontWeight="medium">
+                                Holidays
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                View holiday calendar
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <ChevronRight color="action" />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
       </Grid>
 
       {/* Change Password Dialog */}

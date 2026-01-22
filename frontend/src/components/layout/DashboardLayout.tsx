@@ -11,18 +11,15 @@ import {
   Dashboard,
   EventAvailable,
   AccessTime,
-  CalendarMonth,
   AccountCircle,
   Logout,
   Close,
-  People,
   FolderOpen,
   DarkMode,
   LightMode,
   ChevronLeft,
   ChevronRight,
   Assignment,
-  Business,
 } from "@mui/icons-material";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,12 +52,6 @@ const navSections: NavSection[] = [
         path: "/",
       },
       {
-        text: "Employees",
-        icon: <People />,
-        path: "/employees",
-        roles: ["admin"],
-      },
-      {
         text: "Leaves",
         icon: <EventAvailable />,
         path: "/leaves",
@@ -81,15 +72,9 @@ const navSections: NavSection[] = [
         path: "/daily-reports",
       },
       {
-        text: "Holidays",
-        icon: <CalendarMonth />,
-        path: "/holidays",
-      },
-      {
-        text: "Clients",
-        icon: <Business />,
-        path: "/clients",
-        roles: ["admin", "manager"],
+        text: "Profile",
+        icon: <AccountCircle />,
+        path: "/profile",
       },
     ],
   },

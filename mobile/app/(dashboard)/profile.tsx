@@ -12,6 +12,9 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const { user, logout } = useAuth();
 
+  const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
+
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
@@ -89,6 +92,42 @@ export default function ProfileScreen() {
               // TODO: Navigate to change password
             }}
           />
+        </Card>
+
+        {/* Management Section */}
+        <Card style={[styles.infoCard, { backgroundColor: theme.colors.surface }]}>
+          <List.Subheader>{isAdmin || isManager ? 'Management' : 'Quick Links'}</List.Subheader>
+          {(isAdmin || isManager) && (
+            <>
+              <List.Item
+                title="Employees"
+                description="Manage team members"
+                left={(props) => <List.Icon {...props} icon="account-group" />}
+                right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                onPress={() => router.push('/(dashboard)/employees')}
+              />
+              <Divider />
+            </>
+          )}
+          <List.Item
+            title="Holidays"
+            description="View holiday calendar"
+            left={(props) => <List.Icon {...props} icon="calendar-star" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => router.push('/(dashboard)/holidays')}
+          />
+          {(isAdmin || isManager) && (
+            <>
+              <Divider />
+              <List.Item
+                title="Clients"
+                description="Manage clients"
+                left={(props) => <List.Icon {...props} icon="domain" />}
+                right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                onPress={() => router.push('/(dashboard)/clients')}
+              />
+            </>
+          )}
         </Card>
 
         <Button
