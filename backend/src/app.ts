@@ -23,18 +23,20 @@ import clientRoutes from './routes/client.routes';
 const app: Application = express();
 
 // CORS configuration - MUST be before helmet to handle preflight requests
+// CORS configuration - MUST be before helmet to handle preflight requests
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
 
-// Handle preflight requests explicitly
-app.options('*', cors());
+const corsOptions = {
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly using the same options
+app.options('*', cors(corsOptions));
 
 // Security middleware
 app.use(helmet({
