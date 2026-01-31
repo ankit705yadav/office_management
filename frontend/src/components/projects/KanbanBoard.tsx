@@ -220,22 +220,23 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId, canManage, onTaskU
       <DragDropContext onDragEnd={handleDragEnd}>
         <Box
           sx={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, 1fr)',
             gap: 2,
             flexGrow: 1,
-            overflow: 'auto',
             pb: 2,
+            width: '100%',
+            overflowX: 'hidden', // Prevent container from scrolling
           }}
         >
           {columns.map((column) => (
             <Box
               key={column.id}
               sx={{
-                minWidth: 280,
-                maxWidth: 320,
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
+                minWidth: 0, // Allow flex/grid item to shrink below content size
               }}
             >
               {/* Column Header */}
