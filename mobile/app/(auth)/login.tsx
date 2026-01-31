@@ -258,8 +258,8 @@ export default function LoginScreen() {
 
             </Surface>
 
-            {/* Test Credentials (Dev Only) */}
-            {__DEV__ && (
+            {/* Test Credentials (Dev Only or when enabled via Env) */}
+            {(__DEV__ || process.env.EXPO_PUBLIC_SHOW_DEMO_CREDS === 'true') && (
               <Surface
                 style={[
                   styles.testCredentialsCard,

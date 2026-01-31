@@ -20,13 +20,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Assignment,
+  People,
+  Business,
 } from "@mui/icons-material";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "react-toastify";
+import { UserRole } from "@/types";
 
-const SIDEBAR_EXPANDED_WIDTH = 240;
+const SIDEBAR_EXPANDED_WIDTH = 200;
 const SIDEBAR_COLLAPSED_WIDTH = 64;
 const SIDEBAR_STATE_KEY = "app-sidebar-collapsed";
 
@@ -75,6 +78,23 @@ const navSections: NavSection[] = [
         text: "Profile",
         icon: <AccountCircle />,
         path: "/profile",
+      },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      {
+        text: "Employees",
+        icon: <People />,
+        path: "/employees",
+        roles: [UserRole.ADMIN],
+      },
+      {
+        text: "Clients",
+        icon: <Business />,
+        path: "/clients",
+        roles: [UserRole.ADMIN],
       },
     ],
   },
@@ -170,7 +190,7 @@ const DashboardLayout: React.FC = () => {
           <div className="flex items-center gap-2 flex-1">
             <ChevronLeft
               className="ml-auto cursor-pointer"
-              style={{ color: "var(--text-muted)", fontSize: 18 }}
+              style={{ color: "var(--accent-primary)", fontSize: 24 }}
               onClick={handleSidebarToggle}
             />
           </div>
@@ -178,7 +198,7 @@ const DashboardLayout: React.FC = () => {
           <div className="flex items-center justify-center w-full">
             <ChevronRight
               className="cursor-pointer"
-              style={{ color: "var(--text-muted)", fontSize: 18 }}
+              style={{ color: "var(--accent-primary)", fontSize: 24 }}
               onClick={handleSidebarToggle}
             />
           </div>

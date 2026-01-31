@@ -1,0 +1,29 @@
+{
+    "cli": {
+        "version": ">= 7.0.0"
+    },
+    "build": {
+        "development": {
+            "developmentClient": true,
+            "distribution": "internal"
+        },
+        "preview": {
+            "android": {
+                "buildType": "apk"
+            }
+        },
+        "production": {
+            "android": {
+                "buildType": "apk"
+            },
+            "env": {
+                "EXPO_PUBLIC_API_URL": "https://arkera-api-v1.up.railway.app/api",
+                "EXPO_PUBLIC_SOCKET_URL": "https://arkera-api-v1.up.railway.app",
+                "EXPO_PUBLIC_SHOW_DEMO_CREDS": "true"
+            }
+        }
+    },
+    "submit": {
+        "production": {}
+    }
+}

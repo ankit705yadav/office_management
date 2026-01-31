@@ -33,6 +33,11 @@ const corsOptions = {
       return callback(null, true);
     }
 
+    // Allow wildcard
+    if (allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {

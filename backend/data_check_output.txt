@@ -1,0 +1,6 @@
+Connecting to DB...
+DB Connection successful.
+--- DATA CHECK ---
+Tasks Count: 41
+Projects Count: 12
+------------------
