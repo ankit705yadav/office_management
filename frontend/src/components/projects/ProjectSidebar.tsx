@@ -23,26 +23,37 @@ import {
   Delete,
   Search,
   Refresh,
+  ChevronLeft,
+  Menu as MenuIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { projectService, Project } from '../../services/project.service';
 
 interface ProjectSidebarProps {
   selectedProjectId: number | null;
+  selectedProject?: Project | null;
   onSelectProject: (project: Project | null) => void;
   onCreateProject: () => void;
   onEditProject: (project: Project) => void;
   onDeleteProject: (project: Project) => void;
   canManage: boolean;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
+
+const SIDEBAR_EXPANDED_WIDTH = 300;
+const SIDEBAR_COLLAPSED_WIDTH = 56;
 
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   selectedProjectId,
+  selectedProject,
   onSelectProject,
   onCreateProject,
   onEditProject,
   onDeleteProject,
   canManage,
+  collapsed = false,
+  onCollapsedChange,
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,10 +126,63 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
     return project.name.toLowerCase().includes(lowerTerm);
   });
 
+  // Collapsed view: narrow bar with expand button
+  if (collapsed) {
+    return (
+      <Box
+        sx={{
+          width: SIDEBAR_COLLAPSED_WIDTH,
+          minWidth: SIDEBAR_COLLAPSED_WIDTH,
+          height: '100%',
+          borderRight: 1,
+          borderColor: 'var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: 'var(--surface)',
+          alignItems: 'center',
+          pt: 2,
+          transition: 'width 0.2s ease',
+        }}
+      >
+        <Tooltip title="Show projects">
+          <IconButton
+            onClick={() => onCollapsedChange?.(false)}
+            sx={{
+              color: 'var(--text-secondary)',
+              '&:hover': { color: 'var(--accent-primary)' },
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+        </Tooltip>
+        {selectedProject && (
+          <Tooltip title={selectedProject.name} placement="right">
+            <Box
+              sx={{
+                mt: 2,
+                width: 36,
+                height: 36,
+                borderRadius: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'var(--bg-elevated)',
+                border: 1,
+                borderColor: 'var(--border)',
+              }}
+            >
+              <Description fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
+            </Box>
+          </Tooltip>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
-        width: 300,
+        width: SIDEBAR_EXPANDED_WIDTH,
         minWidth: 280,
         height: '100%',
         borderRight: 1,
@@ -126,6 +190,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         display: 'flex',
         flexDirection: 'column',
         bgcolor: 'var(--surface)',
+        transition: 'width 0.2s ease',
       }}
     >
       {/* Header */}
@@ -134,7 +199,14 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
           <Typography variant="subtitle1" fontWeight="bold" sx={{ color: 'var(--text-primary)' }}>
             Projects
           </Typography>
-          <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {onCollapsedChange && selectedProject && (
+              <Tooltip title="Collapse sidebar">
+                <IconButton size="small" onClick={() => onCollapsedChange(true)}>
+                  <ChevronLeft fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
             <Tooltip title="Refresh">
               <IconButton size="small" onClick={loadProjects}>
                 <Refresh fontSize="small" />

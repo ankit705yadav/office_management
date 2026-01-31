@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  TextField,
   Button,
   IconButton,
   Avatar,
@@ -13,6 +12,7 @@ import {
   Tooltip,
   Chip,
 } from '@mui/material';
+import MentionInput from './MentionInput';
 import {
   Send,
   Edit,
@@ -55,10 +55,6 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
   const [submitting, setSubmitting] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuCommentId, setMenuCommentId] = useState<number | null>(null);
-  const [mentionAnchor, setMentionAnchor] = useState<null | HTMLElement>(null);
-  const [mentionSearch, setMentionSearch] = useState('');
-  const [mentionInputRef, setMentionInputRef] = useState<'new' | 'reply' | 'edit'>('new');
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadComments();
@@ -208,50 +204,8 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
     }
   };
 
-  const handleMentionSelect = (user: User) => {
-    const mention = `@[${user.id}:${user.firstName} ${user.lastName}] `;
-    if (mentionInputRef === 'new') {
-      setNewComment((prev) => prev.replace(/@\w*$/, '') + mention);
-    } else if (mentionInputRef === 'reply') {
-      setReplyText((prev) => prev.replace(/@\w*$/, '') + mention);
-    } else if (mentionInputRef === 'edit') {
-      setEditText((prev) => prev.replace(/@\w*$/, '') + mention);
-    }
-    setMentionAnchor(null);
-    setMentionSearch('');
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    inputType: 'new' | 'reply' | 'edit'
-  ) => {
-    const value = e.target.value;
-    const setter =
-      inputType === 'new' ? setNewComment : inputType === 'reply' ? setReplyText : setEditText;
-    setter(value);
-
-    // Check for @ mention trigger
-    const lastAtIndex = value.lastIndexOf('@');
-    if (lastAtIndex !== -1) {
-      const textAfterAt = value.slice(lastAtIndex + 1);
-      if (!textAfterAt.includes(' ') && !textAfterAt.includes('[')) {
-        setMentionSearch(textAfterAt);
-        setMentionInputRef(inputType);
-        setMentionAnchor(e.target as HTMLElement);
-        return;
-      }
-    }
-    setMentionAnchor(null);
-  };
-
-  const filteredUsers = users.filter(
-    (u) =>
-      u.firstName.toLowerCase().includes(mentionSearch.toLowerCase()) ||
-      u.lastName.toLowerCase().includes(mentionSearch.toLowerCase())
-  );
-
   const renderMentions = (content: string, _mentions: number[]) => {
-    // Parse @[id:name] pattern and render as chips
+    // Parse @[id:name] pattern and render as tag-like chips (name only, no id)
     const parts = content.split(/(@\[\d+:[^\]]+\])/g);
     return parts.map((part, i) => {
       const match = part.match(/@\[(\d+):([^\]]+)\]/);
@@ -262,9 +216,19 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
             key={i}
             label={`@${userName}`}
             size="small"
-            color="primary"
             variant="outlined"
-            sx={{ mx: 0.25, fontSize: 12, height: 20 }}
+            sx={{
+              mx: 0.25,
+              fontSize: 12,
+              height: 22,
+              fontWeight: 500,
+              borderColor: 'primary.main',
+              backgroundColor: 'primary.lighter',
+              color: 'text.primary',
+              '& .MuiChip-label': {
+                color: 'text.primary',
+              },
+            }}
           />
         );
       }
@@ -332,13 +296,11 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
 
             {editingId === comment.id ? (
               <Box sx={{ mt: 1 }}>
-                <TextField
-                  fullWidth
-                  multiline
-                  size="small"
+                <MentionInput
                   value={editText}
-                  onChange={(e) => handleInputChange(e, 'edit')}
+                  onChange={setEditText}
                   placeholder="Edit comment..."
+                  users={users}
                 />
                 <Box sx={{ display: 'flex', gap: 1, mt: 1, justifyContent: 'flex-end' }}>
                   <Button
@@ -385,18 +347,17 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
           {/* Reply form */}
           {replyingTo === comment.id && (
             <Box sx={{ display: 'flex', gap: 1, mt: 1, ml: 4 }}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Write a reply..."
+              <MentionInput
                 value={replyText}
-                onChange={(e) => handleInputChange(e, 'reply')}
-                onKeyPress={(e) => {
+                onChange={setReplyText}
+                onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     handleSubmitComment(comment.id);
                   }
                 }}
+                placeholder="Write a reply..."
+                users={users}
               />
               <IconButton
                 color="primary"
@@ -437,27 +398,25 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
 
       {/* New comment input */}
       {canComment && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'flex-start' }}>
           <Avatar sx={{ width: 32, height: 32, fontSize: 12 }}>
             {currentUser?.firstName?.[0]}
             {currentUser?.lastName?.[0]}
           </Avatar>
-          <TextField
-            ref={inputRef}
-            fullWidth
-            size="small"
-            placeholder="Write a comment... (use @ to mention)"
-            value={newComment}
-            onChange={(e) => handleInputChange(e, 'new')}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmitComment();
-              }
-            }}
-            multiline
-            maxRows={4}
-          />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <MentionInput
+              value={newComment}
+              onChange={setNewComment}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmitComment();
+                }
+              }}
+              placeholder="Write a comment... (use @ to mention)"
+              users={users}
+            />
+          </Box>
           <IconButton
             color="primary"
             onClick={() => handleSubmitComment()}
@@ -476,32 +435,6 @@ const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, canComment }) => {
       ) : (
         <Box>{comments.map((comment) => renderComment(comment))}</Box>
       )}
-
-      {/* Mention menu */}
-      <Menu
-        anchorEl={mentionAnchor}
-        open={Boolean(mentionAnchor)}
-        onClose={() => setMentionAnchor(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-      >
-        {filteredUsers.length === 0 ? (
-          <MenuItem disabled>No users found</MenuItem>
-        ) : (
-          filteredUsers.slice(0, 5).map((user) => (
-            <MenuItem key={user.id} onClick={() => handleMentionSelect(user)}>
-              <Avatar
-                src={user.profileImageUrl}
-                sx={{ width: 24, height: 24, fontSize: 10, mr: 1 }}
-              >
-                {user.firstName[0]}
-                {user.lastName[0]}
-              </Avatar>
-              {user.firstName} {user.lastName}
-            </MenuItem>
-          ))
-        )}
-      </Menu>
 
       {/* Comment actions menu */}
       <Menu

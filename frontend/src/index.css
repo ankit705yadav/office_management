@@ -400,6 +400,52 @@
   }
 
   /* ----------------
+     Mention Input (react-mentions)
+     ---------------- */
+  .mention-input {
+    flex: 1;
+    width: 100%;
+  }
+  .mention-input__control {
+    font-size: 14px;
+    min-height: 40px;
+    border: 1px solid rgba(0, 0, 0, 0.23);
+    border-radius: 4px;
+    background: var(--bg-primary, #fff);
+  }
+  .mention-input__control:focus-within {
+    border-color: var(--accent-primary, #1976d2);
+    border-width: 2px;
+    outline: none;
+  }
+  .mention-input__highlighter,
+  .mention-input__input {
+    padding: 8.5px 14px;
+    font-size: 14px;
+  }
+  .mention-input__suggestions {
+    background: var(--surface, #fff);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  .mention-input__suggestions__item--focused {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-primary, #000) !important;
+  }
+  /* Mention chips: no padding/margin so they match plain-text width - keeps cursor aligned */
+  .mention-input__mention,
+  .mention-chip {
+    display: inline !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+    color: var(--text-primary, #1a1a1a) !important;
+    background-color: var(--accent-primary-light) !important;
+    border-radius: 3px !important;
+  }
+
+  /* ----------------
      Scrollbar Styles
      ---------------- */
   .custom-scrollbar::-webkit-scrollbar {

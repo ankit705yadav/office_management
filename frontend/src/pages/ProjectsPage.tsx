@@ -37,6 +37,9 @@ const ProjectsPage: React.FC = () => {
 
   const canManage = user?.role === 'admin' || user?.role === 'manager';
 
+  // Project sidebar: auto-collapse when a project is selected
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   useEffect(() => {
     loadStats();
     loadTasksAtRisk();
@@ -62,6 +65,12 @@ const ProjectsPage: React.FC = () => {
 
   const handleSelectProject = (project: Project | null) => {
     setSelectedProject(project);
+    // Auto-collapse sidebar when a project is selected
+    if (project) {
+      setSidebarCollapsed(true);
+    } else {
+      setSidebarCollapsed(false);
+    }
   };
 
   const handleCreateProject = () => {
@@ -108,11 +117,14 @@ const ProjectsPage: React.FC = () => {
       {/* Project Sidebar */}
       <ProjectSidebar
         selectedProjectId={selectedProject?.id || null}
+        selectedProject={selectedProject}
         onSelectProject={handleSelectProject}
         onCreateProject={handleCreateProject}
         onEditProject={handleEditProject}
         onDeleteProject={handleDeleteProject}
         canManage={canManage}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
       />
 
       {/* Main Content */}
