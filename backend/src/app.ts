@@ -28,7 +28,7 @@ const app: Application = express();
 
 const allowedOrigins = config.corsOrigin
   .split(',')
-  .map(origin => origin.trim());
+  .map(origin => origin.trim().replace(/^["']|["']$/g, ''));
 
 console.log('Allowed CORS Origins:', allowedOrigins);
 
@@ -38,7 +38,7 @@ app.use(
       // Allow non-browser requests
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
