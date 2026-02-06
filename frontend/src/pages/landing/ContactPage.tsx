@@ -36,8 +36,8 @@ const ContactPage = () => {
             <span className="text-primary-600">Touch</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-            Have questions about Arkera? We'd love to hear from you.
-            Send us a message and we'll respond as soon as possible.
+            Have questions about Arkera? Our team is here to help you move faster.
+            Reach out anytime and get clear answers from real people, quickly.
           </p>
         </div>
       </section>
@@ -123,8 +123,8 @@ const ContactPage = () => {
             <div>
               <h2 className="heading-2 mb-6">Contact Information</h2>
               <p className="text-gray-600 mb-8">
-                You can also reach us through the following channels.
-                Our team is available Monday to Friday, 9 AM to 6 PM.
+                You can also connect with us through the channels below.
+                Our team is available Monday to Friday, from 9 AM to 6 PM, to assist you.
               </p>
 
               <div className="space-y-6">
@@ -202,7 +202,8 @@ const ContactPage = () => {
           <div className="text-center mb-12 md:mb-16">
             <h2 className="heading-2 mb-4">Frequently Asked Questions</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Find answers to common questions about Arkera.
+              Find clear answers to common questions about using Arkera and
+              getting the most from the platform.
             </p>
           </div>
 

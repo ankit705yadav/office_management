@@ -11,8 +11,8 @@ const FeaturesPage = () => {
             <span className="text-primary-600">Modern Teams</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-            Everything you need to manage HR, projects, and daily operations in
-            one comprehensive platform designed for efficiency.
+            Manage HR, projects, and daily operations in one powerful platform
+            built for clarity, speed, and efficient teamwork across modern teams.
           </p>
         </div>
       </section>

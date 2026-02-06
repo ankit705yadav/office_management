@@ -12,8 +12,8 @@ const HowItWorksPage = () => {
             <span className="text-primary-600">Powerful Results</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-            Get your team up and running in minutes. Our intuitive platform
-            makes it easy to manage your entire office operations.
+            Get your team started in minutes. Our intuitive platform makes
+            managing office operations simple, clear, and effective.
           </p>
         </div>
       </section>
@@ -24,7 +24,7 @@ const HowItWorksPage = () => {
           <div className="text-center mb-12 md:mb-16">
             <h2 className="heading-2 mb-4">Get Started in 4 Easy Steps</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              From signup to full productivity in just a few simple steps.
+              From sign-up to full productivity in just a few simple, guided steps.
             </p>
           </div>
 
@@ -109,8 +109,8 @@ const HowItWorksPage = () => {
           <div className="text-center mb-12 md:mb-16">
             <h2 className="heading-2 mb-4">Built for Every Role</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              From admins to employees, everyone gets the tools they need
-              with the right level of access.
+              Every role, from administrators to employees, gets the right tools
+              with appropriate access levels.
             </p>
           </div>
 
@@ -176,11 +176,12 @@ const HowItWorksPage = () => {
                 Watch Demo
               </span>
               <h2 className="heading-2 mb-6">
-                See OfficeFlow in Action
+                See Arkera in Action
               </h2>
               <p className="text-lg text-gray-600 mb-6">
-                Watch a quick walkthrough of our platform and discover how
-                easy it is to manage your entire office operations from one place.
+                Take a quick walkthrough of the platform and see how easily you
+                can manage daily operations, teams, and projects from a single,
+                unified workspace.
               </p>
               <ul className="space-y-4 mb-8">
                 {[

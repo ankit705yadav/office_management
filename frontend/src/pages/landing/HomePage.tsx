@@ -15,8 +15,9 @@ const HomePage = () => {
                 <span className="text-primary-600">Office Operations</span>
               </h1>
               <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0">
-                All-in-one platform for HR management, project tracking, attendance,
-                and daily reporting. Empower your team to work smarter, not harder.
+                An all-in-one platform for project management, HR, attendance, and
+                daily reports, helping teams stay aligned, productive, and focused on
+                work that truly matters every single day.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link to="/login" className="btn-primary text-base no-underline">
@@ -63,8 +64,8 @@ const HomePage = () => {
           <div className="text-center mb-12 md:mb-16">
             <h2 className="heading-2 mb-4">Everything You Need to Manage Your Office</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              From HR tasks to project management, our platform handles it all
-              so you can focus on what matters most.
+              From HR tasks to project management, one platform handles everything
+              so you can focus on priorities, productivity, and meaningful results every day.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
@@ -124,8 +125,9 @@ const HomePage = () => {
           <div className="text-center mb-12 md:mb-16">
             <h2 className="heading-2 mb-4">Trusted by Teams Everywhere</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              See what our customers have to say about how Arkera has transformed
-              their workplace operations.
+              Discover how customers share their experiences using Arkera to
+              simplify workflows, improve collaboration, and bring clarity to
+              everyday workplace operations.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 md:gap-8">
@@ -166,8 +168,8 @@ const HomePage = () => {
             Ready to Transform Your Workplace?
           </h2>
           <p className="text-lg text-primary-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of teams already using Arkera to streamline their operations.
-            Start your free trial today.
+            Join teams already using Arkera to simplify workflows and improve efficiency.
+            Start your free trial today and experience smoother project management.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/login" className="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors no-underline">
