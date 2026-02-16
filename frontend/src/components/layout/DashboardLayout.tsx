@@ -28,8 +28,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "react-toastify";
 import { UserRole } from "@/types";
+import arkeraLogo from "../../assets/arkeraLogo.png";
 
-const SIDEBAR_EXPANDED_WIDTH = 200;
+const SIDEBAR_EXPANDED_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 64;
 const SIDEBAR_STATE_KEY = "app-sidebar-collapsed";
 
@@ -183,11 +184,12 @@ const DashboardLayout: React.FC = () => {
     >
       {/* Logo Section */}
       <div
-        className="h-14 flex items-center px-3 border-b"
+        className="h-24 flex items-center px-3 border-b"
         style={{ borderColor: "var(--sidebar-border)" }}
       >
         {!sidebarCollapsed ? (
           <div className="flex items-center gap-2 flex-1">
+            <img src={arkeraLogo} alt="Arkera Logo" className="h-20 w-auto px-2" />
             <ChevronLeft
               className="ml-auto cursor-pointer"
               style={{ color: "var(--accent-primary)", fontSize: 24 }}
