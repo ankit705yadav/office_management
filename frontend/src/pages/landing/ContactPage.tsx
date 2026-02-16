@@ -121,7 +121,8 @@ const ContactPage = () => {
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden"
                 >
                   <button
-                    className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    className={`w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors rounded-xl ${openFaq === index ? 'rounded-b-none' : ''
+                      }`}
                     onClick={() => setOpenFaq(openFaq === index ? null : index)}
                   >
                     <span className="font-medium text-gray-900">{faq.question}</span>
